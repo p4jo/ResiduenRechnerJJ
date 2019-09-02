@@ -11,56 +11,44 @@
 	<body>
 		<h1> Residuenrechner </h1>
 				<div>  
-				
-		<form action="index.php" method="post"> 
-			Eingabe:
-			<input type="text" id="text" name="formeln"> </textarea>
-			<input type="submit" id="submit" name="submit" text="Residuen berechnen" onclick="checkBrowser();" />
-		</form> 
-		<br><br>
 
-		<P class="blocktext">
-<?php
-require "Classes.php";
-require "Parser.php";
-//////////////////////////////////////////////////////////BEGINN SKRIPT
+        <form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>">
+            <textarea cols="70" rows="1" name="formel" id="update" maxlength="200" ></textarea>
+            <br />
+            <input name="submit_button" type="submit"  value=" Residuen berechnen "  id="update_button"  class="update_button"/>
+        </form>
 
-error_reporting(E_ALL);
-ini_set('display_errors', true);
-ini_set('html_errors', false);
+        <?php
+        require_once "Parser.php";
+        require_once "Classes.php";
 
 
-/// ENDE INIT
+        error_reporting(E_ALL);
+        ini_set('display_errors', true);
+        ini_set('html_errors', false);
 
 
+        /// ENDE INIT
 
-$input = $_POST['formeln'];
-$funktion = new kompletteFunktion(Parser::parseRPNToFunctionElement(Parser::parseStringToRPN($input)));
-echo "Funktion gefunden: " . $funktion->ausgeben();
-$funktion->vereinfachen();
-echo "Vereinfacht:" . $funktion->ausgeben();
-echo "Abgelitten:" . $funktion->ableiten()->ausgeben();
-echo "Abgelitten & Vereinfacht:" . $funktion->ableiten()->vereinfachen()->ausgeben();
+        // check if the form was submitted
+        if (isset($_POST['submit_button']) && $_POST['submit_button']) {
+
+            $input = $_POST['formel'];
+            $funktion = new kompletteFunktion(Parser::parseRPNToFunctionElement(Parser::parseStringToRPN($input)));
+            echo "Funktion gefunden: " . $funktion->ausgeben();
+            $funktion->vereinfachen();
+            echo "Vereinfacht:" . $funktion->ausgeben();
+            echo "Abgelitten:" . $funktion->ableiten()->ausgeben();
+            echo "Abgelitten & Vereinfacht:" . $funktion->ableiten()->vereinfachen()->ausgeben();
 
 
-$ausgabe = "noch nichts";
+            $ausgabe = "Ausgabe: noch nichts";
 
-echo "<math>    
-           <mpadded>                   
+            echo "<math>  <mpadded>
                 $ausgabe
-           </mpadded>
-       </math> <br>";
-
-
-
-
-
-
-
-//////////////////////////////////////////////////////////////////ENDE SKRIPT
-			?>
-		</p>
-
+           </mpadded> </math> <br>";
+        }
+        ?>
 		<br>
 		<footer>
 			<p>&#x00A9; 2019 jgeigers.de</p>
