@@ -2,7 +2,7 @@
 require_once "Classes.php";
 
 class Checker {
-    public function istQuadratisch(FunctionElement $e){
+    public function istQuadratisch(FunktionElement $e){
         return "NICHTS";
     }
 
@@ -14,7 +14,7 @@ class kompletteFunktion {
     //Hier ist das Wurzelelement gemeint, nicht die mathematische Wurzel
     private  $wurzel;
 
-    public function __construct(FunctionElement $wurzel){
+    public function __construct(FunktionElement $wurzel){
         $this->wurzel = $wurzel;
     }
 

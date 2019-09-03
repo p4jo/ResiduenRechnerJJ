@@ -1,14 +1,29 @@
 <?php
 require_once "Classes.php";
 
+//Enter any new Operator here. By default Operators are left-grouping within their precedence class, add key
+// 'rightAssociative' if meant otherwise
+$operators = [
+    '+' => ['name' => 'Addition', 'arity' => 2, 'precedence' => 2],
+    '-' => ['name' => 'Subtraktion', 'arity' => 2, 'precedence' => 2],
+    '/' => ['name' => 'Division', 'arity' => 2, 'precedence' => 3],
+    '÷' => ['name' => 'Division', 'arity' => 2, 'precedence' => 3],
+    ':' => ['name' => 'Division', 'arity' => 2, 'precedence' => 3],
+    '*' => ['name' => 'Multiplikation', 'arity' => 2, 'precedence' => 3],
+    '×' => ['name' => 'Multiplikation', 'arity' => 2, 'precedence' => 3],
+    '·' => ['name' => 'Multiplikation', 'arity' => 2, 'precedence' => 3],
+//    '%' => ['name' => 'RestMod', 'arity' => 2, 'precedence' => 3],
+    '^' => ['name' => 'Potenz', 'arity' => 2, 'precedence' => 3, 'rightAssociative' => 1],
+];
+
 class Addition extends BinaryOperation {
 
     public function ausgeben() {
         return "<mrow> " . $this->op[0]->ausgeben() . "<mo>+</mo>" . $this->op[1]->ausgeben() . "</mrow> ";
     }
 
-    public function ableiten() {
-        return $this->op[0]->ableiten().add(  $this->op[1]->ableiten());
+    public function ableiten(string $varName) : FunktionElement {
+        return $this->op[0]->ableiten($varName).add(  $this->op[1]->ableiten($varName));
     }
 
     public function vereinfachen() {
@@ -77,7 +92,7 @@ class Subtraktion extends BinaryOperation {
         return "<mrow> " . $this->op[0]->ausgeben() . "<mo>-</mo>" . $this->op[1]->ausgeben() . "</mrow> ";
     }
 
-    public function ableiten() {
+    public function ableiten($varName) : FunktionElement {
         return new Subtraktion($this->op[0]->ableiten(), $this->op[1]->ableiten());
     }
 
@@ -140,7 +155,7 @@ class Multiplikation extends BinaryOperation {
         return "<mrow> " . $this->op[0]->ausgeben() . "<mo>&middot;</mo>" . $this->op[1]->ausgeben() . "</mrow> ";
     }
 
-    public function ableiten() {
+    public function ableiten($varName) : FunktionElement {
         return new Addition(new Multiplikation($this->op[0]->ableiten(), $this->op[1]), new Multiplikation($this->op[0], $this->op[1]->ableiten()));
     }
 
@@ -186,8 +201,8 @@ class Division extends BinaryOperation {
         return "<mrow> <mfrac>" .  $this->op[0]->ausgeben() . $this->op[1]->ausgeben() . " </mfrac> </mrow>";
     }
 
-    public function ableiten() {
-        return new Division(new Subtraktion(new Multiplikation($this->op[0]->ableiten(), $this->op[1]), new Multiplikation($this->op[0], $this->op[1]->ableiten())), new Potenz($this->op[1], new Numeric(2)));
+    public function ableiten(string $varName) : FunktionElement {
+        return new Division(new Subtraktion(new Multiplikation($this->op[0]->ableiten($varName), $this->op[1]), new Multiplikation($this->op[0], $this->op[1]->ableiten($varName))), new Potenz($this->op[1], new Numeric(2)));
     }
 
     public function vereinfachen() {
@@ -209,8 +224,8 @@ class Potenz extends BinaryOperation {
         return "<mrow> <msup>" .  $this->op[0]->ausgeben() . $this->op[1]->ausgeben() . " </msup> </mrow>";
     }
 
-    public function ableiten() {
-        if($this->istXhochR()) {
+    public function ableiten(string $varName) : FunktionElement {
+        if($this->istXhochR($varName)) {
             $pot2 = new Potenz($this->op[0], new Numeric($this->op[1]->decrement()));
             return new Multiplikation($this->op[1], $pot2);
         } else if($this->op[0] instanceof Constant && $this->op[0]->istWert("e")) {
@@ -255,8 +270,8 @@ class Wurzel extends UnaryOperation {
         return "<mrow> <msqrt>" .  $this->op[0]->ausgeben() . " </msqrt> </mrow>";
     }
 
-    public function ableiten() {
-        return $this -> op[0] -> ableiten() -> divideBy($this -> multiply(2)) ;
+    public function ableiten($varName) :FunktionElement {
+        return $this -> op[0] -> ableiten($varName) -> divideBy($this -> multiply(2)) ;
     }
 
     public function vereinfachen() {

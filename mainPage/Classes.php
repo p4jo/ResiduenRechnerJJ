@@ -1,12 +1,13 @@
 <?php
 require_once "ExplicitOperations.php";
+require_once "GeneralStuff.php";
 
 Constant::init();
 Funktion::init();
 
-abstract class FunctionElement {
+abstract class FunktionElement {
     public abstract function ausgeben();
-    public abstract function ableiten();
+    public abstract function ableiten(string $varName) : FunktionElement;
     public abstract function vereinfachen();
 
     public function istNull(){
@@ -32,66 +33,46 @@ abstract class FunctionElement {
         return new Potenz($this,$other);
     }
 
-
 }
 
-abstract class Operation extends FunctionElement {
+abstract class Operation extends FunktionElement {
 
-    public static $operators = [
-        '+' => 'Addition',
-        '-' => 'Subtraktion',
-        '/' => 'Division',
-        '÷' => 'Divistion',
-        ':' => 'Division',
-        '*' => 'Multiplikation',
-        '×' => 'Multiplikation',
-        '·' => 'Multiplikation',
-        '%' => 'RestModulo',
-        '^' => 'Potenz'
-    ];
-
-
-    public const arity = 2;
     protected $op;
 
-    public function __construct(array $op)
+    public function __construct(array $op, $arity)
     {
-        if(count($op) != self::arity)
-            throw new InvalidArgumentException(self::arity . "-ärer Operator wurde mit " . count($op) . "Operanden erstellt");
+        if(count($op) != $arity)
+            throw new InvalidArgumentException($arity . "-ärer Operator wurde mit " . count($op) . "Operanden erstellt");
         $this->op = $op;
     }
-
-    public function ausgeben() //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
-    {
-        return get_class($this) . "(" . implode(", ", array_map(
-                function ($a) {return $a->ausgeben(); }, $this->operand))
-            . ")";
-    }
-
 }
 
 
 abstract class UnaryOperation extends Operation {
-    public const arity = 1;
 
-    public function __construct(FunctionElement $op)
+    public function __construct($op)
     {
-        parent::__construct([$op]);
+        if ($op instanceof FunktionElement)
+            parent::__construct([$op], 1);
+        else
+            parent::__construct($op, 1);
     }
 }
 
 abstract class BinaryOperation extends Operation  {
-    public const arity = 2;
 
-    public function __construct(FunctionElement $op1, FunctionElement $op2)
+    public function __construct($op1, $op2)
     {
-        parent::__construct([$op1, $op2]);
+        parent::__construct([$op1, $op2], 2);
     }
 
 }
 
-//Alle vordefinierten Funktionen wie cos müssen als Unterklassen von Funktion definiert werden und sollten ausgeben und ofName nicht überschreiben
-abstract class Funktion extends Operation{
+/**
+ * Alle vordefinierten Funktionen müssen als Unterklassen von Funktion definiert werden, sie können vereinfachen
+ * und müssen ableiten überschreiben, statische Funktionen sollten nicht und ausgeben muss nicht überschrieben werden.
+ */
+abstract class Funktion extends Operation {
 
     protected static $registeredFunktions;
     static function init() {
@@ -109,7 +90,17 @@ abstract class Funktion extends Operation{
         return $this;
     }
 
-    public abstract function ableiten() ;
+    public function ausgeben() //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
+    {
+        return get_class($this) . "(" .
+            implode(", ", array_map(
+                function (FunktionElement $a)
+                {
+                    return $a->ausgeben();
+                },
+                $this->op))
+            . ")";
+    }
 
     public static function isFunktionName($name) {
         return in_array($name, self::$registeredFunktions);
@@ -126,25 +117,10 @@ abstract class Funktion extends Operation{
 
 
 
-
-
-
-
-abstract class Value extends FunctionElement {
-    public abstract function gebeWert();
-    public abstract function increment();
-    public abstract function decrement();
-
-    public function ableiten() {
-        return new Numeric(0);
-    }
-}
-
-
-class Numeric extends Value {
+class Numeric extends FunktionElement {
     protected $value;
 
-    public function __construct(float $v){
+    public function __construct(float $v) {
         $this->value = $v;
     }
 
@@ -155,6 +131,9 @@ class Numeric extends Value {
         return "<mn>" . $this->value . "</mn>";
     }
 
+    public function ableiten($varName) : FunktionElement {
+        return new Numeric(0);
+    }
 
     public function gebeWert() {
         return $this->value;
@@ -174,23 +153,21 @@ class Numeric extends Value {
 }
 
 class Constant extends Numeric {
-    private  $name;
     private  $viewName;
     private static  $allConstants;
 
     public static function init() {
         self::$allConstants = [
-            new Constant("π","&pi;",3.14159265358979),
-            new Constant("pi","&pi;",3.14159265358979),
-            new Constant("e", "e", 2.718281828459045235)
+            "π" => new Constant("&pi;",3.14159265358979),
+            "pi" => new Constant("&pi;",3.14159265358979),
+            "e" => new Constant("e", 2.718281828459045235)
         ];
         //echo "Constant init";
     }
 
-    private function __construct(string $name, string $viewName, float $value){
-        $this->name = $name;
+    private function __construct( string $viewName, float $value){
+        parent::__construct($value);
         $this->viewName = $viewName;
-        $this->value = $value;
     }
 
     public static function ofName(String $name) {
@@ -220,7 +197,7 @@ class Constant extends Numeric {
 }
 
 
-class Variable extends FunctionElement
+class Variable extends FunktionElement
 {
     private $name;
     public static $registeredVariables = array();
@@ -230,9 +207,12 @@ class Variable extends FunctionElement
         $this->name = $name;
     }
 
-    public function ableiten()
+    public function ableiten($varName) : FunktionElement
     {
-        return new Numeric(1);
+        if ($varName == $this->name)
+            return new Numeric(1);
+        else
+            return new Numeric(0);
     }
 
     public function ausgeben()
@@ -247,7 +227,7 @@ class Variable extends FunctionElement
 
     public static function ofName($name)
     {
-        if(Constant::isConstantName($name))
+        if (Constant::isConstantName($name))
             return Constant::ofName($name);
 
         if (array_key_exists($name, Variable::$registeredVariables))

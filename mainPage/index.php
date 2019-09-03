@@ -21,7 +21,8 @@
         <?php
         require_once "Parser.php";
         require_once "Classes.php";
-
+        require_once "GeneralStuff.php";
+        require_once "ExplicitOperations.php";
 
         error_reporting(E_ALL);
         ini_set('display_errors', true);
