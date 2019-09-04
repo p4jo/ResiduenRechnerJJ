@@ -1,18 +1,10 @@
 <?php
 require_once "Classes.php";
 
-class Checker {
-    public function istQuadratisch(FunktionElement $e){
-        return "NICHTS";
-    }
-
-}
-
-
-
 class kompletteFunktion {
     //Hier ist das Wurzelelement gemeint, nicht die mathematische Wurzel
-    private  $wurzel;
+    private $wurzel;
+    public $currentVariableName = 'x';
 
     public function __construct(FunktionElement $wurzel){
         $this->wurzel = $wurzel;
@@ -30,12 +22,13 @@ class kompletteFunktion {
     }
 
     public function vereinfachen() {
-        $this->wurzel = $this->wurzel->vereinfachen();
+        //muss vielleicht so oft wiederholt werden, bis sich nichts mehr ändert
+        $this->wurzel = $this->wurzel->vereinfachen(Variable::ofName($this->currentVariableName));
         return $this;
     }
 
     public function ableiten() {
-        return new kompletteFunktion($this->wurzel->ableiten());
+        return new kompletteFunktion($this->wurzel->ableiten($this->currentVariableName));
     }
 
 }

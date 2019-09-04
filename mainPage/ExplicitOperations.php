@@ -1,5 +1,6 @@
 <?php
 require_once "Classes.php";
+require_once "ExplicitFunctions.php";
 
 //Enter any new Operator here. By default Operators are left-grouping within their precedence class, add key
 // 'rightAssociative' if meant otherwise
@@ -16,60 +17,60 @@ $operators = [
     '^' => ['name' => 'Potenz', 'arity' => 2, 'precedence' => 3, 'rightAssociative' => 1],
 ];
 
-class Addition extends BinaryOperation {
+class Addition extends Operation {
 
     public function ausgeben() {
         return "<mrow> " . $this->op[0]->ausgeben() . "<mo>+</mo>" . $this->op[1]->ausgeben() . "</mrow> ";
     }
 
-    public function ableiten(string $varName) : FunktionElement {
-        return $this->op[0]->ableiten($varName).add(  $this->op[1]->ableiten($varName));
+    public function ableiten($variable) : FunktionElement {
+        return $this->op[0]->ableiten($variable).add(  $this->op[1]->ableiten($variable));
     }
 
-    public function vereinfachen() {
+    public function vereinfachen($variable) : FunktionElement {
         $this->op[0] = $this->op[0]->vereinfachen();
         $this->op[1] = $this->op[1]->vereinfachen();
 
-        if($this->op[0] instanceof Numeric && $this->op[1] instanceof Numeric) {
-            return new Numeric($this->op[0]->gebeWert() + $this->op[1]->gebeWert());
+        if($this->op[0] -> constant($variable) && $this->op[1] -> constant($variable)) {
+            return Numeric::of($this->op[0]->getValue() + $this->op[1]->getValue());
         }
 
         //0 kann weg
-        if($this->op[0] instanceof Numeric && $this->op[0]->gebeWert() == 0) {
+        if($this->op[0] -> constant($variable) && $this->op[0]->getValue() == 0) {
             return $this->op[1];
         }
-        if($this->op[1] instanceof Numeric && $this->op[1]->gebeWert() == 0) {
+        if($this->op[1] -> constant($variable) && $this->op[1]->getValue() == 0) {
             return $this->op[0];
         }
 
         //Fall 1
-        if($this->op[0] instanceof Numeric && ($this->op[1] instanceof Addition || $this->op[1] instanceof Subtraktion)) {
+        if($this->op[0] -> constant($variable) && ($this->op[1] instanceof Addition || $this->op[1] instanceof Subtraktion)) {
             $result = 0;
             $op[1] = $this->op[1]->hasNumeric($result);
             if($result != 0) {
-                return new Addition(new Numeric($this->op[0]->gebeWert() + $result), $op[1]);
+                return Numeric::of($this->op[0]->getValue() + $result) -> add ($op[1]);
             }
         }
 
         //Fall 2
-        if($this->op[1] instanceof Numeric && ($this->op[0] instanceof Addition || $this->op[0] instanceof Subtraktion)) {
+        if($this->op[1] -> constant($variable) && ($this->op[0] instanceof Addition || $this->op[0] instanceof Subtraktion)) {
             $result = 0;
             $op[0] = $this->op[0]->hasNumeric($result);
             if($result != 0) {
-                return new Addition(new Numeric($this->op[1]->gebeWert() + $result), $op[0]);
+                return Numeric::of($this->op[1]->getValue() + $result) -> add ($op[0]);
             }
         }
 
         return $this;
     }
 
-    public function hasNumeric(int &$output) {
-        if($this->op[0] instanceof Numeric) {
-            $output = $this->op[0]->gebeWert();
+    public function hasNumeric(int &$output, $variable) {
+        if($this->op[0] -> constant($variable)) {
+            $output = $this->op[0]->getValue();
             return $this->op[1];
         }
-        if($this->op[1] instanceof Numeric) {
-            $output = $this->op[1]->gebeWert();
+        if($this->op[1] -> constant($variable)) {
+            $output = $this->op[1]->getValue();
             return $this->op[0];
         }
 
@@ -84,41 +85,46 @@ class Addition extends BinaryOperation {
         }
         return $this;
     }
+
+    public function getValue()
+    {
+        // TODO: Implement getValue() method. für komplexe Werte
+    }
 }
 
-class Subtraktion extends BinaryOperation {
+class Subtraktion extends Operation {
 
     public function ausgeben() {
         return "<mrow> " . $this->op[0]->ausgeben() . "<mo>-</mo>" . $this->op[1]->ausgeben() . "</mrow> ";
     }
 
-    public function ableiten($varName) : FunktionElement {
-        return new Subtraktion($this->op[0]->ableiten(), $this->op[1]->ableiten());
+    public function ableiten($variable) : FunktionElement {
+        return $this->op[0]->ableiten() -> subtract ($this->op[1]->ableiten());
     }
 
-    public function vereinfachen() {
-        $this->op[0] = $this->op[0]->vereinfachen();
-        $this->op[1] = $this->op[1]->vereinfachen();
+    public function vereinfachen($variable) : FunktionElement {
+        $this->op[0] = $this->op[0]->vereinfachen($variable);
+        $this->op[1] = $this->op[1]->vereinfachen($variable);
 
-        if($this->op[0] instanceof Numeric && $this->op[1] instanceof Numeric) {
-            return new Numeric($this->op[0]->gebeWert() - $this->op[1]->gebeWert());
+        if($this->op[0] -> constant($variable) && $this->op[1] -> constant($variable)) {
+            return Numeric::of($this->op[0]->getValue() - $this->op[1]->getValue());
         }
 
         //Fall 1
-        if($this->op[0] instanceof Numeric && ($this->op[1] instanceof Addition || $this->op[1] instanceof Subtraktion)) {
+        if($this->op[0] -> constant($variable) && ($this->op[1] instanceof Addition || $this->op[1] instanceof Subtraktion)) {
             $result = 0;
             $op[1] = $this->op[1]->hasNumeric($result);
             if($result != 0) {
-                return new Subtraktion(new Numeric($this->op[0]->gebeWert() + $result), $op[1]);
+                return Numeric::of($this->op[0]->getValue() + $result) -> subtract ($op[1]);
             }
         }
 
         //Fall 2
-        if($this->op[1] instanceof Numeric && ($this->op[0] instanceof Addition || $this->op[0] instanceof Subtraktion)) {
+        if($this->op[1] -> constant($variable) && ($this->op[0] instanceof Addition || $this->op[0] instanceof Subtraktion)) {
             $result = 0;
             $op[0] = $this->op[0]->hasNumeric($result);
             if($result != 0) {
-                return new Subtraktion($op[0], new Numeric(-($this->op[1]->gebeWert() + $result)));
+                return $op[0] -> subtract( Numeric::of(-($this->op[1]->getValue() + $result)));
             }
         }
 
@@ -126,13 +132,13 @@ class Subtraktion extends BinaryOperation {
     }
 
 
-    public function hasNumeric(int &$output) {
-        if($this->op[0] instanceof Numeric) {
-            $output = $this->op[0]->gebeWert();
+    public function hasNumeric(int &$output, $variable) {
+        if($this->op[0] -> constant($variable)) {
+            $output = $this->op[0]->getValue();
             return $this->op[1];
         }
-        if($this->op[1] instanceof Numeric) {
-            $output = $this->op[1]->gebeWert();
+        if($this->op[1] -> constant($variable)) {
+            $output = $this->op[1]->getValue();
             return $this->op[0];
         }
 
@@ -147,53 +153,66 @@ class Subtraktion extends BinaryOperation {
         }
         return $this;
     }
+
+    public function getValue()
+    {
+        // TODO: Implement getValue() method. für komplexe Werte
+    }
 }
 
-class Multiplikation extends BinaryOperation {
+class Multiplikation extends Operation {
 
     public function ausgeben() {
         return "<mrow> " . $this->op[0]->ausgeben() . "<mo>&middot;</mo>" . $this->op[1]->ausgeben() . "</mrow> ";
     }
 
-    public function ableiten($varName) : FunktionElement {
-        return new Addition(new Multiplikation($this->op[0]->ableiten(), $this->op[1]), new Multiplikation($this->op[0], $this->op[1]->ableiten()));
+    public function ableiten($variable) : FunktionElement {
+        return
+            $this->op[0]->ableiten() -> multiply($this->op[1]              ) ->
+        add(
+            $this->op[0]->              multiply($this->op[1]->ableiten()));
     }
 
-    public function vereinfachen() {
-        $this->op[0] = $this->op[0]->vereinfachen();
-        $this->op[1] = $this->op[1]->vereinfachen();
+    public function vereinfachen($variable) : FunktionElement {
+        $this->op[0] = $this->op[0]->vereinfachen($variable);
+        $this->op[1] = $this->op[1]->vereinfachen($variable);
 
-        if($this->op[0] instanceof Numeric && $this->op[1] instanceof Numeric) {
-            return new Numeric($this->op[0]->gebeWert() * $this->op[1]->gebeWert());
+        if($this->op[0] -> constant($variable) && $this->op[1] -> constant($variable)) {
+            return Numeric::of($this->op[0]->getValue() * $this->op[1]->getValue());
         }
 
-        if($this->op[0] instanceof Numeric && $this->op[0]->gebeWert() == 0) {
-            return new Numeric(0);
+        if($this->op[0] -> constant($variable) && $this->op[0]->getValue() == 0) {
+            return Numeric::of(0);
         }
-        if($this->op[0] instanceof Numeric && $this->op[0]->gebeWert() == 1) {
+        if($this->op[0] -> constant($variable) && $this->op[0]->getValue() == 1) {
             return $this->op[1];
         }
 
-        if($this->op[1] instanceof Numeric && $this->op[1]->gebeWert() == 0) {
-            return new Numeric(0);
+        if($this->op[1] -> constant($variable) && $this->op[1]->getValue() == 0) {
+            return Numeric::of(0);
         }
-        if($this->op[1] instanceof Numeric && $this->op[1]->gebeWert() == 1) {
+        if($this->op[1] -> constant($variable) && $this->op[1]->getValue() == 1) {
             return $this->op[0];
         }
         echo "Nichts vereinfacht (multiplikation) <math>" . $this->ausgeben() . "</math><br>";
 
         return $this;
     }
+
+    public function getValue()
+    {
+        // TODO: Implement getValue() method. für komplexe Werte
+    }
 }
 
-class Division extends BinaryOperation {
+class Division extends Operation {
 
-    public function __construct($op0, $op1){
-        parent::__construct($op0,$op1);
-        if($this->op[1] instanceof Numeric && $this->op[1]->gebeWert() == 0) {
+    public function __construct($op){
+        parent::__construct($op);
+        if($this->op[1] -> isZero()) {
             echo "\n\nALARM! ERROR! Beim Teilen durch 0 überhitzt meine CPU!\n";
             echo "ich habe das jetzt mal zu einer 1 geändert...\n\n";
-            $this->op[1] = new Numeric(1);
+            $this->op[1] = Numeric::of(1);
         }
     }
 
@@ -201,83 +220,101 @@ class Division extends BinaryOperation {
         return "<mrow> <mfrac>" .  $this->op[0]->ausgeben() . $this->op[1]->ausgeben() . " </mfrac> </mrow>";
     }
 
-    public function ableiten(string $varName) : FunktionElement {
-        return new Division(new Subtraktion(new Multiplikation($this->op[0]->ableiten($varName), $this->op[1]), new Multiplikation($this->op[0], $this->op[1]->ableiten($varName))), new Potenz($this->op[1], new Numeric(2)));
+    public function ableiten($variable) : FunktionElement {
+        return new Division(new Subtraktion(new Multiplikation($this->op[0]->ableiten($variable), $this->op[1]), new Multiplikation($this->op[0], $this->op[1]->ableiten($variable))), new Potenz($this->op[1], Numeric::of(2)));
     }
 
-    public function vereinfachen() {
+    public function vereinfachen($variable) : FunktionElement {
         $this->op[0] = $this->op[0]->vereinfachen();
         $this->op[1] = $this->op[1]->vereinfachen();
 
-        if($this->op[0] instanceof Numeric && $this->op[1] instanceof Numeric) {
-            if($this->op[0]->gebeWert() % $this->op[1]->gebeWert() == 0)
-                return new Numeric($this->op[0]->gebeWert() / $this->op[1]->gebeWert());
+        if($this->op[0] -> constant($variable) && $this->op[1] -> constant($variable)) {
+            if($this->op[0]->getValue() % $this->op[1]->getValue() == 0)
+                return Numeric::of($this->op[0]->getValue() / $this->op[1]->getValue());
         }
 
         return $this;
     }
+
+    public function getValue()
+    {
+        // TODO: Implement getValue() method. für komplexe Werte
+    }
 }
 
-class Potenz extends BinaryOperation {
+class Potenz extends Operation {
 
     public function ausgeben() {
-        return "<mrow> <msup>" .  $this->op[0]->ausgeben() . $this->op[1]->ausgeben() . " </msup> </mrow>";
+        return "<mrow> " .  $this->op[0]->ausgeben() . " <msup> " . $this->op[1]->ausgeben() . " </msup> </mrow>";
     }
 
-    public function ableiten(string $varName) : FunktionElement {
-        if($this->istXhochR($varName)) {
-            $pot2 = new Potenz($this->op[0], new Numeric($this->op[1]->decrement()));
-            return new Multiplikation($this->op[1], $pot2);
-        } else if($this->op[0] instanceof Constant && $this->op[0]->istWert("e")) {
-            return new Multiplikation($this->op[1]->ableiten(), $this);
+    public function ableiten($variable) : FunktionElement {
+        if($this->isVarToTheR($variable)) {
+            $pot2 = $this->op[0] -> toPower($this->op[1]->subtract(Numeric::one()));
+            return $this->op[1] -> multiply($pot2);
+        } elseif($this->op[0] instanceof Constant && $this->op[0]->istWert("e")) {
+            return $this->op[1]->ableiten() ->multiply ($this);
+        } elseif($this->op[0] -> constant($variable)) {
+            return $this->op[1]->ableiten() -> multiply(new ln($this->op[0] -> getValue())) ->multiply ($this);
         } else {
             echo "Kann nicht folgendes Ableiten:" . $this->ausgeben();
         }
     }
 
-    public function vereinfachen() {
+    public function vereinfachen($variable) : FunktionElement {
         $this->op[0] = $this->op[0]->vereinfachen();
         $this->op[1] = $this->op[1]->vereinfachen();
 
-        if($this->op[0] instanceof Numeric && $this->op[1] instanceof Numeric) {
-            return new Numeric(pow($this->op[0]->gebeWert(), $this->op[1]->gebeWert()));
+        if($this->op[0] -> constant($variable) && $this->op[1] -> constant($variable)) {
+            return Numeric::of(pow($this->op[0]->getValue(), $this->op[1]->getValue()));
         }
 
-        if($this->op[1] instanceof Numeric && $this->op[1]->gebeWert() == 1) {
+        if($this->op[1] -> constant($variable) && $this->op[1]->isOne()) {
             return $this->op[0];
         }
 
         return $this;
     }
 
-    public function istXhochR() {
-        return ($this->op[0] instanceof Variable) && ($this->op[1] instanceof Value);
+    public function isVarToTheR($variable) {
+        return $this->op[0] === Variable::ofName($variable) && $this->op[1] -> constant($variable);
     }
 
-    public function istQuadratisch() {
-        return ($this->op[1] instanceof Numeric  && $this->op[1]->gebeWert() == 2);
+    public function istQuadratisch($variable) : bool {
+        return ($this->op[1] -> constant($variable)  && $this->op[1]->getValue() == 2);
     }
 
-    public function gebeBasis() {
+    public function gebeBasis() : FunktionElement {
         return $this->op[0];
+    }
+
+    public function getValue()
+    {
+        // TODO: Implement getValue() method für komplexe Werte
+        return pow($this->op[0]->getValue(), $this->op[1]->getValue());
     }
 }
 
-class Wurzel extends UnaryOperation {
+class Wurzel extends Operation {
 
+    public function getValue()
+    {
+        // TODO: Implement getValue() method für komplexe Werte
+        return sqrt($this->op[0] -> getValue());
+    }
 
     public function ausgeben() {
         return "<mrow> <msqrt>" .  $this->op[0]->ausgeben() . " </msqrt> </mrow>";
     }
 
-    public function ableiten($varName) :FunktionElement {
-        return $this -> op[0] -> ableiten($varName) -> divideBy($this -> multiply(2)) ;
+    public function ableiten($variable) : FunktionElement {
+        return $this -> op[0] -> ableiten($variable) -> divideBy($this -> multiply(2)) ;
     }
 
-    public function vereinfachen() {
+    public function vereinfachen($variable) : FunktionElement {
         $this->op[0] = $this->op[0]->vereinfachen();
 
-        if($this->op[0] instanceof exponent && $this->op[0]->istQuadratisch()) {
+        if($this->op[0] instanceof Potenz && $this->op[0]->istQuadratisch($variable)) {
             return $this->op[0]->gebeBasis();
         }
 

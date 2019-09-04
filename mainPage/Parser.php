@@ -28,15 +28,17 @@ class Parser
         "‖","×","·","¶","±","¤","÷","‼","⌂"];
     private static $leftBrace = ['(','[','{','<','«'];
     private static $rightBrace = [')',']','}','>','»'];
+    private static $brace = ['(','[','{','<','«', ')',']','}','>','»'];
+    private static $separator = [';'];
 
+    //TODO: Parser::$commaIsDecimalPoint Sollte von einer Checkbox kommen
     public static $commaIsDecimalPoint = true;
     public static function init()
     {
         if (self::$commaIsDecimalPoint)
             self::$numChar[] = ',';
         else {
-            self::$assoc[','] = LEFT;
-            self::$precedence[','] = 1;
+            self::$separator[] = ',';
         }
     }
 
@@ -57,7 +59,7 @@ class Parser
 
             }
 
-            elseif (in_array($chr, self::$specialChar) || in_array($chr, self::$leftBrace) || in_array($chr,self::$rightBrace))
+            elseif (in_array($chr, self::$specialChar) || in_array($chr, self::$brace))
             { //All special characters are single tokens
                 $tokens[] = $chr;
             }
@@ -107,6 +109,17 @@ class Parser
                 $lastType = 'num';
                 $output_queue[] = $token;
             }
+            elseif (in_array($token,self::$separator)){
+                $myOP = 0;
+                while (true)
+                {
+                    if (!$operator_stack) break;
+                    if (in_array(end($operator_stack),self::$brace) )
+                        $output_queue[] = array_pop($operator_stack);
+                    else
+                        break;
+                }
+            }
             elseif (key_exists($token, $operators)) { //OPERATOR
                 $lastType = 'op';
                 //Operatoren mit engerer Bindung (größerer Präzedenz) werden zuerst ausgeführt, d.h. zuerst auf
@@ -116,13 +129,15 @@ class Parser
                 while (true)
                 {
                     if (!$operator_stack) break;
+                    echo end($operator_stack);
                     $earlierOP = $operators[end($operator_stack)]['precedence'];
                     if ($earlierOP > $myOP || ($earlierOP == $myOP && isset($operators[end($operator_stack)]['rightAssociative'])))
                         $output_queue[] = array_pop($operator_stack);
+                    else
+                        break;
                 }
                 // push the read operator onto the operator stack.
-                if ($token != ',' && $token != ';') //diese "operatoren" sind nur Trenner und haben keine echte Operation, sie lassen nur alles vorherige auswerten
-                    $operator_stack[] = $token;
+                $operator_stack[] = $token;
 
             } elseif (in_array($token, self::$leftBrace)) { //LINKE KLAMMER
                 $lastType = 'lB';
@@ -171,33 +186,50 @@ class Parser
     public static function parseRPNToFunctionElement(array $RPNQueue)
     {
         if (!$RPNQueue)
-            return new Numeric(0);
+            return Numeric::of(0);
         self::$stack = array();
         foreach ($RPNQueue as $token) {
             self::$stack[] = self::parseRPNToFunctionElementInternal($token);
         }
 
-        if (self::$stack || $RPNQueue)
-            throw new InvalidArgumentException("HÄ " . self::$stack . "is the stack left, and the RPNQueue is: ".
-            $RPNQueue);
+        $result = array_pop(self::$stack);
+
+        if (self::$stack)
+            throw new InvalidArgumentException("HÄ {"
+                . implode
+                (", ",
+                    array_map (
+                        function (FunktionElement $a)
+                        {
+                            return $a->ausgeben();
+                        },
+                    self::$stack )
+                )
+                . "} is the stack left after parsing RPNQueue: {"
+                .  implode(", ", $RPNQueue )
+                . "}"
+            );
+
+        return $result;
     }
 
     private static function parseRPNToFunctionElementInternal(string $token)
     {
         global $operators;
         if (is_float($token))
-            return new Numeric($token);
+            return Numeric::of($token);
         elseif (key_exists($token, $operators)){
             $args = array();
             for ($i = 0; $i < $operators[$token]['arity']; $i++)
                 $args[] = array_pop(self::$stack);
+            //echo $operators[$token]['name'] ;
             return new $operators[$token]['name'](array_reverse($args));
         }
         elseif (Funktion::isFunktionName($token)) {
             $args = array();
-            for ($i = 0; $i < $token::$arity; $i++)
+            for ($i = 0; $i < $token::arity; $i++)
                 $args[] = array_pop(self::$stack);
-            return Funktion::ofName($token,array_reverse(args));
+            return new $token(array_reverse($args));
         }
         else
             //Enthält Konstanten
