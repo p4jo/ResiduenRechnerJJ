@@ -1,13 +1,13 @@
 <?php
 require_once "Classes.php";
 
-class kompletteFunktion {
+class EntireFunktion {
     //Hier ist das Wurzelelement gemeint, nicht die mathematische Wurzel
-    private $wurzel;
+    private $root;
     public $currentVariableName = 'x';
 
-    public function __construct(FunktionElement $wurzel){
-        $this->wurzel = $wurzel;
+    public function __construct(FunktionElement $root){
+        $this->root = $root;
     }
 
 
@@ -15,20 +15,26 @@ class kompletteFunktion {
         return "<math>
 									<mpadded>
 										<mstyle mathsize=\"2em\" mathvariant=\"bold\">" .
-            $this->wurzel->ausgeben() .
+            $this->root->ausgeben() .
             "</mstyle>
 									</mpadded>
 								</math> <br><br>";
     }
 
-    public function vereinfachen() {
+    public function simplifyNoConstVar() {
         //muss vielleicht so oft wiederholt werden, bis sich nichts mehr ändert
-        $this->wurzel = $this->wurzel->vereinfachen(Variable::ofName($this->currentVariableName));
+        $this->root = $this->root->simplify(null);
+        return $this;
+    }
+
+    public function simplifyConstVar() {
+        //muss vielleicht so oft wiederholt werden, bis sich nichts mehr ändert
+        $this->root = $this->root->simplify(Variable::ofName($this->currentVariableName));
         return $this;
     }
 
     public function ableiten() {
-        return new kompletteFunktion($this->wurzel->ableiten($this->currentVariableName));
+        return new EntireFunktion($this->root->ableiten($this->currentVariableName));
     }
 
 }

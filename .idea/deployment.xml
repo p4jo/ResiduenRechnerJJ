@@ -2,13 +2,6 @@
 <project version="4">
   <component name="PublishConfigData" serverName="XAMPP">
     <serverData>
-      <paths name="Apache local">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="ResiduenRechnerJ" />
-          </mappings>
-        </serverdata>
-      </paths>
       <paths name="XAMPP">
         <serverdata>
           <mappings>

@@ -45,7 +45,7 @@ class Parser
 
     public static function parseStringToRPN($inputStr)
     {
-        global $operators;
+        global $operations;
         //So muss man splitten, weil $str[$i] nach bytes geht und von allen 2-Byte Zeichen beide einzeln nimmt,
         // obige Felder wurden indirekt auch so erzeugt
         $input = preg_split('//u', $inputStr, null, PREG_SPLIT_NO_EMPTY);
@@ -100,7 +100,7 @@ class Parser
             $token = $tokens[$j];
 
             //Wenn eine rechte Klammer ohne nachfolgenden Operator da ist, muss ein · ergänzt werden
-            if (($lastType == "num" || $lastType == "var" || $lastType == "rB") && !key_exists($token, $operators)) {
+            if (($lastType == "num" || $lastType == "var" || $lastType == "rB") && !key_exists($token, $operations)) {
                 $lastType = 'op';
                 $operator_stack[] = "·";
             }
@@ -120,18 +120,18 @@ class Parser
                         break;
                 }
             }
-            elseif (key_exists($token, $operators)) { //OPERATOR
+            elseif (key_exists($token, $operations)) { //OPERATOR
                 $lastType = 'op';
                 //Operatoren mit engerer Bindung (größerer Präzedenz) werden zuerst ausgeführt, d.h. zuerst auf
                 //die RPN-Warteschlange geschoben. Bei links-Assoziativität (Links-Gruppierung) werden auch gleichrangige
                 //Operatoren, die schon auf dem Operatorstapel sind (weil sie links stehen) zuerst ausgeführt (auf die Queue gelegt)
-                $myOP = $operators[$token]['precedence'];
+                $myOP = $operations[$token]['precedence'];
                 while (true)
                 {
                     if (!$operator_stack) break;
                     echo end($operator_stack);
-                    $earlierOP = $operators[end($operator_stack)]['precedence'];
-                    if ($earlierOP > $myOP || ($earlierOP == $myOP && isset($operators[end($operator_stack)]['rightAssociative'])))
+                    $earlierOP = $operations[end($operator_stack)]['precedence'];
+                    if ($earlierOP > $myOP || ($earlierOP == $myOP && isset($operations[end($operator_stack)]['rightAssociative'])))
                         $output_queue[] = array_pop($operator_stack);
                     else
                         break;
@@ -146,7 +146,7 @@ class Parser
                 $lastType = 'rB';
                 // while the operator at the top of the operator stack is not a left bracket:
                 while (!in_array(end($operator_stack), self::$leftBrace)) {
-                    // pop operators from the operator stack onto the output queue.
+                    // pop operations from the operator stack onto the output queue.
                     $output_queue[] = array_pop($operator_stack);
                     if (!$operator_stack) {
                         throw new InvalidArgumentException("Mismatched parentheses!");
@@ -165,7 +165,7 @@ class Parser
             }
         }
 
-        //Pop remaining operators / functions
+        //Pop remaining operations / functions
         while ($operator_stack) {
             $token = array_pop($operator_stack);
              /* if the operator token on the top of the stack is a bracket, then
@@ -183,7 +183,7 @@ class Parser
     }
 
     private static $stack;
-    public static function parseRPNToFunctionElement(array $RPNQueue)
+    public static function parseRPNToFunktionElement(array $RPNQueue)
     {
         if (!$RPNQueue)
             return Numeric::of(0);
@@ -215,21 +215,22 @@ class Parser
 
     private static function parseRPNToFunctionElementInternal(string $token)
     {
-        global $operators;
+        global $operations;
         if (is_float($token))
-            return Numeric::of($token);
-        elseif (key_exists($token, $operators)){
-            $args = array();
-            for ($i = 0; $i < $operators[$token]['arity']; $i++)
-                $args[] = array_pop(self::$stack);
-            //echo $operators[$token]['name'] ;
-            return new $operators[$token]['name'](array_reverse($args));
-        }
-        elseif (Funktion::isFunktionName($token)) {
-            $args = array();
-            for ($i = 0; $i < $token::arity; $i++)
-                $args[] = array_pop(self::$stack);
-            return new $token(array_reverse($args));
+            return new Numeric($token, 0);
+        elseif (key_exists($token, $operations)){
+            switch ($operations[$token]['arity']) {
+                case 1:
+                    return new $operations[$token]['name'](array_pop(self::$stack));
+                case 2:
+                    $o2 = array_pop(self::$stack);
+                    return new $operations[$token]['name'](array_pop(self::$stack), $o2);
+                default:
+                    $args = array();
+                    for ($i = 0; $i < $operations[$token]['arity']; $i++)
+                        $args[] = array_pop(self::$stack);
+                    return new $operations[$token]['name'](array_reverse($args));
+            }
         }
         else
             //Enthält Konstanten

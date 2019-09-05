@@ -1,0 +1,123 @@
+@charset "utf-8";
+*{
+	font-family: Raleway;
+	box-sizing: border-box;
+    margin: 0;
+}
+
+h1 {
+	text-align: center;
+	text-color: blue;
+}
+
+body {
+	text-align: center;
+	padding-bottom:3em;
+}
+
+
+P.blocktext {
+	border: 2px black solid;
+    margin-left: auto;
+    margin-right: auto;
+    width: 8em
+}
+
+P.foot {
+	text-align: center;
+}
+
+
+
+
+
+
+ul>ul>li{
+	color: white;
+	border-bottom: thin dotted;
+	background: rgb(85, 85, 85);
+}
+
+ul>ul>li:last-of-type{
+	border: none;
+}
+
+ul>ul>li>a{
+	display: block;
+	color: inherit;
+	padding: 0.7em 0 0.7em 0;
+    border: none;
+	text-decoration: none;
+}
+
+
+/*footer*/
+footer{
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	left: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding: 1em 0 1em 0;
+	background: rgb(85, 85, 85); 
+	z-index: 1;
+
+}
+
+footer>p{
+	font-size: 0.8em;
+	text-align: left;
+	padding: 0.5em 0 0.5em 0;
+	color: white;
+}
+
+footer>p:last-of-type{
+	/*Find ich nicht schön*/
+	text-align: right;
+}
+
+footer>a{
+	font-size: 0.8em;
+	text-align: center;
+	padding: 0.5em 0 0.5em 0;
+	color: white;
+	text-decoration: underline;
+}
+
+footer>p>a{
+    color: inherit;
+	text-decoration: underline;
+}
+
+
+@MEDIA screen and (min-width: 480px) {
+    /*footer*/
+    footer>p, footer>a{
+        font-size: 1em;
+    }
+}
+
+
+@MEDIA screen and (min-width: 768px) {
+    /*footer*/
+	footer{
+		flex-direction: row;
+		justify-content: center;
+		height: 7.5em;
+		padding: 0 2.5em 0 2.5em;
+	}
+
+	footer>p{
+		flex: 1;
+		font-size: 1.1em;
+		padding: 0;
+	}
+
+	footer>a{
+		font-size: 1.1em;
+		padding: 0;
+	}
+}

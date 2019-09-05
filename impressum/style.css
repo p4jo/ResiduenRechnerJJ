@@ -1,0 +1,36 @@
+/*footer*/
+footer{
+	display: flex;
+	position: relative;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding: 1em 0 1em 0;
+	background: rgb(85, 85, 85); 
+	z-index: 1;
+
+}
+
+footer>p{
+	font-size: 0.8em;
+	text-align: left;
+	padding: 0.5em 0 0.5em 0;
+	color: white;
+}
+
+footer>p:last-of-type{
+	text-align: right;
+}
+
+footer>a{
+	font-size: 0.8em;
+	text-align: center;
+	padding: 0.5em 0 0.5em 0;
+	color: white;
+	text-decoration: underline;
+}
+
+footer>p>a{
+    color: inherit;
+	text-decoration: underline;
+}
