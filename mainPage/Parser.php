@@ -43,6 +43,14 @@ class Parser
     }
 
 
+    public static function precedence(string $token)
+    {
+        global $operations;
+        if (isset($operations[$token]))
+            return $operations[$token]['precedence'];
+        return 0;
+    }
+
     public static function parseStringToRPN($inputStr)
     {
         global $operations;
@@ -67,16 +75,18 @@ class Parser
             elseif (in_array($chr, self::$numChar)) {
                 // entire number as one token
                 $number = $chr;
+                $isInt = true;
 
                 while (isset($input[$i + 1]) && in_array($input[$i + 1], self::$numChar)) {
 
                     $digit = $input[++$i]; //erst hier erhöhen
-                    if ($digit == ',')
-                        $digit = '.';
+                    if ($digit == ',' || $digit == '.') {
+                        $digit = $isInt ? '.' : '';
+                        $isInt = false;
+                    }
                     $number .= $digit;
                 }
-                //probably throws Exception with more than one . or ,
-                $tokens[] = floatval($number);
+                $tokens[] = $isInt ? intval($number) : floatval($number) ;
             }
 
             elseif (in_array($chr, self::$letterChar)) {
@@ -98,13 +108,14 @@ class Parser
 
         for ($j = 0; isset($tokens[$j]); $j++) {
             $token = $tokens[$j];
-
+            //echo "Es kommt gerade der Token " . $token . " ,vorheriger Typ " . $lastType . "<br>";
+/*
             //Wenn eine rechte Klammer ohne nachfolgenden Operator da ist, muss ein · ergänzt werden
             if (($lastType == "num" || $lastType == "var" || $lastType == "rB") && !key_exists($token, $operations)) {
                 $lastType = 'op';
                 $operator_stack[] = "·";
             }
-
+*/
             if (is_float($token)) { //ZAHL
                 $lastType = 'num';
                 $output_queue[] = $token;
@@ -120,23 +131,26 @@ class Parser
                         break;
                 }
             }
-            elseif (key_exists($token, $operations)) { //OPERATOR
+            elseif (key_exists($token, $operations)) { //OPERATOR / Funktion
                 $lastType = 'op';
                 //Operatoren mit engerer Bindung (größerer Präzedenz) werden zuerst ausgeführt, d.h. zuerst auf
                 //die RPN-Warteschlange geschoben. Bei links-Assoziativität (Links-Gruppierung) werden auch gleichrangige
                 //Operatoren, die schon auf dem Operatorstapel sind (weil sie links stehen) zuerst ausgeführt (auf die Queue gelegt)
-                $myOP = $operations[$token]['precedence'];
+                $myOP = self::precedence($token);
+                //echo "pushed operators";
                 while (true)
                 {
                     if (!$operator_stack) break;
-                    echo end($operator_stack);
-                    $earlierOP = $operations[end($operator_stack)]['precedence'];
+                    //echo end($operator_stack);
+                    $earlierOP = self::precedence(end($operator_stack));
                     if ($earlierOP > $myOP || ($earlierOP == $myOP && isset($operations[end($operator_stack)]['rightAssociative'])))
+                        //push higher precedence Stuff from stack to output
                         $output_queue[] = array_pop($operator_stack);
                     else
                         break;
                 }
                 // push the read operator onto the operator stack.
+                //echo ",pulled".$token."<br>";
                 $operator_stack[] = $token;
 
             } elseif (in_array($token, self::$leftBrace)) { //LINKE KLAMMER
@@ -155,10 +169,12 @@ class Parser
                 $wasRightBrace = $j;
                 // pop the left bracket from the stack.
                 array_pop($operator_stack);
-            } elseif (Funktion::isFunktionName($token)) {   //FUNKTION
+
+            }
+            /* elseif (Funktion::isFunktionName($token)) {   //FUNKTION
                 $lastType = 'funk';
                 $output_queue[] = $token;
-            }
+            }*/
             else {                                          //VARIABLE / KONSTANTE
                 $lastType = 'var';
                 $output_queue[] = $token;
@@ -186,14 +202,17 @@ class Parser
     public static function parseRPNToFunktionElement(array $RPNQueue)
     {
         if (!$RPNQueue)
-            return Numeric::of(0);
+            return Numeric::zero();
         self::$stack = array();
         foreach ($RPNQueue as $token) {
-            self::$stack[] = self::parseRPNToFunctionElementInternal($token);
+            echo "Ich verarbeite " . $token;
+            $funkEl = self::parseRPNToFunctionElementInternal($token);
+            self::$stack[] = $funkEl;
+            echo " zu FunktionElement <math>" . $funkEl->ausgeben() . "</math><br>";
         }
 
         $result = array_pop(self::$stack);
-
+ //Fehlerbehandlung
         if (self::$stack)
             throw new InvalidArgumentException("HÄ {"
                 . implode
@@ -215,16 +234,22 @@ class Parser
 
     private static function parseRPNToFunctionElementInternal(string $token)
     {
-        global $operations;
+        if (is_int($token))
+            return new RationalNumber($token);
         if (is_float($token))
-            return new Numeric($token, 0);
-        elseif (key_exists($token, $operations)){
+            return new FloatyNumber($token);
+
+        global $operations;
+
+        if (key_exists($token, $operations)){
             switch ($operations[$token]['arity']) {
                 case 1:
                     return new $operations[$token]['name'](array_pop(self::$stack));
                 case 2:
                     $o2 = array_pop(self::$stack);
-                    return new $operations[$token]['name'](array_pop(self::$stack), $o2);
+                    $o1 = array_pop(self::$stack);
+                    echo " [Token ".$token ." wird geparst mit <math> ".$o1->ausgeben() ." und ". $o2->ausgeben()."</math>] ";
+                    return new $operations[$token]['name']($o1, $o2);
                 default:
                     $args = array();
                     for ($i = 0; $i < $operations[$token]['arity']; $i++)
@@ -232,8 +257,7 @@ class Parser
                     return new $operations[$token]['name'](array_reverse($args));
             }
         }
-        else
-            //Enthält Konstanten
-            return Variable::ofName($token);
+        return Variable::ofName($token);
     }
+
 }

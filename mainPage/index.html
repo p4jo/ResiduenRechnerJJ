@@ -1,56 +1,63 @@
 <!DOCTYPE html>
 
 <html>
-	<head>
-		<meta charset="utf-8">
-		<title>Residuenrechner</title>
-<!--		<link rel="stylesheet" type="text/css" href="style.css"/>-->
-<!--		<link rel="shortcut icon" type="image/icon" href="icon.png">-->
+    <head>
+        <meta charset="utf-8">
+        <title>JResiduenrechner</title>
+        <link rel="stylesheet" type="text/css" href="style.css"/>
+        <link rel="shortcut icon" type="image/icon" href="icon.png">
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
 <!--		<script language="javascript" type="text/javascript" src="main.js"></script>-->
-		<script type="text/javascript">
+        <script type="text/javascript">
 
+    	function loadPHPtoDiv(phpFile,outputDiv) {
+        	$.ajax({
+				url: phpFile + ".php",
+				data:
+				Array.from(document.getElementsByClassName("II"))
+					.reduce(
+						(data, element) => {
+							// Add the current field to the object.
+							data[element.id] = element.value;
+							return data;
+						}, {}
+					),
+				datatype: "json", type: "POST",
+				success: function (data) {
+					//alert(data);
+					document.getElementById("ausgabe" + outputDiv).innerHTML = data;
+				}
+       		});
+    	}
 
+    	</script>
 
-		function callAusgabe() {
+    </head>
+    <body>
+        <h1> Residuenrechner </h1>
 
-	 alert(document.getElementById("formel").innerHTML + ";");
-   $.ajax({
-		url: "Ausgabe.php",
-		data: {inputString : document.getElementById("formel").innerHTML},
-		datatype: "json",
-		type: "POST",
-		success: function(data) { alert(data); }
-   });
-}
+        <div id = constDiv>
+            <form>
+                <a>f(<a>
+                <input class="II" type="text" id="workVariable" size="3">
+                <a>) = <br></a>
+                <input class="II" type="text" id="formel" size="80">
+            </form>
+            <br />
+            <button onclick = "loadPHPtoDiv('Ausgabe', 1)"> Residuen berechnen </button>
+            <button onclick = "loadPHPtoDiv('VariableList', 2)"> Variablenliste aktualisieren </button>
+        </div>
 
-    </script>
-	</head>
-	<body>
-		<h1> Residuenrechner </h1>
-<!--		-->
-<!--        <form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>">-->
-<!--            <textarea cols="70" rows="1" name="formel" id="update" maxlength="200" ></textarea>-->
-<!--            <br /> -->
-<!--            <input name="submit_button" type="submit"  value=" Residuen berechnen "  id="update_button"  class="update_button"/>-->
-<!--        </form> -->
+        <div id = ausgabe1></div>
+        <div id = ausgabe2></div>
+        <div id = ausgabe3></div>
 
-		<div id = constDiv>
-			<textfield name="formel" id="formel" maxlength="400" ></textfield>
-			<br />
-			<button type="button" id="myClickBtn" onclick = "callAusgabe()"> Residuen berechnen </button>
-		</div>
-
-		<div id = ausgabe1></div>
-		<div id = ausgabe2></div>
-		<div id = ausgabe3></div>
-
-		<footer>
-			<p>&#x00A9; 2019 jgeigers.de</p>
-			<p class="foot">
-				Diese Website ist noch in Bearbeitung! Einige Funktionen können fehlerhaft sein.
-			</p>
+        <footer>
+            <p>&#x00A9; 2019 jgeigers.de</p>
+            <p class="foot">
+                Diese Website ist noch in Bearbeitung! Einige Funktionen können fehlerhaft sein.
+            </p>
 <!--			<a href="impressum">Impressum</a>-->
-		</footer>
-	</body>
+        </footer>
+    </body>
 </html>

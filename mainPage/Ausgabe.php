@@ -6,28 +6,42 @@ ini_set('html_errors', false);
 
 require_once "Parser.php";
 require_once "Classes.php";
-require_once "GeneralStuff.php";
+require_once "EntireFunktion.php";
 require_once "ExplicitOperations.php";
 
 /// Obige Dateien sollten keinen HTML-Code erzeugen (Schichtenarchitektur)
-ausgabe($_POST["inputString"]);
-function ausgabe($input): void
-{
 
-    $RPNQueue = Parser::parseStringToRPN($input);
-    $root = Parser::parseRPNToFunktionElement($RPNQueue);
-    $funktion = new EntireFunktion($root);
-    echo "Funktion gefunden: " . $funktion->ausgeben();
-    $funktion->simplifyNoConstVar();
-    echo "Vereinfacht:" . $funktion->ausgeben();
-    $derivative = $funktion->ableiten();
-    echo "Abgelitten:" . $derivative->ausgeben();
-    echo "Abgelitten & Vereinfacht:" . $derivative->simplifyNoConstVar()->ausgeben();
+session_start();
 
+$input = $_POST["formel"];
+Variable::$workVariable = $_POST["workVariable"];
 
-    $ausgabe = "Ausgabe: noch nichts";
+$RPNQueue = Parser::parseStringToRPN($input);
+$root = Parser::parseRPNToFunktionElement($RPNQueue);
+$funktion = new EntireFunktion($root);
 
-    echo "<math>  <mpadded>
-                $ausgabe
-           </mpadded> </math> <br>";
-}
+Variable::$noNumerics = true;
+echo "NO NUMERIC CONSTANT VARIABLES<br>";
+
+echo "Eingabe: " . $funktion->ausgeben();
+
+$funktionSimplified = $funktion->simplify();
+echo "Vereinfacht:" . $funktionSimplified->ausgeben();
+
+$derivative = $funktion->ableiten();
+echo "Abgeleitet:" . $derivative->ausgeben();
+
+$derivativeSimplified = $derivative->simplify();
+echo "Abgeleitet & Vereinfacht:" . $derivativeSimplified->ausgeben();
+
+$derivativeOfSimplified = $funktionSimplified->ableiten();
+echo "Vereinfacht & Abgeleitet:" . $derivativeSimplified->ausgeben();
+
+Variable::$noNumerics = false;
+
+//SAVE THE FUNCTION TO SESSION VARIABLES
+$_SESSION['variables'] = Variable::$registeredVariables;
+$_SESSION['funktion'] = $funktion;
+$_SESSION['funktionSimplified'] = $funktionSimplified;
+$_SESSION['derivative'] = $derivative;
+$_SESSION['derivativeSimplified'] = $derivativeSimplified;

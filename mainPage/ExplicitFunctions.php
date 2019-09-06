@@ -2,21 +2,28 @@
 require_once "Classes.php";
 
 
-class cos extends UnaryFunktion {
+class cos extends UnaryOperation {
 
     public function ableiten(): FunktionElement
     {
-        return (Numeric::of(-1)) -> multiply(new sin($this->op)) -> multiply($this->op->ableiten());
+        return (new RationalNumber(-1)) -> multiply(new sin($this->op)) -> multiply($this->op->ableiten());
     }
 
     public function getValue() : Numeric
     {
-        // TODO: Implement getValue() method für komplexe Werte
-        return cos($this->op -> getValue());
+        $v = $this->op->getValue();
+        return new FloatyNumber(cos($v->re()) * cosh($v->im()), -sin($v->re()) * sinh($v->im()));
+    }
+
+    public function simplify(): FunktionElement
+    {
+        $simpler = new self($this->op->simplify());
+        // TODO: Implement simplify() method.
+
     }
 }
 
-class sin extends UnaryFunktion {
+class sin extends UnaryOperation {
 
     public function ableiten(): FunktionElement
     {
@@ -26,11 +33,17 @@ class sin extends UnaryFunktion {
     public function getValue() : Numeric
     {
         $v = $this->op->getValue();
-        return new Numeric(sin($v->re) * cosh($v->im), cos($v->re) * sinh($v->im));
+        return new FloatyNumber(sin($v->re()) * cosh($v->im()), cos($v->re()) * sinh($v->im()));
+    }
+
+    public function simplify(): FunktionElement
+    {
+        $simpler = new self($this->op->simplify());
+        // TODO: Implement simplify() method.
     }
 }
 
-class ln extends UnaryFunktion {
+class ln extends UnaryOperation {
 
     public function ableiten(): FunktionElement
     {
@@ -40,6 +53,12 @@ class ln extends UnaryFunktion {
     public function getValue() : Numeric
     {
         //Todo Verzweigungsschnitt beachten, vielleicht 2-parametrigen Logarithmus einführen
-        return new Numeric(log($this->op -> getValue()->absSquared()) / 2, $this->op->getValue()->arg());
+        return new FloatyNumber(log($this->op -> getValue()->absSquared()) / 2, $this->op->getValue()->arg());
+    }
+
+    public function simplify(): FunktionElement
+    {
+        $simpler = new self($this->op->simplify());
+        // TODO: Implement simplify() method.
     }
 }
