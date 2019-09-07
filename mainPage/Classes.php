@@ -1,6 +1,10 @@
 <?php
+
 require_once "ExplicitOperations.php";
 require_once "EntireFunktion.php";
+
+$floatToRationalTolerance = PHP_FLOAT_MIN * 0x10000000;
+$floatToRationalMaxDen = 200;
 
 abstract class FunktionElement {
     public abstract function ausgeben();
@@ -55,7 +59,7 @@ abstract class FunktionElement {
         return new Potenz($this,$other);
     }
     public function sqrt() : FunktionElement {
-        return new Wurzel([$this]);
+        return new Wurzel($this);
     }
 
     public function equals(FunktionElement $other) : bool
@@ -77,6 +81,52 @@ abstract class FunktionElement {
             return false; 
         }
         return false; 
+    }
+
+}
+
+/**
+ * Alle vordefinierten Funktionen sollten als Unterklassen von den Operation - Klassen definiert werden,
+ * sie können simplify und müssen ableiten überschreiben, statische Funktionen sollten nicht
+ * und ausgeben muss nicht überschrieben werden.
+ * Jeder Operator und jede Funktion muss in operations eingetragen werden.
+ */
+abstract class Operation extends FunktionElement {
+
+    private /* array */ $op;
+
+    public function __construct(FunktionElement ... $op) {
+
+    }
+
+    public function isNumeric() : bool {
+        $result = true;
+        foreach ($this->op as $o)
+        {
+            $result = $result && $o -> isNumeric();
+        }
+        return $result;
+    }
+
+    public function isConstant() : bool {
+        $result = true;
+        foreach ($this->op as $o)
+        {
+            $result = $result && $o -> isConstant();
+        }
+        return $result;
+    }
+
+    public function ausgeben() //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
+    {
+        return get_class($this) . "(" .
+            implode(", ", array_map(
+                function (FunktionElement $a)
+                {
+                    return $a->ausgeben();
+                },
+                $this->op))
+            . ")";
     }
 
 }
@@ -108,6 +158,8 @@ abstract class UnaryOperation extends FunktionElement {
 
 abstract class BinaryOperation extends FunktionElement  {
 
+    //DIESE AUSKOMMENTIERUNG VERUSACHT GROßE PROGRAMMIERSCHWIERIGKEITEN UND VIELE IDE-WARNUNGEN
+    //php ist aber erst in 7.3.8 verfügbar und Attribut-Typen werden erst ab 7.4 unterstützt :(
     protected /*FunktionElement*/ $op1, $op2;
     public function __construct($op1, $op2)
     {
@@ -128,61 +180,154 @@ abstract class BinaryOperation extends FunktionElement  {
 
 }
 
-/**
- * Alle vordefinierten Funktionen sollten als Unterklassen von den Operation - Klassen definiert werden,
- * sie können simplify und müssen ableiten überschreiben, statische Funktionen sollten nicht
- * und ausgeben muss nicht überschrieben werden.
- * Jeder Operator und jede Funktion muss in operations eingetragen werden.
- */
-abstract class Operation extends FunktionElement {
+class Variable extends FunktionElement
+{
+    public static /*bool*/ $noNumerics = false;
+    public static /*string*/ $workVariable;
+    public /*string*/ $name;
+    public /*Numeric*/ $value;
+    public /*bool*/ $numeric = false;
 
-    private /* array */ $op;
-
-    public function __construct(FunktionElement ... $op) {
-
-    }
-
-    public function isNumeric() : bool {
-        $result = true;
-        foreach ($this->op as $o)
-        {
-            $result = $result && $o -> isNumeric();
-        }
-        return $result;
-    }
-    
-    public function isConstant() : bool {
-        $result = true;
-        foreach ($this->op as $o)
-        {
-            $result = $result && $o -> isConstant();
-        }
-        return $result;
-    }
-
-    public function ausgeben() //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
+    private function __construct(String $name, Numeric $value = null)
     {
-        return get_class($this) . "(" .
-            implode(", ", array_map(
-                function (FunktionElement $a)
-                {
-                    return $a->ausgeben();
-                },
-                $this->op))
-            . ")";
+        $this->name = $name;
+        $this->value = $value;
+    }
+
+    public function ableiten() : FunktionElement
+    {
+        if (self::$workVariable == $this->name)
+            return Numeric::one();
+        else
+            return Numeric::zero();
+    }
+
+    public function ausgeben()
+    {
+        return $this->numeric ?
+            "<mi mathvariant='bold'>" . $this->name . "</mi>" :
+            "<mi>" . $this->name . "</mi>" ;
+    }
+
+    public function simplify() : FunktionElement
+    {
+        return $this;
+    } 
+
+    public function isNumeric(): bool
+    {
+        //i als einzige Ausnahme (&& hat größere Präzedenz als ||)
+        return $this->name == 'i' || !self::$noNumerics && $this->numeric;
+    }
+
+    public function isConstant(): bool
+    {
+        return $this->name != self::$workVariable;
+    }
+
+    // wirft entweder Fehler, oder rechnet mit nichtssagenden, konstanten Werten, wenn
+    // getValue aufgerufen wird, obwohl diese Variable nicht numeric ist.
+    public function getValue() : Numeric
+    {
+        if (!$this->isNumeric())
+            throw new ErrorException("ProgrammierFehler");
+        return $this->value;
+        //sollte aus einer Liste auf der HTTP-Seite (vom User eigetragene) Werte haben
+    }
+
+    public function isOne(): bool
+    {
+        return $this->isNumeric() && $this->getValue()->isOne();
+    }
+    public function isZero(): bool
+    {
+        return $this->isNumeric() && $this->getValue()->isZero();
+    }
+
+    /// Element-wise
+    /// Static
+
+    //Das ist letztlich Variable::init()
+    public static /*array*/ $registeredVariables = array();
+
+    public static function ofName($name)
+    {
+        if (array_key_exists($name, Variable::$registeredVariables))
+            return Variable::$registeredVariables[$name];
+
+        $co = new Variable($name);
+        $co -> numeric = true;
+        switch(strtolower($name)) {
+            case "pi":
+                $co->name = 'π';
+            case "π":
+                $co -> value = new Numeric(new FloatReal(pi()), RationalReal::$zero);
+                break;
+            case "e":
+                $co -> value = new Numeric(new FloatReal(2.718281828459045235), RationalReal::$zero);
+                break;
+            case "i":
+                $co -> value = new Numeric(RationalReal::$zero,RationalReal::$one);
+                break;
+            default:
+                $co->numeric = false;
+        }
+        //hinzufügen
+        Variable::$registeredVariables[$name] = $co;
+        return $co;
     }
 
 }
 
 Numeric::init();
 
-abstract class Numeric extends FunktionElement
+class Numeric extends FunktionElement
 {
     // TODO: Implement Numeric für rationale Werte
 
+    private /*Real*/ $im;
+    private /*Real*/ $re;
+
+    public function re() : Real {
+        return $this->re;
+    }
+    public function im() : Real {
+        return $this->im;
+    }
+
+    public function reF() : float {
+        return $this->re()->floatValue();
+    }
+    public function imF() : float {
+        return $this->im()->floatValue();
+    }
+
+    public function __construct(Real $re, Real $im)
+    {
+        $this->re = $re;
+        $this->im = $im;
+    }
+
+    public function ausgeben() : string {
+        return $this->toStringHelper();
+    }
+
+    private function toStringHelper() : string
+    {
+        if ($this->im->isZero())
+            return $this->re->ausgeben();
+        if ($this->re->isZero())
+            return $this->im->ausgeben() . "i";
+        return "[" . $this->re->ausgeben() . " + " . $this->im->ausgeben() . "i]";
+    }
 
     public function ableiten() : FunktionElement {
         return self::zero();
+    }
+
+    public function simplify(): FunktionElement
+    {
+        return new self($this->re->simplified(),$this->im->simplified());
     }
 
     public function getValue() : Numeric {
@@ -199,263 +344,427 @@ abstract class Numeric extends FunktionElement
         return true;
     }
 
-    public abstract function addN(Numeric $other) : Numeric ;
 
-    public abstract function subtractN(Numeric $other) : Numeric ;
-    
-    public abstract function multiplyN(Numeric $other) : Numeric ;
+    public function isOne(): bool
+    {
+        return $this->re()->isOne() && $this->im()->isZero();
+    }
 
-    public abstract function divideByN(Numeric $other) : Numeric ;
-    
+    public function isZero(): bool
+    {
+        return $this->re()->isZero() && $this->im()->isZero();
+    }
+
+    public function equalsN(Numeric $other)
+    {
+        return $this->re() -> equalsR ($other->re) && $this->im()->equalsR ($other->im());
+    }
+
+    public function addN(Numeric $other) : Numeric
+    {
+        return new self($this->re() ->addR ($other->re()), $this->im()->addR ($other->im()));
+    }
+    public function subtractN(Numeric $other) : Numeric
+    {
+        return new self($this->re() ->subtractR ($other->re()), $this->im() ->subtractR ($other->im()));
+    }
+
+    public function multiplyN(Numeric $other) : Numeric
+    {
+        return new self($this->re() ->multiplyR($other->re())   ->subtractR(
+            $this->im() ->multiplyR($other->im()))  ,
+            $this->re() ->multiplyR($other->im()) -> addR(
+                $this->im() -> multiplyR ($other->re())));
+    }
+
+    //z / w = z mal w* / |w|²
+
+    public function divideByN(Numeric $other) : Numeric
+    {
+        return new self(
+            $this->re() -> multiplyR ($other->re())     ->addR(
+                $this->im() ->multiplyR ($other->im()))
+                ->divideByR($other->absSquared())     ,
+            $this->im() -> multiplyR($other->re())      ->subtractR(
+                $this->re() ->multiplyR($other->im()))
+                -> divideByR ($other->absSquared()));
+    }
+
     public function toPowerN(Numeric $other) : Numeric
     {
-        $r = $this->abs();
-        $phi = $this->arg();
-        return self::ofAbsArg(pow($r,$other->re()()) * exp($phi * $other -> im()()),
-                                $phi * $other ->re() + log($r) * $other->im()());
+        $r = $this->absF();
+        $phi = $this->argF();
+        return self::ofAbsArg(pow($r,$other->reF()) * exp($phi * $other -> imF()),
+            $phi * $other ->reF() + log($r) * $other->imF());
     }
 
     public function sqrtN()
     {
         //Todo Verzweigungsschnitt beachten, vielleicht 2-parametrige Wurzel einführen
-        return self::ofAbsArg($this->abs(), $this->arg() / 2);
+        return self::ofAbsArg($this->absF(), $this->argF() / 2);
     }
 
-    public abstract function re() : float ;
-    public abstract function im() : float ;
-
-    public function arg() : float {
-        return atan2($this->im(), $this->re());
+    public function argF() : float {
+        return atan2($this->imF(), $this->reF());
     }
 
-    public function absSquared() : float {
+    public function absSquared() : Real {
         $re = $this->re();
         $im = $this->im();
-        return $re * $re + $im * $im;
+        return $re ->multiplyR($re) ->addR(
+            $im ->multiplyR($im));
+    }
+    public function absSquaredF() : float {
+        $re = $this->reF();
+        $im = $this->imF();
+        return $re * $re +  $im * $im;
     }
 
-    public function abs() : float {
-        return sqrt($this->absSquared());
+    public function absF() : float {
+        return sqrt($this->absSquaredF());
     }
-
     /// Element-wise
+
     /// Static
 
-    protected static $one;
-    protected static $zero;
+    protected static /*Numeric*/ $one;
+    protected static /*Numeric*/ $zero;
 
     public static function init() {
-        self::$one = new RationalNumber(1, 1, 0, 1);
-        self::$zero = new RationalNumber(0, 1, 0, 1);
+        RationalReal::$one = new RationalReal(1);
+        RationalReal::$zero = new RationalReal(0);
+        self::$one = new self(RationalReal::$one, RationalReal::$zero);
+        self::$zero = new self(RationalReal::$zero,  RationalReal::$zero);
     }
 
     public static function zero() : Numeric {
         return self::$zero;
     }
 
+
     public static function one() : Numeric {
         return self::$one;
     }
 
     public static function ofAbsArg(float $r, float $arg) {
-        return new FloatyNumber($r * cos($arg), $r * sin($arg));
+        return new self(new FloatReal($r * cos($arg)),new FloatReal($r * sin($arg)));
     }
 
-    public static function complexAusgabe($real, $imaginary) {
-        if (!$imaginary)
-            return $real;
-        if (!$real)
-            return $imaginary. 'i';
-        return "[" . $real ." + " . $imaginary . "i]";
+    public static function ofF(float $reF, float $imF = 0) : self {
+        return new self(Real::ofF($reF), Real::ofF($imF));
     }
-
-/*
-    public static function of(float $v){
-        if ($v == 0)
-            return self::$zero;
-        if ($v == 1)
-            return self::$one;
-        return new self($v);
-    }*/
 
 }
 
-class FloatyNumber extends Numeric {
+abstract class Real {
+    public abstract function floatValue() : float ;
+
+    public abstract function ausgeben() : string ;
+    public abstract function isZero() : bool ;
+    public abstract function isOne() : bool ;
+    public abstract function simplified() : Real ;
+
+    public abstract function equalsR(Real $re) : bool;
+    public abstract function addR(Real $other) : Real ;
+    public abstract function subtractR(Real $other) : Real ;
+    public abstract function multiplyR(Real $other) : Real ;
+    public abstract function divideByR(Real $other) : Real ;
+
+    public abstract function negativeR() : Real ;
+    public abstract function reciprocalR() : Real ;
+
+    public static function ofF(float $reF){
+        return (new FloatReal($reF))->simplified();
+    }
+
+}
+
+class FloatReal extends Real{
     public static /*int*/ $displayDigits = 0;
+    public /*float*/ $value = 0.0;
 
-    private /*float*/ $im;
-    private /*float*/ $re;
-
-    public function re() : float {
-        return $this->re;
-    }
-    public function im() : float {
-        return $this->im;
-    }
-
-    public function __construct($re, $im = 0)
+    public function __construct(float $value)
     {
-        $this->re = $re;
-        $this->im = $im;
+        $this->value = $value;
     }
 
-    public function ausgeben() {
+    public function ausgeben() : string {
         if (self::$displayDigits > 0) {
             $thousands_sep = Parser::$commaIsDecimalPoint ? '.' : ',';
             $dec_point = Parser::$commaIsDecimalPoint ? ',' : '.';
-            return Numeric::complexAusgabe(
-                number_format ( $this->re , self::$displayDigits, $dec_point, $thousands_sep),
-                number_format ( $this->im , self::$displayDigits, $dec_point, $thousands_sep));
+            return "<mn>" . number_format ( $this->value , self::$displayDigits, $dec_point, $thousands_sep) . "</mn>";
         }
-        return Numeric::complexAusgabe($this->re,$this->im);
+        return "<mn>".$this->value."</mn>";
     }
 
-    public function isOne(): bool
+    function floatValue(): float
     {
-        return $this->re == 1 && $this->im == 0;
+        return $this->value;
     }
 
-    public function isZero(): bool
+    function isZero(): bool
     {
-        return $this->re == 0 && $this->im == 0;
+        return $this->value == 0;
     }
 
-
-    public function addN(Numeric $other) : Numeric
+    function isOne(): bool
     {
-        return new FloatyNumber($this->re() + $other->re(), $this->im() + $other->im());
+        return $this->value == 1;
     }
 
-    public function subtractN(Numeric $other) : Numeric
+    public function equalsR(Real $other) : bool
     {
-        return new FloatyNumber($this->re() - $other->re(), $this->im() - $other->im());
+        $epsilon = PHP_FLOAT_EPSILON;
+        $absA = abs($this->value);
+		$absB = abs($other->floatValue());
+		$diff = abs($this->value - $other->floatValue());
+
+		if ($this->floatValue() == $other->floatValue()) { // shortcut, handles infinities
+            return true;
+        } else if ($this->floatValue() == 0 || $other->floatValue() == 0 || ($absA + $absB < PHP_FLOAT_MIN)) {
+            // a or b is zero or both are extremely close to it
+            // relative error is less meaningful here
+            return $diff < ($epsilon * PHP_FLOAT_MIN);
+        } else { // use relative error
+            return $diff / min(($absA + $absB), PHP_FLOAT_MAX) < $epsilon;
+        }
+	}
+
+    public function addR(Real $other) : Real
+    {
+        return new self($this->value + $other->floatValue());
     }
 
-    public function multiplyN(Numeric $other) : Numeric
+    public function subtractR(Real $other) : Real
     {
-        return new FloatyNumber($this->re() * $other->re() - $this->im() * $other->im(),
-            $this->re() * $other->im() + $this->im() * $other->re());
+        return new self($this->value - $other->floatValue());
     }
 
-    //z / w = z mal w* / |w|²
-    public function divideByN(Numeric $other) : Numeric
+    public function multiplyR(Real $other) : Real
     {
-        return new FloatyNumber(($this->re() * $other->re() + $this->im() * $other->im())
-            / $other->absSquared()     ,
-            ($this->im() * $other->re() - $this->re() * $other->im())
-            / $other->absSquared()
-        );
+        return new self($this->value * $other->floatValue());
     }
 
-    public function simplify(): FunktionElement
+    public function divideByR(Real $other) : Real
     {
-        return new self($this->re,$this->im);
-        // TODO: Rationalisieren, wenn möglich.
+        return new self($this->value / $other->floatValue());
+    }
+
+    public function negativeR() : Real
+    {
+        return new self(-$this->value);
+    }
+
+    public function reciprocalR(): Real
+    {
+        return new self(1/$this->value);
+    }
+
+    public function simplified(): Real
+    {
+        if(fmod($this->value, 1) == 0.0 && abs($this->value) <= PHP_INT_MAX){
+            return RationalReal::of((int) $this->value);
+        }
+        //ALGORITHM TO CONVERT FLOAT TO RATIONAL
+        global $floatToRationalTolerance, $floatToRationalMaxDen;
+
+        //Vorkommastellen
+        $vks = floor($this->value);
+        //Nachkommastellen (jetztiger / letzter)
+        $nks = $this->value - $vks;
+        //jetztiger / letzter , d.h. erster Bruch ist einfach der Ganzzahlzeil der Zahl/1
+        $num = $vks;
+        $den = 1;
+        //letzter / vorletzter , d.h. "vorerster Bruch 1/0"
+        $oldNum = 1;
+        $oldDen = 0;
+        while (abs($this->value - $num / $den) > $floatToRationalTolerance) {
+            $zahl = 1 / $nks;
+            $vks = floor($zahl);
+            $nks = $zahl - $vks;
+
+            //Zähler und Nenner auf vks mal den letzten, plus den vorletzten (Z|N) setzen
+            $temp = $num;
+            $num = $vks * $num + $oldNum;
+            $oldNum = $temp;
+
+            $temp = $den;
+            $den = $vks * $den + $oldDen;
+            $oldDen = $temp;
+
+            //Abbrechen bei zu großem Nenner
+            if ($den > $floatToRationalMaxDen)
+                return $this;
+        }
+        return new RationalReal($num,$den);
     }
 }
 
-class RationalNumber extends Numeric
+/**
+ * Class RationalReal
+ * represents a rational number as a reduced fraction with a positve denominator
+ */
+class RationalReal extends Real
 {
-    protected /*int*/ $reZ;
-    //Nenner is natural Number
-    protected /*int*/ $reN;
-    protected /*int*/ $imZ;
-    //Nenner is natural Number
-    protected /*int*/ $imN;
 
-    public function __construct(int $reZ, int $reN = 1, int $imZ = 0, int $imN = 1)
+    public static /*self*/ $zero;
+    public static /*self*/ $one;
+
+    protected /*int*/ $num;
+    //denominator is natural number
+    protected /*int*/ $den;
+
+    public function __construct(int $num, int $den = 1)
     {
-        if ($reN == 0) {
+        if ($den == 0) {
             echo "<br>ALARM! ERROR! Beim Teilen durch 0 überhitzt meine CPU!<br>";
             echo "ich habe das jetzt mal zu einer 1 geändert...<br>";
-            $this->reN = 1;
+            $this->den = 1;
         }
         else {
-            if ($reN < 0) {
-                $reN = -$reN;
-                $reZ = -$reZ;
+            if ($den < 0) {
+                $den = -$den;
+                $num = -$num;
             }
-            $this->reN = $reN;
+            $this->den = $den;
         }
 
-        $this->reZ = $reZ;
-
-        if ($imN == 0){
-            echo "<br>ALARM! ERROR! Beim Teilen durch 0 überhitzt meine CPU!<br>";
-            echo "ich habe das jetzt mal zu einer 1 geändert...<br>";
-            $this->reN = 1;
-        }
-        else
-            $this->imN = $imN;
-
-        $this->imZ = $imZ;
+        $this->num = $num;
+        
+        $this->simplify();
     }
 
-    public function ausgeben()
+    public function ausgeben() : string
     {
-        return Numeric::complexAusgabe(self::fractionAusgeben($this->reZ,$this->reN), self::fractionAusgeben($this->imZ,$this->imN)) ;
+        if ($this->den == 1 || $this->num == 0)
+            return '<mn>' . $this->num . '</mn>';
+        return self::fractionAusgeben('<mn>' . $this->num . '</mn>','<mn>' . $this->den . '</mn>');
     }
 
     public function isOne(): bool
     {
-        return $this->reZ == $this->reN && $this->imZ == 0;
+        return $this->num == $this->den;
     }
 
     public function isZero(): bool
     {
-        return $this->reZ == 0 && $this->imZ == 0;
+        return $this->num == 0;
     }
 
-    public function simplify(): FunktionElement
+    public function simplified() : Real 
     {
-
-        return new self($this->reZ,$this->reN,$this->imZ,$this->imN);
-        //todo kürzen
+        return $this;
     }
-
-    public function addN(Numeric $other): Numeric
+    
+    private function simplify()
     {
-        return $this; // TODO: Change the autogenerated stub
+        $g = self::gcd($this->num,$this->den);
+        $this->num = intdiv($this->num, $g);
+        $this->den =  intdiv($this->den, $g);
     }
 
-    public function subtractN(Numeric $other): Numeric
+    public function floatValue(): float
     {
-        return $this; // TODO: Change the autogenerated stub
+        return $this->num / $this->den;
     }
 
-    public function multiplyN(Numeric $other): Numeric
+    public function equalsR(Real $other) : bool
     {
-        return $this; // TODO: Change the autogenerated stub
+        if ($other instanceof self){
+            return $this->num == $other->num && $this->den == $other->den;
+        }
+        return $other->equalsR($this);
     }
 
-    public function divideByN(Numeric $other): Numeric
+    public function addR(Real $other) : Real
     {
         if ($other instanceof self) {
-            return new self();
+            //ggT der Nenner
+            $g = self::gcd($this->den,$other->den);
+            $b = intdiv ($this->den, $g);
+            $d = intdiv ($other->den, $g);
+            //$this->den * $d ist auch der kgV (lcm) der Nenner
+            return new self($this->num * $d + $other->num * $b, $this->den * $d);
+
         }
-        //sieht nur aus wie ein statischer Aufruf
-        return parent::divideByN($other);
+        else
+            return new FloatReal($this->floatValue() + $other->floatValue());
     }
 
-    public function re(): float
+    public function subtractR(Real $other) : Real
     {
-        return $this->reZ / $this->reN;
+        if ($other instanceof self) {
+            $g = self::gcd($this->den,$other->den);
+            $b = intdiv ($this->den, $g);
+            $d = intdiv ($other->den, $g);
+            //$this->den * $d ist auch lcm der Nenner
+            return new self($this->num * $d - $other->num * $b, $this->den * $d);
+        }
+        else
+            return new FloatReal($this->floatValue() - $other->floatValue());
     }
 
-    public function im(): float
+    public function multiplyR(Real $other) : Real
     {
-        return $this->imZ / $this->imN;
+        if ($other instanceof self) {
+            $num = $this->num * $other->num;
+            $den = $this->den * $other->den;
+            if (is_int($num) && is_int($den))
+                return new self($num, $den);
+        }
+        return new FloatReal($this->floatValue() * $other->floatValue());
     }
 
-    public static function fractionAusgeben($num, $den) {
-        if ($den == 1 || $num == 0)
-            return $num;
-        return "<mfrac>$num  $den</mfrac>";
+    public function divideByR(Real $other) : Real
+    {
+        if ($other instanceof self) {
+            $num = $this->num * $other->den;
+            $den = $this->den * $other->num;
+            if (is_int($num) && is_int($den))
+                return new self($num, $den);
+        }
+
+        return new FloatReal($this->floatValue() / $other->floatValue());
     }
 
-    public static function addF($z1, $n1, $z2, $n2) {
-        return
+    public function negativeR(): Real
+    {
+        return new self(-$this->num, $this->den);
+    }
 
+    public function reciprocalR(): Real
+    {
+        return self::of($this->den,$this->num);
+    }
+
+    ////////////////
+
+    public static function of(int $num = 0, int $den = 1)
+    {
+        if ($num == 0)
+            return self::$zero;
+        if ($num == $den)
+            return self::$one;
+        return new self($num, $den);
+    }
+
+    public static function fractionAusgeben(string $num,string $den) {
+        return "<mfrac bevelled='false'>" . $num . $den . "</mn></mfrac>";
+    }
+
+    /**
+     * Greatest common divisor of numbers "a" and "b"
+     * @param int $a only natural numbers
+     * @param int $b only natural numbers
+     * @return int
+     */
+    public static function gcd(int $a, int $b) : int{
+        do {
+            $r = $a % $b;
+            $a = $b;
+            $b = $r;
+        } while ($b != 0);
+        return $a;
     }
 
     /**
@@ -467,31 +776,12 @@ class RationalNumber extends Numeric
     public static function lcm(int $a, int $b) : int{
         return ($a * $b) / self::gcd($a, $b);
     }
-
-    /**
-     * Greatest common divisor of numbers "a" and "b"
-     * @param int $a only natural numbers
-     * @param int $b only natural numbers
-     * @return int
-     */
-    public static function gcd(int $a, int $b) : int{
-        $r = 0;
-        do {
-            $r = $a % $b;
-            $a = $b;
-            $b = $r;
-        } while ($b != 0);
-        return $a;
-    }
-
-
 }
 
 /*
 Constant::init();
 
 class Constant extends Numeric {
-    // TODO: Implement Numeric für komplexe Werte
 
     private $viewName;
 
@@ -530,104 +820,4 @@ class Constant extends Numeric {
 
 }*/
 
-
-class Variable extends FunktionElement
-{
-    public static /*bool*/ $noNumerics = false;
-    public static /*string*/ $workVariable;
-    public /*string*/ $name;
-    public /*Numeric*/ $value;
-    public /*bool*/ $numeric = false;
-
-    private function __construct(String $name, Numeric $value)
-    {
-        $this->name = $name;
-        $this->value = $value;
-    }
-
-    public function ableiten() : FunktionElement
-    {
-        if (self::$workVariable == $this->name)
-            return Numeric::one();
-        else
-            return Numeric::zero();
-    }
-
-    public function ausgeben()
-    {
-        return $this->numeric ?
-            "<mi mathvariant='bold'>" . $this->name . "</mi>" :
-            "<mi>" . $this->name . "</mi>" ;
-    }
-
-    public function simplify() : FunktionElement
-    {
-        return $this;
-    } 
-
-    public function isNumeric(): bool
-    {
-        //i als einzige Ausnahme
-        return $this->name == 'i' || !self::$noNumerics && $this->numeric;
-    }
-
-    public function isConstant(): bool
-    {
-        return $this->name != self::$workVariable;
-    }
-
-    // wirft entweder Fehler, oder rechnet mit nichtssagenden, konstanten Werten, wenn
-    // getValue aufgerufen wird, obwohl diese Variable nicht numeric ist.
-    public function getValue() : Numeric
-    {
-        if (!$this->isNumeric())
-            throw new ErrorException("ProgrammierFehler");
-        return $this->value;
-        //sollte aus einer Liste auf der HTTP-Seite (vom User eigetragene) Werte laden
-    }
-
-    public function isOne(): bool
-    {
-        return $this->isNumeric() && $this->getValue()->isOne();
-    }
-    public function isZero(): bool
-    {
-        return $this->isNumeric() && $this->getValue()->isZero();
-    }
-
-    /// Element-wise
-    /// Static
-
-    //Das ist letztlich Variable::init()
-    //TODO: Variablen als Liste mit re(),im,numeric bearbeitbar anzeigen, nachdem der Ausdruck geparsed wurde
-    public static /*array*/ $registeredVariables = array();
-
-    public static function ofName($name)
-    {
-        if (array_key_exists($name, Variable::$registeredVariables))
-            return Variable::$registeredVariables[$name];
-
-        $co = new Variable($name,Numeric::one());
-        $co -> numeric = true;
-        switch(strtolower($name)) {
-            case "pi":
-                $co->name = 'π';
-            case "π":
-                $co -> value = new FloatyNumber(pi(), 0);
-                break;
-            case "e":
-                $co -> value = new FloatyNumber(2.718281828459045235, 0);
-                break;
-            case "i":
-                $co -> value = new FloatyNumber(0, 1);
-                break;
-            default:
-                $co->numeric = false;
-        }
-        //hinzufügen
-        Variable::$registeredVariables[$name] = $co;
-        return $co;
-    }
-
-}
 

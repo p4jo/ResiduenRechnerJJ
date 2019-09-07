@@ -2,6 +2,9 @@
 require_once "Classes.php";
 require_once "ExplicitFunctions.php";
 
+// TODO: Auch Operationen müssen, wie Variablen nur zu Numerics vereinfacht werden dürfen, wenn das gewünscht ist
+// (z.B. Additionen immer erlaubt, aber Wurzel und ln nicht erlaubt, weil das in Zahlen in mathematischer Notation auch stehen bleibt
+
 //Enter any new Operator here. By default Operators are left-grouping within their precedence class, add key
 // 'rightAssociative' if meant otherwise
 $operations = [
@@ -19,6 +22,7 @@ $operations = [
     'sin' => ['name' => 'sin', 'arity' => 1, 'precedence' => 5],
     'cos' => ['name' => 'cos', 'arity' => 1, 'precedence' => 5],
     'ln' => ['name' => 'ln', 'arity' => 1, 'precedence' => 5],
+    'sqrt' => ['name' => 'Wurzel', 'arity' => 1, 'precedence' => 5],
     '_' => ['name' => 'minus', 'arity' => 1, 'precedence' => 5],
     'ζ' => ['name' => 'RiemannZeta', 'arity' => 1, 'precedence' => 5],
     //Pi-Funktion (entschobene Gamma-Funktion) //postfix
@@ -97,7 +101,7 @@ class Addition extends BinaryOperation {
 
     public function getValue() : Numeric
     {
-        // TODO: Implement getValue() method. für komplexe Werte
+        return $this->op1->getValue()->addN($this->op2->getValue());
     }
 }
 
@@ -131,9 +135,9 @@ class Subtraktion extends BinaryOperation {
         if($simpler->op2 -> isNumeric() && ($simpler->op1 instanceof Addition || $simpler->op1 instanceof Subtraktion)) {
             $result = 0;
             $op1 = $simpler->op1->hasNumeric($result);
-            if($result != 0) {
+            if(! $result ->isZero()) {
                 //Todo warum - -? Wenn - => ->negate
-                return $op1 -> subtract( -($simpler->op2->getValue() -> addN ( $result)));
+                return $op1 -> add( ($simpler->op2->getValue() -> addN ( $result)));
             }
         }
 
@@ -165,7 +169,7 @@ class Subtraktion extends BinaryOperation {
 
     public function getValue() : Numeric
     {
-        return $this->op1->subtractN($this->op2);
+        return $this->op1->getValue()->subtractN($this->op2->getValue());
     }
 }
 
@@ -225,11 +229,11 @@ class Division extends BinaryOperation {
     }
 
     public function ausgeben() {
-        return RationalNumber::fractionAusgeben($this->op1->ausgeben() , $this->op2->ausgeben());
+        return RationalReal::fractionAusgeben($this->op1->ausgeben() , $this->op2->ausgeben());
     }
 
     public function ableiten() : FunktionElement {
-        return new Division(new Subtraktion(new Multiplikation($this->op1->ableiten(), $this->op2), new Multiplikation($this->op1, $this->op2->ableiten())), new Potenz($this->op2, new RationalNumber(2)));
+        return new Division(new Subtraktion(new Multiplikation($this->op1->ableiten(), $this->op2), new Multiplikation($this->op1, $this->op2->ableiten())), new Potenz($this->op2, Numeric::ofF(2)));
     }
 
     public function simplify() : FunktionElement {
@@ -237,7 +241,7 @@ class Division extends BinaryOperation {
 
         if($this->op1 -> isNumeric() && $this->op2 -> isNumeric()) {
             //if($this->op1->getValue() % $this->op2->getValue()->isZero())
-                return $this->op1->getValue() -> divideN( $this->op2->getValue());
+                return $this->op1->getValue() -> divideByN( $this->op2->getValue());
         }
 
         return $this;
@@ -245,7 +249,7 @@ class Division extends BinaryOperation {
 
     public function getValue() : Numeric
     {
-        return $this->op1->divideByN($this->op2);
+        return $this->op1->getValue()->divideByN($this->op2->getValue());
     }
 }
 
@@ -256,15 +260,14 @@ class Potenz extends BinaryOperation {
     }
 
     public function ableiten() : FunktionElement {
-        if($this->isVarToTheR()) {
-            $pot2 = $this->op1 -> toPower($this->op2->subtract(Numeric::one()));
-            return $this->op2 -> multiply($pot2);
+        if($this->op2 -> isConstant()) {
+            return $this->op2 -> multiply($this->op1 -> toPower($this->op2->subtract(Numeric::one()))) -> multiply($this->op1->ableiten());
         } elseif($this->op1 -> equals(Variable::ofName('e'))) {
             return $this->op2->ableiten() ->multiply ($this);
-        } elseif($this->op1 -> isNumeric()) {
-            return $this->op2->ableiten() -> multiply(new ln($this->op1 -> getValue())) ->multiply ($this);
+        } elseif($this->op1 -> isConstant()) {
+            return $this->op2->ableiten() -> multiply(new ln($this->op1)) ->multiply ($this);
         } else {
-            throw new Exception("Kann nicht folgendes Ableiten:" . $this->ausgeben());
+            throw new Exception("Kann nicht folgendes Ableiten: <math>" . $this->ausgeben() ."<\math> weil " . $this->op1->ausgeben() . " nicht numeric ist");
         }
     }
 
@@ -280,10 +283,6 @@ class Potenz extends BinaryOperation {
         }
 
         return $simpler;
-    }
-
-    public function isVarToTheR() {
-        return $this->op1 === Variable::$workVariable && $this->op2 -> isConstant();
     }
 
     public function istQuadratisch() : bool {

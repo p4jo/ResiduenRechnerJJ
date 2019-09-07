@@ -13,6 +13,7 @@ h1 {
 body {
 	text-align: center;
 	padding-bottom:3em;
+	overflow-y : auto;
 }
 
 

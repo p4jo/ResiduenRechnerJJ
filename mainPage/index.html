@@ -10,18 +10,28 @@
 <!--		<script language="javascript" type="text/javascript" src="main.js"></script>-->
         <script type="text/javascript">
 
-    	function loadPHPtoDiv(phpFile,outputDiv) {
-        	$.ajax({
-				url: phpFile + ".php",
-				data:
-				Array.from(document.getElementsByClassName("II"))
+        function relevantData(element) {
+            if (element.type == "text")
+                return element.value != "" ? element.value: "null";
+            if (element.type == "checkbox")
+                return element.checked;
+            return "nul";
+        }
+
+    	function loadPHPtoDiv(phpFile, outputDiv, loadData) {
+    	    //alert("called with " + phpFile + ", " + outputDiv + ", " + loadData);
+    	    let formData = Array.from(document.getElementsByClassName("II"))
 					.reduce(
 						(data, element) => {
 							// Add the current field to the object.
-							data[element.id] = element.value;
+							data[element.id] = relevantData(element);
 							return data;
 						}, {}
-					),
+					);
+            formData["loadData"] = loadData;
+        	jQuery.ajax({
+				url: phpFile + ".php",
+				data: formData,
 				datatype: "json", type: "POST",
 				success: function (data) {
 					//alert(data);
@@ -44,20 +54,22 @@
                 <input class="II" type="text" id="formel" size="80">
             </form>
             <br />
-            <button onclick = "loadPHPtoDiv('Ausgabe', 1)"> Residuen berechnen </button>
-            <button onclick = "loadPHPtoDiv('VariableList', 2)"> Variablenliste aktualisieren </button>
+            <button onclick = "loadPHPtoDiv('Ausgabe', 1, false)"> Residuen berechnen </button>
+            <button onclick = "loadPHPtoDiv('VariableList', 2, true)"> Variablenliste aktualisieren </button>
+
+             <Button onclick="loadPHPtoDiv('Ausgabe', 3, true)"> Aktualisieren </Button>
         </div>
 
         <div id = ausgabe1></div>
         <div id = ausgabe2></div>
         <div id = ausgabe3></div>
-
+<!--
         <footer>
             <p>&#x00A9; 2019 jgeigers.de</p>
             <p class="foot">
                 Diese Website ist noch in Bearbeitung! Einige Funktionen können fehlerhaft sein.
             </p>
-<!--			<a href="impressum">Impressum</a>-->
-        </footer>
+			<a href="impressum">Impressum</a>
+        </footer>-->
     </body>
 </html>

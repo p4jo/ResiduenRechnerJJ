@@ -51,7 +51,7 @@ class Parser
         return 0;
     }
 
-    public static function parseStringToRPN($inputStr)
+    public static function parseStringToRPN(string $inputStr) : array
     {
         global $operations;
         //So muss man splitten, weil $str[$i] nach bytes geht und von allen 2-Byte Zeichen beide einzeln nimmt,
@@ -86,7 +86,8 @@ class Parser
                     }
                     $number .= $digit;
                 }
-                $tokens[] = $isInt ? intval($number) : floatval($number) ;
+                //$tokens[] = $isInt ? intval($number) : floatval($number) ;
+                $tokens[] = floatval($number);
             }
 
             elseif (in_array($chr, self::$letterChar)) {
@@ -199,7 +200,7 @@ class Parser
     }
 
     private static $stack;
-    public static function parseRPNToFunktionElement(array $RPNQueue)
+    public static function parseRPNToFunktionElement(array $RPNQueue) : FunktionElement
     {
         if (!$RPNQueue)
             return Numeric::zero();
@@ -208,7 +209,7 @@ class Parser
             echo "Ich verarbeite " . $token;
             $funkEl = self::parseRPNToFunctionElementInternal($token);
             self::$stack[] = $funkEl;
-            echo " zu FunktionElement <math>" . $funkEl->ausgeben() . "</math><br>";
+            echo " zu ".get_class($funkEl)."-Element: <math displaystyle='true'>" . $funkEl->ausgeben() . "</math><br>";
         }
 
         $result = array_pop(self::$stack);
@@ -232,12 +233,10 @@ class Parser
         return $result;
     }
 
-    private static function parseRPNToFunctionElementInternal(string $token)
+    private static function parseRPNToFunctionElementInternal($token)
     {
-        if (is_int($token))
-            return new RationalNumber($token);
         if (is_float($token))
-            return new FloatyNumber($token);
+            return Numeric::ofF($token);
 
         global $operations;
 
@@ -248,7 +247,7 @@ class Parser
                 case 2:
                     $o2 = array_pop(self::$stack);
                     $o1 = array_pop(self::$stack);
-                    echo " [Token ".$token ." wird geparst mit <math> ".$o1->ausgeben() ." und ". $o2->ausgeben()."</math>] ";
+                    echo " [Token ".$token ." wird geparst mit <math> ".$o1->ausgeben() ."</math> und <math>". $o2->ausgeben()."</math>] ";
                     return new $operations[$token]['name']($o1, $o2);
                 default:
                     $args = array();

@@ -1,29 +1,36 @@
 <?php
+
 require_once "Classes.php";
 
-class EntireFunktion {
+class EntireFunktion
+{
     //Hier ist das Wurzelelement gemeint, nicht die mathematische Wurzel
-    private $root;
+    private /*FunktionElement*/ $root;
+    public /*string*/ $name;
 
-    public function __construct(FunktionElement $root){
+    public function __construct(FunktionElement $root, string $name = 'f')
+    {
         $this->root = $root;
+        $this->name = $name;
     }
 
 
-    public function ausgeben() {
+    public function ausgeben()
+    {
         /*mathvariant=\"bold\"*/
-        return "<math><mpadded><mstyle mathsize='1em'>
-            f(". Variable::$workVariable . ") = " . $this->root->ausgeben() . "
+        return "<math><mpadded><mstyle mathsize='1em'>" .
+            $this->name . "(" . Variable::$workVariable . ") = " . $this->root->ausgeben() . "
             </mstyle></mpadded></math> <br>";
     }
 
-    public function simplify() {
+    public function simplify()
+    {
         //muss vielleicht so oft wiederholt werden, bis sich nichts mehr ändert
-        return new self($this->root->simplify());
+        return new self($this->root->simplify(), $this->name);
     }
 
-    public function ableiten() {
-        return new self($this->root->ableiten());
+    public function ableiten()
+    {
+        return new self($this->root->ableiten(), $this->name . "'");
     }
-
 }

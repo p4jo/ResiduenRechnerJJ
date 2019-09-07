@@ -9,39 +9,66 @@ require_once "Classes.php";
 require_once "EntireFunktion.php";
 require_once "ExplicitOperations.php";
 
-/// Obige Dateien sollten keinen HTML-Code erzeugen (Schichtenarchitektur)
-
 session_start();
+$secondCall = isset($_POST["loadData"]) && $_POST["loadData"] == "true";
+//var_dump($_POST);
+if ($secondCall) {
+    Variable::$registeredVariables = $_SESSION['variables'];
+    foreach (Variable::$registeredVariables as $variable){
+        //todo only if changed
+        if(isset($_POST["input_$variable->name"]) && $_POST["input_$variable->name"] != 'null') {
+            //If User enters expression with variables in it, might be a problem (only isnumeric=true valid).
+            //Todo Let User enter expressions that contain variables - that is : other entireFunktions or 0-ary operations
+            $variable->value = Parser::parseRPNToFunktionElement(Parser::parseStringToRPN($_POST["input_$variable->name"]))->getValue();
+        }
+        //echo $_POST["check_$variable->name"];
+        $variable->numeric = isset($_POST["check_$variable->name"]) && $_POST["check_$variable->name"]=="true";
+        if($variable->numeric)
+            echo "Numerischer Wert <math displaystyle='true'>" . $variable->value->ausgeben() . "</math> for variable ". $variable->name ."<br>";
+    }
 
-$input = $_POST["formel"];
+    $funktion = $_SESSION['funktionSimplified'];
+    /*
+    $funktion = $_SESSION['funktion'];
+    $funktionSimplified = $_SESSION['funktionSimplified'];
+    $derivative = $_SESSION['derivative'];
+    $derivativeSimplified = $_SESSION['derivativeSimplified'];
+    */
+}
+else {
+    $RPNQueue = Parser::parseStringToRPN($_POST["formel"]);
+    $root = Parser::parseRPNToFunktionElement($RPNQueue);
+    $funktion = new EntireFunktion($root, "f");
+}
+
 Variable::$workVariable = $_POST["workVariable"];
-
-$RPNQueue = Parser::parseStringToRPN($input);
-$root = Parser::parseRPNToFunktionElement($RPNQueue);
-$funktion = new EntireFunktion($root);
-
-Variable::$noNumerics = true;
-echo "NO NUMERIC CONSTANT VARIABLES<br>";
+if(!$secondCall) {
+    echo "NO NUMERIC CONSTANT VARIABLES<br>";
+    Variable::$noNumerics = true;
+}
 
 echo "Eingabe: " . $funktion->ausgeben();
 
 $funktionSimplified = $funktion->simplify();
-echo "Vereinfacht:" . $funktionSimplified->ausgeben();
+echo "Vereinfacht: " . $funktionSimplified->ausgeben();
 
 $derivative = $funktion->ableiten();
-echo "Abgeleitet:" . $derivative->ausgeben();
+echo "Abgeleitet: " . $derivative->ausgeben();
 
 $derivativeSimplified = $derivative->simplify();
-echo "Abgeleitet & Vereinfacht:" . $derivativeSimplified->ausgeben();
+echo "Abgeleitet & Vereinfacht: " . $derivativeSimplified->ausgeben();
 
 $derivativeOfSimplified = $funktionSimplified->ableiten();
-echo "Vereinfacht & Abgeleitet:" . $derivativeSimplified->ausgeben();
+echo "Vereinfacht & Abgeleitet: " . $derivativeSimplified->ausgeben();
 
 Variable::$noNumerics = false;
 
 //SAVE THE FUNCTION TO SESSION VARIABLES
 $_SESSION['variables'] = Variable::$registeredVariables;
-$_SESSION['funktion'] = $funktion;
-$_SESSION['funktionSimplified'] = $funktionSimplified;
-$_SESSION['derivative'] = $derivative;
-$_SESSION['derivativeSimplified'] = $derivativeSimplified;
+//echo implode(",",array_map(function($v){return$v->name;}, Variable::$registeredVariables));
+if(!$secondCall) {
+    $_SESSION['funktion'] = $funktion;
+    $_SESSION['funktionSimplified'] = $funktionSimplified;
+    $_SESSION['derivative'] = $derivative;
+    $_SESSION['derivativeSimplified'] = $derivativeSimplified;
+}

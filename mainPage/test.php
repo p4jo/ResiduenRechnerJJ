@@ -1,14 +1,18 @@
 
 <?php
-
+/*
 require_once "Parser.php";
 require_once "Classes.php";
 require_once "EntireFunktion.php";
 require_once "ExplicitOperations.php";
 
-echo ((new EntireFunktion(new RationalNumber(2,5,7,9))) -> ausgeben());
-echo Numeric::zero()->ausgeben();
 
+$a = new Numeric(new RationalReal(1), new RationalReal(4,6));
+$b = new Numeric(new FloatReal(4.5), new RationalReal(5));
+echo "<math> " . $a->multiplyN($b)->ausgeben() ."</math>";
+*/
+
+echo "false" ? "yep":"nope";
 ?>
 <math>
     <mstyle mathsize="1em">
