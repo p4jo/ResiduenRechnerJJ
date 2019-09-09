@@ -11,14 +11,14 @@
         <script type="text/javascript">
 
         function relevantData(element) {
-            if (element.type == "text")
+            if (element.type === "text")
                 return element.value != "" ? element.value: "null";
-            if (element.type == "checkbox")
+            if (element.type === "checkbox")
                 return element.checked;
             return "nul";
         }
 
-    	function loadPHPtoDiv(phpFile, outputDiv, loadData) {
+    	function sendInputTroughPHPIntoDiv(phpFile, outputDiv, loadData) {
     	    //alert("called with " + phpFile + ", " + outputDiv + ", " + loadData);
     	    let formData = Array.from(document.getElementsByClassName("II"))
 					.reduce(
@@ -35,12 +35,30 @@
 				datatype: "json", type: "POST",
 				success: function (data) {
 					//alert(data);
-					document.getElementById("ausgabe" + outputDiv).innerHTML = data;
+                    sendHTMLIntoDiv(data, outputDiv);
 				}
        		});
     	}
 
-    	</script>
+    	function sendHTMLIntoDiv(htmlCode, outputDiv) {
+            document.getElementById("ausgabe" + outputDiv).innerHTML = htmlCode;
+        }
+
+        function funktionSubmit() {
+            sendInputTroughPHPIntoDiv('Ausgabe', 1, false);
+            showVariables();
+            sendHTMLIntoDiv('', 3);
+        }
+
+        function showVariables() {
+            sendInputTroughPHPIntoDiv('VariableList', 2, true);
+        }
+
+        function reloadSecondArea() {
+            sendInputTroughPHPIntoDiv('Ausgabe', 3, true);
+        }
+
+        </script>
 
     </head>
     <body>
@@ -48,16 +66,15 @@
 
         <div id = constDiv>
             <form>
-                <a>f(<a>
+                <label> f( </label>
                 <input class="II" type="text" id="workVariable" size="3">
-                <a>) = <br></a>
+                <label>) = <br></label>
                 <input class="II" type="text" id="formel" size="80">
             </form>
-            <br />
-            <button onclick = "loadPHPtoDiv('Ausgabe', 1, false)"> Residuen berechnen </button>
-            <button onclick = "loadPHPtoDiv('VariableList', 2, true)"> Variablenliste aktualisieren </button>
+            <br>
+            <button onclick = "funktionSubmit()"> Funktion parsen </button>
+            <button onclick = "showVariables()"> Variablenliste aktualisieren </button>
 
-             <Button onclick="loadPHPtoDiv('Ausgabe', 3, true)"> Aktualisieren </Button>
         </div>
 
         <div id = ausgabe1></div>

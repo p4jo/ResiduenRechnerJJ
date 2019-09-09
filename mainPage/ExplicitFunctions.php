@@ -4,9 +4,9 @@ require_once "Classes.php";
 
 class cos extends UnaryOperation {
 
-    public function ableiten(): FunktionElement
+    public function derivative(): FunktionElement
     {
-        return (Numeric::ofF(-1)) -> multiply(new sin($this->op)) -> multiply($this->op->ableiten());
+        return (Numeric::ofF(-1)) -> multiply(new sin($this->op)) -> multiply($this->op->derivative());
     }
 
     public function getValue() : Numeric
@@ -15,9 +15,9 @@ class cos extends UnaryOperation {
         return Numeric::ofF(cos($v->reF()) * cosh($v->imF()), -sin($v->reF()) * sinh($v->imF()));
     }
 
-    public function simplify(): FunktionElement
+    public function simplified(): FunktionElement
     {
-        $simpler = new self($this->op->simplify());
+        $simpler = new self($this->op->simplified());
         // TODO: Implement simplify() method.
         return $simpler;
     }
@@ -25,9 +25,9 @@ class cos extends UnaryOperation {
 
 class sin extends UnaryOperation {
 
-    public function ableiten(): FunktionElement
+    public function derivative(): FunktionElement
     {
-        return                             (new cos($this->op)) -> multiply($this->op->ableiten());
+        return                             (new cos($this->op)) -> multiply($this->op->derivative());
     }
 
     public function getValue() : Numeric
@@ -36,9 +36,9 @@ class sin extends UnaryOperation {
         return Numeric::ofF(sin($v->reF()) * cosh($v->imF()), cos($v->reF()) * sinh($v->imF()));
     }
 
-    public function simplify(): FunktionElement
+    public function simplified(): FunktionElement
     {
-        $simpler = new self($this->op->simplify());
+        $simpler = new self($this->op->simplified());
         // TODO: Implement simplify() method.
         return $simpler;
     }
@@ -46,9 +46,9 @@ class sin extends UnaryOperation {
 
 class ln extends UnaryOperation {
 
-    public function ableiten(): FunktionElement
+    public function derivative(): FunktionElement
     {
-        return $this->op-> ableiten() -> divideBy ($this->op);
+        return $this->op-> derivative() -> divideBy ($this->op);
     }
 
     public function getValue() : Numeric
@@ -57,9 +57,9 @@ class ln extends UnaryOperation {
         return Numeric::ofF(log($this->op -> getValue()->absSquaredF()) / 2, $this->op->getValue()->argF());
     }
 
-    public function simplify(): FunktionElement
+    public function simplified(): FunktionElement
     {
-        $simpler = new self($this->op->simplify());
+        $simpler = new self($this->op->simplified());
         // TODO: Implement simplify() method.
         return $simpler;
     }

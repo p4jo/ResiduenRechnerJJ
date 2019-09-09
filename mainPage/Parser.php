@@ -1,15 +1,16 @@
 <?php
 
-require_once "Classes.php";
-require_once "ExplicitOperations.php";
+$commaIsDecimalPoint = true;
 
+require_once "Classes.php";
+//nur Classes anfragen, das enthält schon in der richtigen Reihenfolge der inits die Expliziten Operationen
 Parser::init();
 
 class Parser
 {
     // REGEXes
-    static $numChar = ['1','2','3','4','5','6','7','8','9','0','.'];
-    static $letterChar =
+    private static $numChars = ['1','2','3','4','5','6','7','8','9','0','.', '\''];
+    private static $letterChar =
         ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
         'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
         'ä', 'ö', 'ü', 'ß', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
@@ -23,162 +24,189 @@ class Parser
         'ы', 'ф', 'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', 'Й',
         'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З', 'Х', 'Э', 'Ж',
         'Д', 'Л', 'О', 'Р', 'П', 'А', 'В', 'Ы', 'Ф', 'Я', 'Ч', 'С',
-        'М', 'И', 'Т', 'Ь', 'Б', 'Ю', "'"];
-    private static $specialChar = ["#","%","&","*","+","-", "/", ":", ";", "?", "@", "^", "_", "|", "~",
-        "‖","×","·","¶","±","¤","÷","‼","⌂"];
-    private static $leftBrace = ['(','[','{','<','«'];
-    private static $rightBrace = [')',']','}','>','»'];
-    private static $brace = ['(','[','{','<','«', ')',']','}','>','»'];
-    private static $separator = [';'];
+        'М', 'И', 'Т', 'Ь', 'Б', 'Ю', '\''];
+    private static $specialChars;
+    private static $leftBraceChars = ['(','[','{','<','«'];
+    private static $rightBraceChars = [')',']','}','>','»'];
+    private static $braceChars;
+    private static $separatorChars = [';'];
+    private static $forbiddenToMultiplyWithMeChars;
+    private static $forbiddenToMultiplyMeTokens;
 
     //TODO: Parser::$commaIsDecimalPoint Sollte von einer Checkbox kommen
-    public static $commaIsDecimalPoint = true;
     public static function init()
     {
-        if (self::$commaIsDecimalPoint)
-            self::$numChar[] = ',';
+        global $commaIsDecimalPoint;
+        global $operations;
+        if ($commaIsDecimalPoint)
+            self::$numChars[] = ',';
         else {
-            self::$separator[] = ',';
+            self::$separatorChars[] = ',';
         }
+        self::$braceChars = array_merge(self::$leftBraceChars, self::$rightBraceChars);
+        $temp = array_merge(["#","%","&","*","+","-", "/", ":", ";", "?", "@", "^", "_", "|", "~",
+            "‖","×","·","¶","±","¤","÷","‼","⌂"], self::$separatorChars );
+        self::$forbiddenToMultiplyWithMeChars = array_merge($temp, self::$rightBraceChars);
+        self::$forbiddenToMultiplyMeTokens = array_merge($temp, self::$leftBraceChars, array_keys($operations));
+        self::$specialChars = array_merge($temp, self::$braceChars);
     }
 
 
-    public static function precedence(string $token)
-    {
-        global $operations;
-        if (isset($operations[$token]))
-            return $operations[$token]['precedence'];
-        return 0;
+    public static function parseStringToFunktionElement(string $inputStr) {
+        $tokens = self::tokenize($inputStr);
+        echo "Tokens: " . implode(" ", $tokens) . "<br>";
+        $RPN = self::parseTokensToRPN($tokens);
+        echo "RPN: " . implode(" ", $RPN) . "<br>";
+        return self::parseRPNToFunktionElement($RPN);
     }
 
-    public static function parseStringToRPN(string $inputStr) : array
+    private static function tokenize(string $inputStr) : array
     {
-        global $operations;
         //So muss man splitten, weil $str[$i] nach bytes geht und von allen 2-Byte Zeichen beide einzeln nimmt,
-        // obige Felder wurden indirekt auch so erzeugt
         $input = preg_split('//u', $inputStr, null, PREG_SPLIT_NO_EMPTY);
-
-        // tokenize
         $tokens = [];
         for ($i = 0; isset($input[$i]); $i++) {
             $chr = $input[$i];
 
             if (ctype_space($chr)) {
-
+                continue;
             }
 
-            elseif (in_array($chr, self::$specialChar) || in_array($chr, self::$brace))
-            { //All special characters are single tokens
+            //WENN der letzte Token kein Operator war, oder eine Klammer zu (also ein Operand)
+            //UND der nächste auch kein Operator wird, oder eine Klammer auf (also noch ein Operand);
+            //DANN fügt er einen Malpunkt ein.
+            if ( $tokens &&
+                !in_array((string) end($tokens), self::$forbiddenToMultiplyMeTokens) &&
+                !in_array($chr,self::$forbiddenToMultiplyWithMeChars)) {
+                echo "Nach dem Token ".end($tokens).", vor das Zeichen $chr setze ich ·<br>";
+                $tokens[] = "·";
+            }
+
+
+            if (in_array($chr, self::$specialChars)) { //All special characters are single tokens
                 $tokens[] = $chr;
             }
-
-            elseif (in_array($chr, self::$numChar)) {
+            elseif (in_array($chr, self::$numChars)) {
                 // entire number as one token
                 $number = $chr;
                 $isInt = true;
 
-                while (isset($input[$i + 1]) && in_array($input[$i + 1], self::$numChar)) {
+                while (isset($input[$i + 1]) && in_array($input[$i + 1], self::$numChars)) {
 
                     $digit = $input[++$i]; //erst hier erhöhen
                     if ($digit == ',' || $digit == '.') {
                         $digit = $isInt ? '.' : '';
                         $isInt = false;
                     }
-                    $number .= $digit;
+                    if ($digit != '\'')
+                        $number .= $digit;
                 }
                 //$tokens[] = $isInt ? intval($number) : floatval($number) ;
                 $tokens[] = floatval($number);
             }
-
             elseif (in_array($chr, self::$letterChar)) {
                 $text = $chr;
                 while (isset($input[$i + 1]) && in_array($input[$i + 1], self::$letterChar))
                     $text .= $input[++$i]; //erst hier erhöhen
                 $tokens[] = $text;
             }
-
             else {
-                throw new InvalidArgumentException("Invalid character at position $i: " . $input[$i] . $input);
+                echo "Achtung das Zeichen " . $input[$i] . " an Stelle $i: von \"" . $input . "\" wurde übergangen (invalid)";
             }
         }
-        echo "Tokens: " . implode(" ",$tokens) . "<br>";
+        return $tokens;
+    }
 
+    private static function precedence(string $token)
+    {
+        global $operations;
+        if (isset($operations[$token]))
+            return $operations[$token]['precedence'];
+        //; und ) haben -inf Präzedenz, weil sie alles poppen (auswerten lassen), was davor kam.
+        //( hat -inf Präzedenz, weil es bei dem Vorgang nicht gepoppt werden darf (Stopper)
+        return PHP_INT_MIN;
+    }
+
+    private static function parseTokensToRPN(array $tokens) : array
+    {
+        global $operations;
         $output_queue = array();
         $operator_stack = array();
-        $lastType = "";
+        $wasOperand = false;
 
         for ($j = 0; isset($tokens[$j]); $j++) {
             $token = $tokens[$j];
-            //echo "Es kommt gerade der Token " . $token . " ,vorheriger Typ " . $lastType . "<br>";
-/*
-            //Wenn eine rechte Klammer ohne nachfolgenden Operator da ist, muss ein · ergänzt werden
-            if (($lastType == "num" || $lastType == "var" || $lastType == "rB") && !key_exists($token, $operations)) {
-                $lastType = 'op';
-                $operator_stack[] = "·";
-            }
-*/
+
             if (is_float($token)) { //ZAHL
-                $lastType = 'num';
                 $output_queue[] = $token;
-            }
-            elseif (in_array($token,self::$separator)){
-                $myOP = 0;
-                while (true)
-                {
-                    if (!$operator_stack) break;
-                    if (in_array(end($operator_stack),self::$brace) )
-                        $output_queue[] = array_pop($operator_stack);
-                    else
-                        break;
-                }
+                $wasOperand = true;
             }
             elseif (key_exists($token, $operations)) { //OPERATOR / Funktion
-                $lastType = 'op';
+
+                //WENN das letzte Token kein Operand war (Eine Operation oder eine Klammer auf, oder einfach der Anfang)
+                //UND dieses Token eine (mindestens) binäre Operation
+                //UND das nächtste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
+                //DANN fügt er einen leeren Operanden ein, der für den entsprechenden Standardwert steht (z.b. neutrales Element).
+                //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) => 0-baum oder /z => 1/z
+                if(!$wasOperand && $operations[$token]['arity'] >= 2 && !(isset($tokens[$j+1]) && in_array($tokens[$j+1], self::$rightBraceChars))) {
+                    $output_queue[] = '';
+                    echo "leerer Operand wurde eingefügt für $token <br>";
+                }
+
+
                 //Operatoren mit engerer Bindung (größerer Präzedenz) werden zuerst ausgeführt, d.h. zuerst auf
                 //die RPN-Warteschlange geschoben. Bei links-Assoziativität (Links-Gruppierung) werden auch gleichrangige
                 //Operatoren, die schon auf dem Operatorstapel sind (weil sie links stehen) zuerst ausgeführt (auf die Queue gelegt)
                 $myOP = self::precedence($token);
-                //echo "pushed operators";
                 while (true)
                 {
-                    if (!$operator_stack) break;
-                    //echo end($operator_stack);
+                    if (!$operator_stack)
+                        break;
+
                     $earlierOP = self::precedence(end($operator_stack));
-                    if ($earlierOP > $myOP || ($earlierOP == $myOP && isset($operations[end($operator_stack)]['rightAssociative'])))
+                    if ($earlierOP > $myOP ||
+                        ($earlierOP == $myOP && !isset($operations[end($operator_stack)]['rightAssociative'])))
                         //push higher precedence Stuff from stack to output
                         $output_queue[] = array_pop($operator_stack);
                     else
                         break;
                 }
-                // push the read operator onto the operator stack.
-                //echo ",pulled".$token."<br>";
                 $operator_stack[] = $token;
+                $wasOperand = false;
 
-            } elseif (in_array($token, self::$leftBrace)) { //LINKE KLAMMER
-                $lastType = 'lB';
+            } elseif (in_array($token, self::$leftBraceChars)) { //LINKE KLAMMER
                 $operator_stack[] = $token;
-            } elseif (in_array($token, self::$rightBrace)) { //RECHTE KLAMMER
-                $lastType = 'rB';
-                // while the operator at the top of the operator stack is not a left bracket:
-                while (!in_array(end($operator_stack), self::$leftBrace)) {
-                    // pop operations from the operator stack onto the output queue.
+                $wasOperand = false;
+            } elseif (in_array($token, self::$rightBraceChars)) { //RECHTE KLAMMER
+                // Alles bis zur linken Klammer + die linke Klammer pop-,pushen
+                while (!in_array(end($operator_stack), self::$leftBraceChars)) {
                     $output_queue[] = array_pop($operator_stack);
                     if (!$operator_stack) {
-                        throw new InvalidArgumentException("Mismatched parentheses!");
+                        echo "Zu wenige öffnende Klammern!<br>";
+                        //array_pop unten wirft keinen Fehler :)
+                        break;
                     }
                 }
-                $wasRightBrace = $j;
                 // pop the left bracket from the stack.
                 array_pop($operator_stack);
-
+                $wasOperand = true;
             }
-            /* elseif (Funktion::isFunktionName($token)) {   //FUNKTION
-                $lastType = 'funk';
-                $output_queue[] = $token;
-            }*/
+            elseif (in_array($token,self::$separatorChars)){ //KOMMA / ;
+                // Alles bis zur linken Klammer pop-,pushen
+                while (true)
+                {
+                    if (!$operator_stack)
+                        break;
+                    if (in_array(end($operator_stack),self::$leftBraceChars) )
+                        $output_queue[] = array_pop($operator_stack);
+                    else
+                        break;
+                }
+                $wasOperand = false;
+            }
             else {                                          //VARIABLE / KONSTANTE
-                $lastType = 'var';
                 $output_queue[] = $token;
+                $wasOperand = true;
             }
         }
 
@@ -188,19 +216,17 @@ class Parser
              /* if the operator token on the top of the stack is a bracket, then
             there are mismatched parentheses. */
             if ($token == '(') {
-                throw new InvalidArgumentException("Mismatched parentheses!");
+                echo "Zu viele öffnende Klammern!<br>";
             }
-            // pop the operator onto the output queue.
-            $output_queue[] = $token;
+            else // pop the operator onto the output queue.
+                $output_queue[] = $token;
         }
-
-        echo "RPN: " . implode(" ", $output_queue) . "<br>";
 
         return $output_queue;
     }
 
     private static $stack;
-    public static function parseRPNToFunktionElement(array $RPNQueue) : FunktionElement
+    private static function parseRPNToFunktionElement(array $RPNQueue) : FunktionElement
     {
         if (!$RPNQueue)
             return Numeric::zero();
@@ -215,7 +241,7 @@ class Parser
         $result = array_pop(self::$stack);
  //Fehlerbehandlung
         if (self::$stack)
-            throw new InvalidArgumentException("HÄ {"
+            echo"HÄ? {"
                 . implode
                 (", ",
                     array_map (
@@ -227,8 +253,8 @@ class Parser
                 )
                 . "} is the stack left after parsing RPNQueue: {"
                 .  implode(", ", $RPNQueue )
-                . "}"
-            );
+                . "}<br>"
+            ;
 
         return $result;
     }

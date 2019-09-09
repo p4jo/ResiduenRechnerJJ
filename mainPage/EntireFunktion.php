@@ -23,14 +23,14 @@ class EntireFunktion
             </mstyle></mpadded></math> <br>";
     }
 
-    public function simplify()
+    public function simplified()
     {
         //muss vielleicht so oft wiederholt werden, bis sich nichts mehr ändert
-        return new self($this->root->simplify(), $this->name);
+        return new self($this->root->simplified(), $this->name);
     }
 
-    public function ableiten()
+    public function derivative()
     {
-        return new self($this->root->ableiten(), $this->name . "'");
+        return new self($this->root->derivative(), $this->name . "'");
     }
 }

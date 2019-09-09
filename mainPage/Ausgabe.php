@@ -13,13 +13,28 @@ session_start();
 $secondCall = isset($_POST["loadData"]) && $_POST["loadData"] == "true";
 //var_dump($_POST);
 if ($secondCall) {
-    Variable::$registeredVariables = $_SESSION['variables'];
-    foreach (Variable::$registeredVariables as $variable){
-        //todo only if changed
-        if(isset($_POST["input_$variable->name"]) && $_POST["input_$variable->name"] != 'null') {
+    global $registeredVariables, $namedFunktionElements;
+    $registeredVariables = $_SESSION['variables'];
+    $namedFunktionElements = $_SESSION['nFE'];
+    foreach ($registeredVariables as $variable){
+        if(isset($_POST["input_$variable->name"]) && $_POST["input_$variable->name"] != 'null'
+            && $_POST["input_$variable->name"] != $variable->value->inlineAusgeben()) {
             //If User enters expression with variables in it, might be a problem (only isnumeric=true valid).
             //Todo Let User enter expressions that contain variables - that is : other entireFunktions or 0-ary operations
-            $variable->value = Parser::parseRPNToFunktionElement(Parser::parseStringToRPN($_POST["input_$variable->name"]))->getValue();
+            $variable->value = Parser::parseStringToFunktionElement($_POST["input_$variable->name"])->getValue();
+        }
+        //echo $_POST["check_$variable->name"];
+        $variable->numeric = isset($_POST["check_$variable->name"]) && $_POST["check_$variable->name"]=="true";
+        if($variable->numeric)
+            echo "Numerischer Wert <math displaystyle='true'>" . $variable->value->ausgeben() . "</math> for variable ". $variable->name ."<br>";
+    }
+
+    foreach ($namedFunktionElements as $element){
+        if(isset($_POST["input_$variable->name"]) && $_POST["input_$variable->name"] != 'null'
+            && $_POST["input_$variable->name"] != $variable->value->inlineAusgeben()) {
+            //If User enters expression with variables in it, might be a problem (only isnumeric=true valid).
+            //Todo Let User enter expressions that contain variables - that is : other entireFunktions or 0-ary operations
+            $variable->value = Parser::parseStringToFunktionElement($_POST["input_$variable->name"])->getValue();
         }
         //echo $_POST["check_$variable->name"];
         $variable->numeric = isset($_POST["check_$variable->name"]) && $_POST["check_$variable->name"]=="true";
@@ -36,8 +51,7 @@ if ($secondCall) {
     */
 }
 else {
-    $RPNQueue = Parser::parseStringToRPN($_POST["formel"]);
-    $root = Parser::parseRPNToFunktionElement($RPNQueue);
+    $root = Parser::parseStringToFunktionElement($_POST["formel"]);
     $funktion = new EntireFunktion($root, "f");
 }
 
@@ -49,23 +63,24 @@ if(!$secondCall) {
 
 echo "Eingabe: " . $funktion->ausgeben();
 
-$funktionSimplified = $funktion->simplify();
+$funktionSimplified = $funktion->simplified();
 echo "Vereinfacht: " . $funktionSimplified->ausgeben();
 
-$derivative = $funktion->ableiten();
+$derivative = $funktion->derivative();
 echo "Abgeleitet: " . $derivative->ausgeben();
 
-$derivativeSimplified = $derivative->simplify();
+$derivativeSimplified = $derivative->simplified();
 echo "Abgeleitet & Vereinfacht: " . $derivativeSimplified->ausgeben();
 
-$derivativeOfSimplified = $funktionSimplified->ableiten();
+$derivativeOfSimplified = $funktionSimplified->derivative();
 echo "Vereinfacht & Abgeleitet: " . $derivativeSimplified->ausgeben();
 
 Variable::$noNumerics = false;
 
 //SAVE THE FUNCTION TO SESSION VARIABLES
-$_SESSION['variables'] = Variable::$registeredVariables;
-//echo implode(",",array_map(function($v){return$v->name;}, Variable::$registeredVariables));
+$_SESSION['variables'] = $registeredVariables;
+$_SESSION['nFE'] = $namedFunktionElements;
+//echo implode(",",array_map(function($v){return$v->name;}, $registeredVariables));
 if(!$secondCall) {
     $_SESSION['funktion'] = $funktion;
     $_SESSION['funktionSimplified'] = $funktionSimplified;
