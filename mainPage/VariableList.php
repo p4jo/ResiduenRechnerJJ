@@ -13,9 +13,9 @@ session_start();
 
 //LOAD FROM SESSION VARIABLES
 global $registeredVariables;
-global $namedFunktionElements;
 $registeredVariables = $_SESSION['variables'];
-$namedFunktionElements = $_SESSION['nFE'];
+global $commaIsDecimalPoint;
+$commaIsDecimalPoint = isset($_POST["cIDP"]) && $_POST["cIDP"] == "true";
 /*
 $funktion = $_SESSION['funktion'];
 $funktionSimplified = $_SESSION['funktionSimplified'];
@@ -25,11 +25,11 @@ $derivativeSimplified = $_SESSION['derivativeSimplified'];
 
 echo "<form><fieldset>";
 
-foreach ($registeredVariables as $funkEl) {
-    $valN = $funkEl->value;
+foreach ($registeredVariables as $variable) {
+    $valN = $variable->inner;
     $mathOutput = '(nicht gesetzt)';
     $output = '';
-    if($valN instanceof Numeric) {
+    if($valN instanceof FunktionElement) {
         $mathOutput = $valN->ausgeben();
         $output = $valN->inlineAusgeben();
     }
@@ -40,16 +40,16 @@ foreach ($registeredVariables as $funkEl) {
         <input class='II' type='checkbox' id='check_$variable->name'> <br>
         ";
     */
-    echo "<math> <mi> $funkEl->name </mi> = $mathOutput </math>. 
+    echo "<math> <mi> $variable->name </mi> = $mathOutput </math>. 
     <label> Setzte eigenen Wert: 
-        <input class='II' type='text' id='input_$funkEl->name' value='$output' size='20'>. 
+        <input class='II' type='text' id='input_$variable->name' value='$output' size='20'>. 
     </label> 
     <label>Direkt einsetzen:  
-        <input class='II' type='checkbox' id='check_$funkEl->name'>
+        <input class='II' type='checkbox' id='check_$variable->name' ". ($variable->useInner() ? "checked='checked'" : '') .">
     </label>
         <br>";
 }
-
+/*
 echo "</fieldset>Ausdrücke können hier unten eigegeben werden.<fieldset>";
 
 foreach ($namedFunktionElements as $name => $funkEl) {
@@ -66,13 +66,14 @@ foreach ($namedFunktionElements as $name => $funkEl) {
         <input class='II' type='text' id='input_$variable->name' value='$imF' size='8'> <a>i. Direkt einsetzen: </a>
         <input class='II' type='checkbox' id='check_$variable->name'> <br>
         ";
-    */
+
     echo "<math> <mi> $name </mi> <mo>=</mo> $mathOutput </math>
     <label> Setzte eigenen Wert: 
         <input class='II' type='text' id='input_$name' value='$output' size='30'>. 
     </label> 
         <br>";
 }
+*/
 
 echo "</fieldset></form>
         <Button onclick=\"reloadSecondArea()\"> Aktualisieren </Button>

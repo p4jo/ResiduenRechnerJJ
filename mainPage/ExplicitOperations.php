@@ -2,43 +2,14 @@
 require_once "Classes.php";
 require_once "ExplicitFunctions.php";
 
-// TODO: Auch Operationen müssen, wie Variablen, nur zu Numerics vereinfacht werden dürfen, wenn das gewünscht ist
-// (z.B. Additionen immer erlaubt, aber Wurzel und ln nicht erlaubt, weil das in Zahlen in mathematischer Notation auch stehen bleibt
-
-//Enter any new Operator here. By default Operators are left-grouping within their precedence class, add key
-// 'rightAssociative' if meant otherwise
-$operations = [
-    '+' => ['name' => 'Addition', 'arity' => 2, 'precedence' => 2],
-    '-' => ['name' => 'Subtraktion', 'arity' => 2, 'precedence' => 2],
-    '/' => ['name' => 'Division', 'arity' => 2, 'precedence' => 4],
-    '÷' => ['name' => 'Division', 'arity' => 2, 'precedence' => 3],
-    ':' => ['name' => 'Division', 'arity' => 2, 'precedence' => 3],
-    '*' => ['name' => 'Multiplikation', 'arity' => 2, 'precedence' => 3],
-    '×' => ['name' => 'Multiplikation', 'arity' => 2, 'precedence' => 3],
-    '·' => ['name' => 'Multiplikation', 'arity' => 2, 'precedence' => 3],
-//    '%' => ['name' => 'RestMod', 'arity' => 2, 'precedence' => 3],
-    '^' => ['name' => 'Potenz', 'arity' => 2, 'precedence' => 4, 'rightAssociative' => 1],
-
-    'sin' => ['name' => 'sin', 'arity' => 1, 'precedence' => 5],
-    'cos' => ['name' => 'cos', 'arity' => 1, 'precedence' => 5],
-    'ln' => ['name' => 'ln', 'arity' => 1, 'precedence' => 5],
-    'sqrt' => ['name' => 'Wurzel', 'arity' => 1, 'precedence' => 5],
-    'ζ' => ['name' => 'RiemannZeta', 'arity' => 1, 'precedence' => 5],
-    //Pi-Funktion (entschobene Gamma-Funktion) //postfix
-    '!' => [ 'name' => 'Factorial', 'arity' => 1, 'precedence' => 5],
-];
-
-//User kann hier eigene "Null-äre Operationen" eintragen, d.h. Kurzschreibweisen wie sin(3x^2), oder pi+e (vereinfachbar)
-$two = new Numeric(new RationalReal(2));
-$namedFunktionElements = [
-    'τ' => ($two)->multiply (Variable::ofName('π')),
-    'tri' => Variable::ofName('π')->divideBy($two),
-    'φ' => Numeric::one() -> add(new Wurzel(new Numeric(new RationalReal(5)))) -> divideBy($two)
-];
-
 abstract class AdditionType extends BinaryOperation {
 
-    public function extractNumeric(Numeric &$output) {
+    public function __construct(?FunktionElement $op1,?FunktionElement $op2)
+    {
+        parent::__construct($op1 ?? Numeric::zero(), $op2 ?? Numeric::zero());
+    }
+
+    public function extractNumeric(?Numeric &$output) {
         if($this->op1 -> isNumeric()) {
             $output = $this->op1->getValue();
             return $this->op2;
@@ -49,6 +20,7 @@ abstract class AdditionType extends BinaryOperation {
         }
 
         if($this->op1 instanceof AdditionType) {
+            //TOdo Immutable
             $this->op1 = $this->op1->extractNumeric($output);
             return $this;
         }
@@ -58,6 +30,40 @@ abstract class AdditionType extends BinaryOperation {
             return $this;
         }
         return $this;
+    }
+
+    //Mit Multiplizität
+    public function allSummands() : array
+    {
+        if ($this->op1->isNumeric()) 
+            $output['n'] = $this->op1->getValue();
+        elseif ($this->op1 instanceof AdditionType)
+            $output = $this->op1->allSummands();
+        elseif ($this->op1 instanceof MultiplicationType) {
+            $factors = $this->op1->allFactors();
+            //TODO rest
+            $output[] = [$factors["REST"], $factors['n']];
+        }
+        else
+            $output[] = [$this->op1, Numeric::one()];
+
+        if ($this->op2->isNumeric()) {
+            if ($this instanceof Addition)
+                $output['n'] = isset($output['n']) ? $output['n'] ->addN($this->op2->getValue()) : $this->op2->getValue();
+            else
+                $output['n'] = isset($output['n']) ? $output['n'] ->subtractN($this->op2->getValue()) : $this->op2->getValue()->negativeN();
+        }
+        elseif ($this->op2 instanceof AdditionType) {
+            if ($this instanceof Addition)
+                $output['n'] = isset($output['n']) ? $output['n']->addN($this->op2->getValue()) : $this->op2->getValue();
+            else
+                $output['n'] = isset($output['n']) ? $output['n']->subtractN($this->op2->getValue()) : $this->op2->getValue()->negativeN();
+            $output = array_merge($this->op2->allSummands(), $output);
+        }
+        else
+            $output[] = [$this->op2, $this instanceof Addition ? Numeric::one() : Numeric::one()->negativeN()];
+
+        return $output;
     }
 
     public function simplify($instance) : FunktionElement {
@@ -90,8 +96,8 @@ abstract class AdditionType extends BinaryOperation {
             $simplerop1 = $instance->op1->extractNumeric($result);
             if ($result instanceof Numeric && !$result->isZero()) {
                 return $this instanceof Addition ?
-                    $instance->op1->getValue() -> addN ($result) -> add ($simplerop1) :
-                    $instance->op1->getValue() -> subtractN ($result) -> add ($simplerop1);
+                    $instance->op2->getValue() -> addN ($result) -> add ($simplerop1) :
+                    $instance->op2->getValue() -> subtractN ($result) -> add ($simplerop1);
             }
         }
 
@@ -112,7 +118,7 @@ class Addition extends AdditionType {
     }
 
     public function derivative() : FunktionElement {
-        return $this->op1->derivative() -> add(  $this->op2->derivative());
+        return $this->isConstant() ? Numeric::zero() : $this->op1->derivative() -> add(  $this->op2->derivative());
     }
 
 
@@ -141,11 +147,11 @@ class Subtraktion extends AdditionType {
     }
     
     public function inlineAusgeben() {
-        return ' <mo>(</mo> ' . $this->op1->inlineAusgeben() . " - " . $this->op2->inlineAusgeben() . "<mo>)</mo>  ";
+        return ' (' . $this->op1->inlineAusgeben() . " - " . $this->op2->inlineAusgeben() . ") ";
     }
 
     public function derivative() : FunktionElement {
-        return $this->op1->derivative() -> subtract ($this->op2->derivative());
+        return $this->isConstant() ? Numeric::zero() : $this->op1->derivative() -> subtract ($this->op2->derivative());
     }
 
     public function getValue() : Numeric
@@ -162,11 +168,27 @@ class Subtraktion extends AdditionType {
             return $simpler->getValue();
         }
         //ENDE so
+
+        if ($simpler->op1->equals($simpler->op2))
+            return Numeric::zero();
+
         return parent::simplify($simpler);
     }
 }
+abstract class MultiplicationType extends BinaryOperation {
 
-class Multiplikation extends BinaryOperation {
+    public function __construct(?FunktionElement $op1,?FunktionElement $op2)
+    {
+        parent::__construct($op1 ?? Numeric::one(), $op2 ?? Numeric::one());
+    }
+
+    public function allFactors() : array {
+
+    }
+}
+
+
+class Multiplikation extends MultiplicationType {
 
     public function ausgeben() {
         return "<mrow> <mo>(</mo> " . $this->op1->ausgeben() . "<mo>&middot;</mo>" . $this->op2->ausgeben() . "<mo>)</mo>  </mrow> ";
@@ -177,18 +199,16 @@ class Multiplikation extends BinaryOperation {
     }
 
     public function derivative() : FunktionElement {
-        return
-            $this->op1->derivative() -> multiply($this->op2              ) ->
-        add(
-            $this->op1->              multiply($this->op2->derivative()));
+        return $this->isConstant() ? Numeric::zero() :
+        $this->op1->derivative() -> multiply($this->op2)                -> add(
+        $this->op1->                multiply($this->op2->derivative()));
     }
 
     public function simplified() : FunktionElement {
         $simpler = new self($this->op1->simplified(), $this->op2->simplified());
 
-        if($simpler->op1 -> isNumeric() && $simpler->op2 -> isNumeric()) {
-            return $simpler->op1->getValue() -> multiplyN($simpler->op2->getValue());
-        }
+        if ($simpler->isNumeric())
+            return $simpler->getValue();
 
         if($simpler->op1 -> isNumeric() && $simpler->op1->isZero()) {
             return Numeric::zero();
@@ -204,7 +224,7 @@ class Multiplikation extends BinaryOperation {
             return $simpler->op1;
         }
         //echo "Nichts vereinfacht (multiplikation) <math>" . $simpler->ausgeben() . "</math><br>";
-
+        //TODO
         return $simpler;
     }
 
@@ -214,7 +234,7 @@ class Multiplikation extends BinaryOperation {
     }
 }
 
-class Division extends BinaryOperation {
+class Division extends MultiplicationType {
 
     public function __construct($op1, $op2){
         parent::__construct($op1, $op2);
@@ -234,16 +254,18 @@ class Division extends BinaryOperation {
     }
 
     public function derivative() : FunktionElement {
-        return new Division(new Subtraktion(new Multiplikation($this->op1->derivative(), $this->op2), new Multiplikation($this->op1, $this->op2->derivative())), new Potenz($this->op2, Numeric::ofF(2)));
+        return $this->isConstant() ? Numeric::zero() : new Division(new Subtraktion(new Multiplikation($this->op1->derivative(), $this->op2), new Multiplikation($this->op1, $this->op2->derivative())), new Potenz($this->op2, Numeric::ofF(2)));
     }
 
     public function simplified() : FunktionElement {
         $simpler = new self($this->op1->simplified(), $this->op2->simplified());
 
-        if($this->op1 -> isNumeric() && $this->op2 -> isNumeric()) {
-            //if($this->op1->getValue() % $this->op2->getValue()->isZero())
-                return $this->op1->getValue() -> divideByN( $this->op2->getValue());
-        }
+        if ($simpler->isNumeric())
+            return $simpler->getValue();
+
+        if ($simpler->op1->equals($simpler->op2))
+            return Numeric::zero();
+
 
         return $this;
     }
@@ -261,37 +283,45 @@ class Potenz extends BinaryOperation {
     }
     
     public function inlineAusgeben() {
-        return ' (' . $this->op1->inlineAusgeben() . " ^ " . $this->op2->inlineAusgeben() . ") ";
+        return $this->op1->inlineAusgeben() . " ^ " . $this->op2->inlineAusgeben();
     }
 
     public function derivative() : FunktionElement {
-        if($this->op2 -> isConstant()) {
+        if ($this->isConstant())  return Numeric::zero();
+        if ($this->op2 -> isConstant()) {
             return $this->op2 -> multiply($this->op1 -> toPower($this->op2->subtract(Numeric::one()))) -> multiply($this->op1->derivative());
         } elseif($this->op1 -> equals(Variable::ofName('e'))) {
             return $this->op2->derivative() ->multiply ($this);
         } elseif($this->op1 -> isConstant()) {
             return $this->op2->derivative() -> multiply(new ln($this->op1)) ->multiply ($this);
         } else {
-            throw new Exception("Kann nicht folgendes Ableiten: <math>" . $this->ausgeben() ."<\math> weil " . $this->op1->ausgeben() . " nicht numeric ist");
+            return $this->multiply(
+                (new ln($this->op1))->multiply($this->op2->derivative()) -> add(
+                $this->op1->derivative()->divideBy($this->op1)->multiply($this->op2))
+            );
         }
     }
 
     public function simplified() : FunktionElement {
         $simpler = new self($this->op1->simplified(), $this->op2->simplified());
 
-        if($simpler->op1 -> isNumeric() && $simpler->op2 -> isNumeric()) {
-            return $simpler->op1->getValue() -> toPowerN( $simpler->op2->getValue());
-        }
+        if($simpler->isNumeric())
+            return $simpler->getValue();
 
-        if($simpler->op2 -> isNumeric() && $simpler->op2->isOne()) {
+        if ($simpler->op2->isZero())
+            return Numeric::one();
+        if($simpler->op1->isZero())
+            return Numeric::zero();
+        if ($simpler->op1->isOne())
+            return Numeric::one();
+        if($simpler->op2->isOne())
             return $simpler->op1;
-        }
 
         return $simpler;
     }
 
     public function istQuadratisch() : bool {
-        return ($this->op2 -> isConstant()  && $this->op2->getValue()->re() == 2 && $this->op2->getValue()->im() == 0);
+        return ($this->op2 ->equals(Numeric::two()));
     }
 
     public function gebeBasis() : FunktionElement {
@@ -316,7 +346,7 @@ class Wurzel extends UnaryOperation {
     }
 
     public function derivative() : FunktionElement {
-        return $this -> op -> derivative() -> divideBy((new Numeric(new RationalReal(2))) -> multiply($this));
+        return $this->isConstant() ? Numeric::zero() :  $this -> op -> derivative() -> divideBy((new Numeric(new RationalReal(2))) -> multiply($this));
     }
 
     public function simplified() : FunktionElement {

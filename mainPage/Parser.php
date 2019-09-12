@@ -10,6 +10,7 @@ class Parser
 {
     // REGEXes
     private static $numChars = ['1','2','3','4','5','6','7','8','9','0','.', '\''];
+    //TODO: Vervollständigen der zulässigen Buchstaben (mit Schriftart abgleichen)
     private static $letterChar =
         ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
         'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -25,6 +26,9 @@ class Parser
         'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З', 'Х', 'Э', 'Ж',
         'Д', 'Л', 'О', 'Р', 'П', 'А', 'В', 'Ы', 'Ф', 'Я', 'Ч', 'С',
         'М', 'И', 'Т', 'Ь', 'Б', 'Ю', '\''];
+    //TODO: Vervollständigen
+    private static $namedChars = ['alpha' => 'α', 'beta' => 'β', 'pi' => 'π', 'tri' => 'ш',
+    ];
     private static $specialChars;
     private static $leftBraceChars = ['(','[','{','<','«'];
     private static $rightBraceChars = [')',']','}','>','»'];
@@ -108,7 +112,10 @@ class Parser
                 $text = $chr;
                 while (isset($input[$i + 1]) && in_array($input[$i + 1], self::$letterChar))
                     $text .= $input[++$i]; //erst hier erhöhen
-                $tokens[] = $text;
+                if (key_exists($text, self::$namedChars))
+                    $tokens[] = self::$namedChars[$text];
+                else
+                    $tokens[] = $text;
             }
             else {
                 echo "Achtung das Zeichen " . $input[$i] . " an Stelle $i: von \"" . $input . "\" wurde übergangen (invalid)";
@@ -148,7 +155,7 @@ class Parser
                 //UND das nächtste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
                 //DANN fügt er einen leeren Operanden ein, der für den entsprechenden Standardwert steht (z.b. neutrales Element).
                 //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) => 0-baum oder /z => 1/z
-                if(!$wasOperand && $operations[$token]['arity'] >= 2 && !(isset($tokens[$j+1]) && in_array($tokens[$j+1], self::$rightBraceChars))) {
+                if(!$wasOperand && $operations[$token]['arity'] >= 2 && !(isset($tokens[$j+1]) && in_array($tokens[$j+1], self::$leftBraceChars))) {
                     $output_queue[] = '';
                     echo "leerer Operand wurde eingefügt für $token <br>";
                 }
@@ -175,11 +182,11 @@ class Parser
                 $wasOperand = false;
 
             } elseif (in_array($token, self::$leftBraceChars)) { //LINKE KLAMMER
-                $operator_stack[] = $token;
+                $operator_stack[] = '(';
                 $wasOperand = false;
             } elseif (in_array($token, self::$rightBraceChars)) { //RECHTE KLAMMER
                 // Alles bis zur linken Klammer + die linke Klammer pop-,pushen
-                while (!in_array(end($operator_stack), self::$leftBraceChars)) {
+                while (end($operator_stack) !== '(') {
                     $output_queue[] = array_pop($operator_stack);
                     if (!$operator_stack) {
                         echo "Zu wenige öffnende Klammern!<br>";
@@ -193,14 +200,15 @@ class Parser
             }
             elseif (in_array($token,self::$separatorChars)){ //KOMMA / ;
                 // Alles bis zur linken Klammer pop-,pushen
-                while (true)
-                {
-                    if (!$operator_stack)
+                if (end($operator_stack) !== '(')
+                    $output_queue[] = '';
+                while (end($operator_stack) !== '(') {
+                    $output_queue[] = array_pop($operator_stack);
+                    if (!$operator_stack) {
+                        echo "Zu wenige öffnende Klammern!<br>";
+                        //array_pop unten wirft keinen Fehler :)
                         break;
-                    if (in_array(end($operator_stack),self::$leftBraceChars) )
-                        $output_queue[] = array_pop($operator_stack);
-                    else
-                        break;
+                    }
                 }
                 $wasOperand = false;
             }
@@ -232,10 +240,10 @@ class Parser
             return Numeric::zero();
         self::$stack = array();
         foreach ($RPNQueue as $token) {
-            echo "Ich verarbeite " . $token;
-            $funkEl = self::parseRPNToFunctionElementInternal($token);
+            //echo "Ich verarbeite " . $token;
+            $funkEl = $token === '' ? null : self::parseRPNToFunctionElementInternal($token);
             self::$stack[] = $funkEl;
-            echo " zu ".get_class($funkEl)."-Element: <math displaystyle='true'>" . $funkEl->ausgeben() . "</math><br>";
+            //echo " zu ".get_class($funkEl)."-Element: <math displaystyle='true'>" . $funkEl->ausgeben() . "</math><br>";
         }
 
         $result = array_pop(self::$stack);
@@ -273,7 +281,7 @@ class Parser
                 case 2:
                     $o2 = array_pop(self::$stack);
                     $o1 = array_pop(self::$stack);
-                    echo " [Token ".$token ." wird geparst mit <math> ".$o1->ausgeben() ."</math> und <math>". $o2->ausgeben()."</math>] ";
+                    //echo " [Token ".$token ." wird geparst mit <math> ".$o1->ausgeben() ."</math> und <math>". $o2->ausgeben()."</math>] ";
                     return new $operations[$token]['name']($o1, $o2);
                 default:
                     $args = array();

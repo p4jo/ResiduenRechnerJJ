@@ -6,7 +6,7 @@ class cos extends UnaryOperation {
 
     public function derivative(): FunktionElement
     {
-        return (Numeric::ofF(-1)) -> multiply(new sin($this->op)) -> multiply($this->op->derivative());
+        return $this->isConstant() ? Numeric::zero() : (Numeric::ofF(-1)) -> multiply(new sin($this->op)) -> multiply($this->op->derivative());
     }
 
     public function getValue() : Numeric
@@ -27,7 +27,7 @@ class sin extends UnaryOperation {
 
     public function derivative(): FunktionElement
     {
-        return                             (new cos($this->op)) -> multiply($this->op->derivative());
+        return $this->isConstant() ? Numeric::zero() : (new cos($this->op)) -> multiply($this->op->derivative());
     }
 
     public function getValue() : Numeric
@@ -48,7 +48,7 @@ class ln extends UnaryOperation {
 
     public function derivative(): FunktionElement
     {
-        return $this->op-> derivative() -> divideBy ($this->op);
+        return $this->isConstant() ? Numeric::zero() :  $this->op-> derivative() -> divideBy ($this->op);
     }
 
     public function getValue() : Numeric

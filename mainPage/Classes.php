@@ -1,31 +1,53 @@
 <?php
 
 $floatToRationalTolerance = PHP_FLOAT_MIN * 0x10000000;
-$floatToRationalMaxDen = 200;
+$floatToRationalMaxDen = 1000;
 
 // REIHENFOLGE ESSENTIELL
+require_once "ExplicitOperations.php";
 Numeric::init();
 Variable::init();
 
-require_once "ExplicitOperations.php";
+
+// TODO: Auch Operationen müssen, wie Variablen, nur zu Numerics vereinfacht werden dürfen, wenn das gewünscht ist
+// (z.B. Additionen immer erlaubt, aber Wurzel und ln nicht erlaubt, weil das in Zahlen in mathematischer Notation auch stehen bleibt
+
+//Enter any new Operator here. By default Operators are left-grouping within their precedence class, add key
+// 'rightAssociative' if meant otherwise
+$operations = [
+    '+' => ['name' => 'Addition', 'arity' => 2, 'precedence' => 2],
+    '-' => ['name' => 'Subtraktion', 'arity' => 2, 'precedence' => 2],
+    '/' => ['name' => 'Division', 'arity' => 2, 'precedence' => 4],
+    '÷' => ['name' => 'Division', 'arity' => 2, 'precedence' => 3],
+    ':' => ['name' => 'Division', 'arity' => 2, 'precedence' => 3],
+    '*' => ['name' => 'Multiplikation', 'arity' => 2, 'precedence' => 3],
+    '×' => ['name' => 'Multiplikation', 'arity' => 2, 'precedence' => 3],
+    '·' => ['name' => 'Multiplikation', 'arity' => 2, 'precedence' => 3],
+//    '%' => ['name' => 'RestMod', 'arity' => 2, 'precedence' => 3],
+    '^' => ['name' => 'Potenz', 'arity' => 2, 'precedence' => 4, 'rightAssociative' => 1],
+
+    'sin' => ['name' => 'sin', 'arity' => 1, 'precedence' => 5],
+    'cos' => ['name' => 'cos', 'arity' => 1, 'precedence' => 5],
+    'ln' => ['name' => 'ln', 'arity' => 1, 'precedence' => 5],
+    'sqrt' => ['name' => 'Wurzel', 'arity' => 1, 'precedence' => 5],
+    'ζ' => ['name' => 'RiemannZeta', 'arity' => 1, 'precedence' => 5],
+    //Pi-Funktion (entschobene Gamma-Funktion) //postfix
+    '!' => [ 'name' => 'Factorial', 'arity' => 1, 'precedence' => 5],
+];
+
+
 // ENDE ESSENTIELLE REIHENFOLGE
 require_once "EntireFunktion.php";
 
+/**
+ * Class FunktionElement: IMMUTABLE
+ */
 abstract class FunktionElement {
     public abstract function ausgeben();
     public abstract function inlineAusgeben();
 
-    /**
-     * Ableiten verändert NICHT
-     * @param $variable
-     * @return FunktionElement
-     */
-    public abstract function derivative() : FunktionElement ;
+    public abstract function derivative() : FunktionElement;
 
-    /**
-     * Vereinfachen 
-     * @return FunktionElement
-     */
     public abstract function simplified() : FunktionElement ;
 
     /**
@@ -48,7 +70,6 @@ abstract class FunktionElement {
     // WARNING: ONLY CALL ON (RELATIVELY) NUMERIC OBJECTS
     public abstract function getValue() : Numeric ;
 
-
     public function add (FunktionElement $other) : Addition {
         return new Addition($this,$other);
     }
@@ -68,25 +89,13 @@ abstract class FunktionElement {
         return new Wurzel($this);
     }
 
-    public function equals(FunktionElement $other) : bool
+    public function equals(FunktionElement $other) : ?bool
     {
+        if ($this->isNumeric() != $other->isNumeric() || $this->isConstant() != $other->isConstant())
+            return false;
         if ($this->isNumeric() && $other->isNumeric())
             return $other->getValue()->equalsN($this->getValue());
-
-        if (!$this->isNumeric() && !$other->isNumeric()){
-
-            if ($this->isConstant() && $other->isConstant()) {
-
-                return false; //Todo Gleichheit überprüfen
-            }
-
-            if (!$this->isConstant() && !$other->isConstant()){
-
-                return false; //Todo Gleichheit überprüfen
-            }
-            return false; 
-        }
-        return false; 
+        return null;
     }
 
 }
@@ -205,30 +214,34 @@ class Variable extends FunktionElement
     public static /*bool*/ $noNumerics = false;
     public static /*string*/ $workVariable;
     public /*string*/ $name;
-    public /*Numeric*/ $value;
-    public /*bool*/ $numeric = false;
+    public /*FunktionElement*/ $inner;
+    public /*bool*/ $useInner = false;
 
-    private function __construct(String $name, Numeric $value = null)
+    private function __construct(String $name, FunktionElement $inner = null, bool $useInner = false)
     {
         $this->name = $name;
-        $this->value = $value;
+        $this->inner = isset($inner) ? $inner->simplified() : null;
+        $this->useInner = $useInner;
     }
 
     public function derivative() : FunktionElement
     {
         if (self::$workVariable == $this->name)
             return Numeric::one();
-        else
-            return Numeric::zero();
+        elseif ($this->useInner && !$this->inner->isConstant())
+            return $this->inner->derivative();
+        return Numeric::zero();
     }
 
     public function ausgeben()
     {
-        return $this->isConstant() ?
-                $this->numeric ?
-                "<mi mathvariant='bold'>" . $this->name . "</mi>" :
-                "<mi mathvariant='normal'>" . $this->name . "</mi>" :
-            "<mi mathvariant='italic'>" . $this->name . "</mi>" ;
+        return $this->isConstant()
+                ?($this->isNumeric()
+                    ?'<mn>' . $this->inner->getValue()->ausgeben() . '</mn>'
+                    :($this->useInner()
+                        ?"<mi mathvariant='bold'>" . $this->name . '</mi>'
+                        :"<mi mathvariant='normal'>" . $this->name . '</mi>'))
+                :"<mi mathvariant='italic'>" . $this->name . "</mi>" ;
     }
     
     public function inlineAusgeben()
@@ -238,18 +251,27 @@ class Variable extends FunktionElement
 
     public function simplified() : FunktionElement
     {
-        return $this;
+        if ($this->useInner())
+            //ist schon simplified
+            return $this->inner;//->simplified();
+        else
+            return $this;
     } 
 
     public function isNumeric(): bool
     {
+        return $this->isConstant() && $this->useInner() && $this->inner->isNumeric();
+    }
+
+    public function useInner(): bool
+    {
         //i als einzige Ausnahme (&& hat größere Präzedenz als ||)
-        return $this->name == 'i' || !self::$noNumerics && $this->numeric;
+        return $this->name == 'i' || !self::$noNumerics && $this->useInner;
     }
 
     public function isConstant(): bool
     {
-        return $this->name != self::$workVariable;
+        return $this->name != self::$workVariable && (!$this->useInner() || $this->inner -> isConstant());
     }
 
     // wirft entweder Fehler, oder rechnet mit nichtssagenden, konstanten Werten, wenn
@@ -258,7 +280,7 @@ class Variable extends FunktionElement
     {
         if (!$this->isNumeric())
             echo new ErrorException("ProgrammierFehler");
-        return $this->value;
+        return $this->inner->getValue();
         //sollte aus einer Liste auf der HTTP-Seite (vom User eigetragene) Werte haben
     }
 
@@ -277,11 +299,16 @@ class Variable extends FunktionElement
 
     public static function init(){
         global $registeredVariables;
+        //User kann hier eigene "Null-äre Operationen" eintragen, d.h. Kurzschreibweisen wie sin(3x^2), oder pi+e (vereinfachbar)
         $registeredVariables = [
             'π' => new Variable ('π', new Numeric(new FloatReal(pi()))),
             'e' => new Variable ('e', new Numeric(new FloatReal(2.718281828459045235))),
-            'i' => new Variable ('i', new Numeric(RationalReal::$zero, RationalReal::$one))
+            'i' => new Variable ('i', new Numeric(RationalReal::$zero, RationalReal::$one), true),
+            'φ' => new Variable('φ', Numeric::one() -> add(new Wurzel(new Numeric(new RationalReal(5)))) -> divideBy(Numeric::two()), true)
         ];
+        $registeredVariables['τ'] = new Variable('τ', Numeric::two()->multiply ($registeredVariables['π']), true);
+        //TODO tri-Symbol zu Schrift hinzufügen
+        $registeredVariables['ш'] = new Variable('ш', $registeredVariables['π'] ->divideBy(Numeric::two()), true);
     }
 
     public static function ofName($name) : FunktionElement
@@ -289,10 +316,6 @@ class Variable extends FunktionElement
         global $registeredVariables;
         if (array_key_exists($name, $registeredVariables))
             return $registeredVariables[$name];
-
-        global $namedFunktionElements;
-        if(array_key_exists($name, $namedFunktionElements))
-            return $namedFunktionElements[$name];
 
         $co = new Variable($name);
         $registeredVariables[$name] = $co;
@@ -309,17 +332,17 @@ class Numeric extends FunktionElement
     public function re() : Real {
         return $this->re;
     }
+
     public function im() : Real {
         return $this->im;
     }
-
     public function reF() : float {
         return $this->re()->floatValue();
     }
+
     public function imF() : float {
         return $this->im()->floatValue();
     }
-
     public function __construct(Real $re, Real $im = null)
     {
         $this->re = $re;
@@ -348,7 +371,8 @@ class Numeric extends FunktionElement
 
     public function simplified(): FunktionElement
     {
-        return new self($this->re->simplified(),$this->im->simplified());
+        return $this;
+        //return new self($this->re->simplified(),$this->im->simplified());
     }
 
     public function getValue() : Numeric {
@@ -365,11 +389,11 @@ class Numeric extends FunktionElement
         return true;
     }
 
-
     public function isOne(): bool
     {
         return $this->re()->isOne() && $this->im()->isZero();
     }
+
 
     public function isZero(): bool
     {
@@ -385,11 +409,22 @@ class Numeric extends FunktionElement
     {
         return new self($this->re() ->addR ($other->re()), $this->im()->addR ($other->im()));
     }
+
     public function subtractN(Numeric $other) : Numeric
     {
         return new self($this->re() ->subtractR ($other->re()), $this->im() ->subtractR ($other->im()));
     }
+    public function negativeN()
+    {
+        return new self($this->re->negativeR(), $this->im->negativeR());
+    }
 
+    // 1/z = z* / |z|²
+
+    public function reciprocalN()
+    {
+        return new self($this->re->divideByR($this->absSquared()), $this->im->divideByR($this->absSquared())->negativeR());
+    }
     public function multiplyN(Numeric $other) : Numeric
     {
         return new self($this->re() ->multiplyR($other->re())   ->subtractR(
@@ -448,14 +483,16 @@ class Numeric extends FunktionElement
 
     /// Static
 
-    protected static /*Numeric*/ $one;
     protected static /*Numeric*/ $zero;
+    protected static /*Numeric*/ $one;
+    protected static /*Numeric*/ $two;
 
     public static function init() {
         RationalReal::$one = new RationalReal(1);
         RationalReal::$zero = new RationalReal(0);
-        self::$one = new self(RationalReal::$one, RationalReal::$zero);
-        self::$zero = new self(RationalReal::$zero,  RationalReal::$zero);
+        self::$one = new self(RationalReal::$one);
+        self::$zero = new self(RationalReal::$zero);
+        self::$two = new self(new RationalReal(2));
     }
 
     public static function zero() : Numeric {
@@ -465,6 +502,10 @@ class Numeric extends FunktionElement
 
     public static function one() : Numeric {
         return self::$one;
+    }
+
+    public static function two() : Numeric {
+        return self::$two;
     }
 
     public static function ofAbsArg(float $r, float $arg) {
@@ -485,7 +526,6 @@ abstract class Real {
     public abstract function isZero() : bool ;
     public abstract function isOne() : bool ;
 
-    public abstract function simplified() : Real ;
     public abstract function equalsR(Real $re) : bool;
     public abstract function addR(Real $other) : Real ;
     public abstract function subtractR(Real $other) : Real ;
@@ -506,6 +546,10 @@ class FloatReal extends Real{
     public static /*int*/ $displayDigits = 15;
     public /*float*/ $value = 0.0;
 
+    /**
+     * FloatReal constructor. USE ONLY WHEN VALUE IS DEFINITELY NOT RATIONAL, else use Real::ofF-function
+     * @param float $value
+     */
     public function __construct(float $value)
     {
         $this->value = $value;
@@ -686,16 +730,11 @@ class RationalReal extends Real
         return $this->num == 0;
     }
 
-    public function simplified() : Real
-    {
-        return $this;
-    }
-
     private function simplify()
     {
         $g = self::gcd($this->num,$this->den);
         $this->num = intdiv($this->num, $g);
-        $this->den =  intdiv($this->den, $g);
+        $this->den = intdiv($this->den, $g);
     }
 
     public function floatValue(): float

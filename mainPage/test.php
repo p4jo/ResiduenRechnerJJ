@@ -11,6 +11,6 @@ $a = new Numeric(new RationalReal(1), new RationalReal(4,6));
 $b = new Numeric(new FloatReal(4.5), new RationalReal(5));
 echo "<math> ",. $a->multiplyN($b)->ausgeben() ."</math>";
 */
-
-echo in_array(0.0,['a']) ? "yep" : "nope";
-echo in_array(null,['2']) ? "yep" : "nope";
+$a = false;
+//echo in_array(0.0,['a']) ? "yep" : "nope";
+echo $a ?? 'E';
