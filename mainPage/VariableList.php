@@ -6,7 +6,6 @@ ini_set('html_errors', false);
 
 require_once "Parser.php";
 require_once "Classes.php";
-require_once "EntireFunktion.php";
 require_once "ExplicitOperations.php";
 
 session_start();
@@ -27,7 +26,7 @@ echo "<form><fieldset>";
 
 foreach ($registeredVariables as $variable) {
     $valN = $variable->inner;
-    $mathOutput = '(nicht gesetzt)';
+    $mathOutput = '\textrm{(nicht gesetzt)}';
     $output = '';
     if($valN instanceof FunktionElement) {
         $mathOutput = $valN->ausgeben();
@@ -40,7 +39,7 @@ foreach ($registeredVariables as $variable) {
         <input class='II' type='checkbox' id='check_$variable->name'> <br>
         ";
     */
-    echo "<math> <mi> $variable->name </mi> = $mathOutput </math>. 
+    echo "\\( $variable->name = $mathOutput \\)  
     <label> Setzte eigenen Wert: 
         <input class='II' type='text' id='input_$variable->name' value='$output' size='20'>. 
     </label> 

@@ -4,6 +4,11 @@ require_once "ExplicitFunctions.php";
 
 abstract class AdditionType extends BinaryOperation {
 
+    public function precedence(): int
+    {
+        return 2;
+    }
+
     public function __construct(?FunktionElement $op1,?FunktionElement $op2)
     {
         parent::__construct($op1 ?? Numeric::zero(), $op2 ?? Numeric::zero());
@@ -22,6 +27,7 @@ abstract class AdditionType extends BinaryOperation {
         if($this->op1 instanceof AdditionType) {
             //TOdo Immutable
             $this->op1 = $this->op1->extractNumeric($output);
+            //new self($this->op1->extractNumeric($output),$this->op2);
             return $this;
         }
 
@@ -107,14 +113,8 @@ abstract class AdditionType extends BinaryOperation {
 
 class Addition extends AdditionType {
 
-    public function ausgeben() {/*
-        if(is_null($this->op1))
-            echo"op2 war " .$this->op2->ausgeben();*/
-        return "<mrow> <mo>(</mo>" . $this->op1->ausgeben() . "<mo>+</mo>" . $this->op2->ausgeben() . "<mo>)</mo> </mrow> ";
-    }
-    
-    public function inlineAusgeben() {
-        return ' (' . $this->op1->inlineAusgeben() . " + " . $this->op2->inlineAusgeben() . ") ";
+    public function normalInlineAusgeben($left, $right) {
+        return $left . " + " . $right;
     }
 
     public function derivative() : FunktionElement {
@@ -142,12 +142,9 @@ class Addition extends AdditionType {
 
 class Subtraktion extends AdditionType {
 
-    public function ausgeben() {
-        return "<mrow> <mo>(</mo> " . ($this->op1->isZero() ? '' : $this->op1->ausgeben()) . "<mo>-</mo>" . $this->op2->ausgeben() . "<mo>)</mo>  </mrow> ";
-    }
-    
-    public function inlineAusgeben() {
-        return ' (' . $this->op1->inlineAusgeben() . " - " . $this->op2->inlineAusgeben() . ") ";
+    public function normalInlineAusgeben($left, $right)
+    {
+        return $left. '-' . $right;
     }
 
     public function derivative() : FunktionElement {
@@ -176,7 +173,6 @@ class Subtraktion extends AdditionType {
     }
 }
 abstract class MultiplicationType extends BinaryOperation {
-
     public function __construct(?FunktionElement $op1,?FunktionElement $op2)
     {
         parent::__construct($op1 ?? Numeric::one(), $op2 ?? Numeric::one());
@@ -189,13 +185,14 @@ abstract class MultiplicationType extends BinaryOperation {
 
 
 class Multiplikation extends MultiplicationType {
-
-    public function ausgeben() {
-        return "<mrow> <mo>(</mo> " . $this->op1->ausgeben() . "<mo>&middot;</mo>" . $this->op2->ausgeben() . "<mo>)</mo>  </mrow> ";
+    public function normalAusgeben($left, $right)
+    {
+        return $left . '\\cdot ' . $right;
     }
-    
-    public function inlineAusgeben() {
-        return ' (' . $this->op1->inlineAusgeben() . " · " . $this->op2->inlineAusgeben() . ") ";
+
+    public function normalInlineAusgeben($left, $right)
+    {
+        return $left . '·' . $right;
     }
 
     public function derivative() : FunktionElement {
@@ -245,12 +242,22 @@ class Division extends MultiplicationType {
         }
     }
 
-    public function ausgeben() {
-        return RationalReal::fractionAusgeben($this->op1->ausgeben() , $this->op2->ausgeben());
+    //Nur wegen Ausnahme bei Bruchstrich -> Keine Klammern
+    public function ausgeben(int $outerPrecedence = 0) : string    {
+        $innerPrec = $this->precedence();
+        if ($outerPrecedence > $innerPrec)
+            return "\\left(" . $this->normalAusgeben($this->op1->ausgeben(), $this->op2->ausgeben()) . "\\right)";
+        return $this->normalAusgeben($this->op1->ausgeben(), $this->op2->ausgeben());
     }
-    
-    public function inlineAusgeben() {
-        return ' (' . $this->op1->inlineAusgeben() . " ÷ " . $this->op2->inlineAusgeben() . ") ";
+
+    public function normalAusgeben($left, $right)
+    {
+        return RationalReal::fractionAusgeben($left, $right);
+    }
+
+    public function normalInlineAusgeben($left, $right)
+    {
+        return $left . " ÷ " . $right;
     }
 
     public function derivative() : FunktionElement {
@@ -264,10 +271,10 @@ class Division extends MultiplicationType {
             return $simpler->getValue();
 
         if ($simpler->op1->equals($simpler->op2))
-            return Numeric::zero();
+            return Numeric::one();
 
 
-        return $this;
+        return $simpler;
     }
 
     public function getValue() : Numeric
@@ -277,14 +284,28 @@ class Division extends MultiplicationType {
 }
 
 class Potenz extends BinaryOperation {
+    function precedence(): int
+    { return 4; }
 
-    public function ausgeben() {
-        return "<mrow> <msup> " .  $this->op1->ausgeben() . "\n" . $this->op2->ausgeben() . " </msup> </mrow>";
+
+    //Nur wegen Ausnahme bei Hochstellung -> Keine Klammer
+    public function ausgeben(int $outerPrecedence = 0) : string    {
+        $innerPrec = $this->precedence();
+        if ($outerPrecedence > $innerPrec)
+            return "\\left(" . $this->normalAusgeben($this->op1->ausgeben($innerPrec), $this->op2->ausgeben()) . "\\right)";
+        return $this->normalAusgeben($this->op1->ausgeben($innerPrec), $this->op2->ausgeben());
     }
-    
-    public function inlineAusgeben() {
-        return $this->op1->inlineAusgeben() . " ^ " . $this->op2->inlineAusgeben();
+
+    public function normalAusgeben($left, $right)
+    {
+        return  $left . "^{" . $right . "}";
     }
+
+    public function normalInlineAusgeben($left, $right)
+    {
+        return  $left . "^(" . $right . ")";
+    }
+
 
     public function derivative() : FunktionElement {
         if ($this->isConstant())  return Numeric::zero();
@@ -305,8 +326,9 @@ class Potenz extends BinaryOperation {
     public function simplified() : FunktionElement {
         $simpler = new self($this->op1->simplified(), $this->op2->simplified());
 
-        if($simpler->isNumeric())
+        if($simpler->isNumeric()) {
             return $simpler->getValue();
+        }
 
         if ($simpler->op2->isZero())
             return Numeric::one();
@@ -320,48 +342,8 @@ class Potenz extends BinaryOperation {
         return $simpler;
     }
 
-    public function istQuadratisch() : bool {
-        return ($this->op2 ->equals(Numeric::two()));
-    }
-
-    public function gebeBasis() : FunktionElement {
-        return $this->op1;
-    }
-
     public function getValue() : Numeric
     {
         return $this->op1->getValue() -> toPowerN( $this->op2->getValue());
-    }
-}
-
-class Wurzel extends UnaryOperation {
-
-    public function getValue() : Numeric
-    {
-        return $this->op -> getValue()->sqrtN();
-    }
-
-    public function ausgeben() {
-        return "<mrow> <msqrt>" .  $this->op->ausgeben() . " </msqrt> </mrow>";
-    }
-
-    public function derivative() : FunktionElement {
-        return $this->isConstant() ? Numeric::zero() :  $this -> op -> derivative() -> divideBy((new Numeric(new RationalReal(2))) -> multiply($this));
-    }
-
-    public function simplified() : FunktionElement {
-        $simpler = new self($this->op->simplified());
-
-        if($simpler->op instanceof Potenz && $simpler->op->istQuadratisch()) {
-            return $simpler->op->gebeBasis();
-        }
-
-        return $simpler;
-    }
-
-    public function isNumeric(): bool
-    {
-        //TODO: gehört zu Todo ganz oben in dieser Datei
-        return false;
     }
 }

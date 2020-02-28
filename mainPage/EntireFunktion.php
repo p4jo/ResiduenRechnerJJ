@@ -5,8 +5,8 @@ require_once "Classes.php";
 class EntireFunktion
 {
     //Hier ist das Wurzelelement gemeint, nicht die mathematische Wurzel
-    private /*FunktionElement*/ $root;
-    public /*string*/ $name;
+    private FunktionElement $root;
+    public string $name;
 
     public function __construct(FunktionElement $root, string $name = 'f')
     {
@@ -18,9 +18,9 @@ class EntireFunktion
     public function ausgeben()
     {
         /*mathvariant=\"bold\"*/
-        return "<math><mpadded><mstyle mathsize='1em'>" .
-            $this->name . "(" . Variable::$workVariable . ") = " . $this->root->ausgeben() . "
-            </mstyle></mpadded></math> <br>";
+        return "\\( " .
+            $this->name . "\\left(\\mathit{" . Variable::$workVariable . "}\\right) =  " . $this->root->ausgeben() . "
+            \\)<br>";
     }
 
     public function simplified()

@@ -1,34 +1,43 @@
 <!DOCTYPE html>
-
+<!-- DIES IST DIE TATSÄCHLICH AUFGERUFENE WEBSEITE -->
 <html>
     <head>
         <meta charset="utf-8">
         <title>JResiduenrechner</title>
         <link rel="stylesheet" type="text/css" href="style.css"/>
         <link rel="shortcut icon" type="image/icon" href="icon.png">
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
 <!--		<script language="javascript" type="text/javascript" src="main.js"></script>-->
         <script type="text/javascript">
 
+        // DATEN
+
         function relevantData(element) {
             if (element.type === "text")
-                return element.value != "" ? element.value: "null";
+                return element.value !== "" ? element.value: "null";
             if (element.type === "checkbox")
                 return element.checked;
             return "nul";
         }
 
+        //JAVASCRIPT FUNKTIONALITÄT
+
+        function sendHTMLIntoDiv(htmlCode, outputDiv) {
+            var div = document.getElementById("ausgabe" + outputDiv);
+            div.innerHTML = htmlCode;
+            MathJax.typesetPromise();
+           // alert("still working");
+        }
+
     	function sendInputTroughPHPIntoDiv(phpFile, outputDiv, loadData) {
     	    //alert("called with " + phpFile + ", " + outputDiv + ", " + loadData);
-    	    let formData = Array.from(document.getElementsByClassName("II"))
-					.reduce(
-						(data, element) => {
-							// Add the current field to the object.
-							data[element.id] = relevantData(element);
-							return data;
-						}, {}
-					);
-            formData["loadData"] = loadData;
+
+            let formData = {"loadData": loadData};
+            for (var element of document.getElementsByClassName("II"))
+                formData[element.id] = relevantData(element);
+
         	jQuery.ajax({
 				url: phpFile + ".php",
 				data: formData,
@@ -40,9 +49,7 @@
        		});
     	}
 
-    	function sendHTMLIntoDiv(htmlCode, outputDiv) {
-            document.getElementById("ausgabe" + outputDiv).innerHTML = htmlCode;
-        }
+        //BUTTON-EVENTS
 
         function funktionSubmit() {
             sendInputTroughPHPIntoDiv('Ausgabe', 1, false);
@@ -56,6 +63,19 @@
 
         function reloadSecondArea() {
             sendInputTroughPHPIntoDiv('Ausgabe', 3, true);
+            showVariables();
+        }
+
+        function mathReload() {
+            MathJax.typesetPromise();
+        }
+        function dump(obj) {
+            var out = '';
+            for (var i in obj) {
+                out += i + ": " + obj[i] + "\n";
+            }
+
+            alert(out);
         }
 
         </script>
@@ -76,8 +96,9 @@
             </form>
             <br>
             <button onclick = "funktionSubmit()"> Funktion parsen </button>
-            <button onclick = "showVariables()"> Variablenliste aktualisieren </button>
-
+      <!--      <button onclick = "showVariables()"> Variablenliste aktualisieren </button>
+            <button onclick = "mathReload()"> Mathe-Formeln aktualisieren </button>
+-->
         </div>
 
         <div id = ausgabe1></div>

@@ -1,6 +1,43 @@
 <?php
 require_once "Classes.php";
 
+class sqrt extends UnaryOperation {
+
+    public function getValue() : Numeric
+    {
+        return $this->op -> getValue()->sqrtN();
+    }
+
+    public function ausgeben(int $outerPrecedence = 0) : string {
+        return "\\sqrt{" .  $this->op->ausgeben(0) . "}";
+    }
+
+    public function derivative() : FunktionElement {
+        return $this->isConstant() ? Numeric::zero() :  $this -> op -> derivative() -> divideBy(Numeric::two() -> multiply($this));
+    }
+
+    public function simplified() : FunktionElement {
+        $simplerop = $this->op->simplified();
+
+        if($simplerop instanceof Potenz) {
+            //TODO stimmt im komplexen nicht immer
+            $simplerop->op2 = $simplerop->op2->divideBy(Numeric::two());
+            return $simplerop;
+        }
+
+        return new self($simplerop);
+    }
+
+    public function isNumeric(): bool
+    {
+        if (! $this->op->isNumeric())
+            return false;
+        //TODO: wann nicht vereinfachen für Mathematische Exaktheit
+
+        if ($this->getValue()->isRational())
+            return true;
+    }
+}
 
 class cos extends UnaryOperation {
 

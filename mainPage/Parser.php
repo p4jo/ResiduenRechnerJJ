@@ -37,7 +37,6 @@ class Parser
     private static $forbiddenToMultiplyWithMeChars;
     private static $forbiddenToMultiplyMeTokens;
 
-    //TODO: Parser::$commaIsDecimalPoint Sollte von einer Checkbox kommen
     public static function init()
     {
         global $commaIsDecimalPoint;
@@ -68,6 +67,7 @@ class Parser
     {
         //So muss man splitten, weil $str[$i] nach bytes geht und von allen 2-Byte Zeichen beide einzeln nimmt,
         $input = preg_split('//u', $inputStr, null, PREG_SPLIT_NO_EMPTY);
+        //var_dump($input);
         $tokens = [];
         for ($i = 0; isset($input[$i]); $i++) {
             $chr = $input[$i];
@@ -82,7 +82,7 @@ class Parser
             if ( $tokens &&
                 !in_array((string) end($tokens), self::$forbiddenToMultiplyMeTokens) &&
                 !in_array($chr,self::$forbiddenToMultiplyWithMeChars)) {
-                echo "Nach dem Token ".end($tokens).", vor das Zeichen $chr setze ich ·<br>";
+                //echo "Nach dem Token ".end($tokens).", vor das Zeichen $chr setze ich ·<br>";
                 $tokens[] = "·";
             }
 
@@ -98,7 +98,7 @@ class Parser
                 while (isset($input[$i + 1]) && in_array($input[$i + 1], self::$numChars)) {
 
                     $digit = $input[++$i]; //erst hier erhöhen
-                    if ($digit == ',' || $digit == '.') {
+                    if ($digit == '.' || $digit == ',') {
                         $digit = $isInt ? '.' : '';
                         $isInt = false;
                     }
@@ -115,6 +115,7 @@ class Parser
                 if (key_exists($text, self::$namedChars))
                     $tokens[] = self::$namedChars[$text];
                 else
+                    //TODO: Hier noch in einzelne Faktoren splitten, falls mehrbuchstabige Variablen nicht erwünscht sind
                     $tokens[] = $text;
             }
             else {
@@ -173,7 +174,7 @@ class Parser
                     $earlierOP = self::precedence(end($operator_stack));
                     if ($earlierOP > $myOP ||
                         ($earlierOP == $myOP && !isset($operations[end($operator_stack)]['rightAssociative'])))
-                        //push higher precedence Stuff from stack to output
+                        //push higher precedence stuff from stack to output
                         $output_queue[] = array_pop($operator_stack);
                     else
                         break;
@@ -185,11 +186,11 @@ class Parser
                 $operator_stack[] = '(';
                 $wasOperand = false;
             } elseif (in_array($token, self::$rightBraceChars)) { //RECHTE KLAMMER
-                // Alles bis zur linken Klammer + die linke Klammer pop-,pushen
+                // Alles bis zur linken Klammer & die linke Klammer pop-,pushen
                 while (end($operator_stack) !== '(') {
                     $output_queue[] = array_pop($operator_stack);
                     if (!$operator_stack) {
-                        echo "Zu wenige öffnende Klammern!<br>";
+                        echo "Zu wenige öffnende Klammern.<br>";
                         //array_pop unten wirft keinen Fehler :)
                         break;
                     }
@@ -205,7 +206,7 @@ class Parser
                 while (end($operator_stack) !== '(') {
                     $output_queue[] = array_pop($operator_stack);
                     if (!$operator_stack) {
-                        echo "Zu wenige öffnende Klammern!<br>";
+                        echo "Zu wenige öffnende Klammern.<br>";
                         //array_pop unten wirft keinen Fehler :)
                         break;
                     }
