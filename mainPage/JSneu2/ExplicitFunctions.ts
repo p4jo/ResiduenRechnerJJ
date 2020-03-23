@@ -11,7 +11,7 @@ class sqrt extends UnaryOperation {
     }
 
     derivative() : FunktionElement {
-        return this.isConstant() ? Numeric.zero() :  this + op + derivative() + divideBy(Numeric.two() + multiply(this));
+        return this.isConstant() ? Numeric.zero :  this + op + derivative() + divideBy(Numeric.two() + multiply(this));
     }
 
     simplified() : FunktionElement {
@@ -48,7 +48,7 @@ class cos extends UnaryOperation {
 
     derivative(): FunktionElement
     {
-        return this.isConstant() ? Numeric.zero() : (Numeric.ofF(-1)) + multiply(new sin(this.op)) + multiply(this.op.derivative());
+        return this.isConstant() ? Numeric.zero : (Numeric.ofF(-1)) + multiply(new sin(this.op)) + multiply(this.op.derivative());
     }
 
     getValue() : Numeric
@@ -71,7 +71,7 @@ class sin extends UnaryOperation {
 
     derivative(): FunktionElement
     {
-        return this.isConstant() ? Numeric.zero() : (new cos(this.op)) + multiply(this.op.derivative());
+        return this.isConstant() ? Numeric.zero : (new cos(this.op)) + multiply(this.op.derivative());
     }
 
     getValue() : Numeric
@@ -95,7 +95,7 @@ class ln extends UnaryOperation {
 
     derivative(): FunktionElement
     {
-        return this.isConstant() ? Numeric.zero() :  this.op. derivative() + divideBy (this.op);
+        return this.isConstant() ? Numeric.zero :  this.op. derivative() + divideBy (this.op);
     }
 
     getValue() : Numeric

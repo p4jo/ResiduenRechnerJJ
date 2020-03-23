@@ -17,6 +17,10 @@ class sqrt extends UnaryOperation {
     }
 
     public function simplified() : FunktionElement {
+
+        if ($this->isNumeric())
+            return $this->getValue();
+
         $simplerop = $this->op->simplified();
 
         if($simplerop instanceof Potenz) {
@@ -34,8 +38,11 @@ class sqrt extends UnaryOperation {
             return false;
         //TODO: wann nicht vereinfachen für Mathematische Exaktheit
 
-        if ($this->getValue()->isRational())
+        //echo $this->inlineAusgeben() . "=".$this->getValue()->inlineAusgeben();
+        if ($this->getValue()->isRational() || ! $this->op->getValue()->isRational())
             return true;
+        return false;
+
     }
 }
 
@@ -55,6 +62,8 @@ class cos extends UnaryOperation {
     public function simplified(): FunktionElement
     {
         $simpler = new self($this->op->simplified());
+        if ($simpler->isNumeric())
+            return $simpler->getValue();
         // TODO: Implement simplify() method.
         return $simpler;
     }
@@ -76,7 +85,10 @@ class sin extends UnaryOperation {
     public function simplified(): FunktionElement
     {
         $simpler = new self($this->op->simplified());
+        if ($simpler->isNumeric())
+            return $simpler->getValue();
         // TODO: Implement simplify() method.
+
         return $simpler;
     }
 }
@@ -97,6 +109,9 @@ class ln extends UnaryOperation {
     public function simplified(): FunktionElement
     {
         $simpler = new self($this->op->simplified());
+        if ($simpler->isNumeric())
+            return $simpler->getValue();
+
         // TODO: Implement simplify() method.
         return $simpler;
     }

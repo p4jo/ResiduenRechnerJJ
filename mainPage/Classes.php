@@ -1,7 +1,7 @@
 <?php
 
-$floatToRationalTolerance = PHP_FLOAT_MIN * 0x1000000000000000000000000000000000;
-$floatToRationalMaxDen = 1000;
+$floatToRationalTolerance = 1e-10;
+$floatToRationalMaxDen = 100000;
 
 // REIHENFOLGE ESSENTIELL
 require_once "ExplicitOperations.php";
@@ -475,7 +475,7 @@ class Numeric extends FunktionElement
     public function sqrtN()
     {
         //Todo Verzweigungsschnitt beachten, vielleicht 2-parametrige Wurzel einführen
-        return self::ofAbsArg($this->absF(), $this->argF() / 2);
+        return self::ofAbsArg(sqrt($this->absF()), $this->argF() / 2);
     }
 
     public function argF() : float {

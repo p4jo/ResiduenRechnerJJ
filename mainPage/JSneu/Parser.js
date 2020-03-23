@@ -1,13 +1,15 @@
 
 var commaIsDecimalPoint = true;
+var operations = true;
+
 
 
 class Parser
 {
     // REGEXes
-    private static numChars = ['1','2','3','4','5','6','7','8','9','0','.', '\''];
+    static numChars = ['1','2','3','4','5','6','7','8','9','0','.', '\''];
     //TODO: Vervollständigen der zulässigen Buchstaben (mit Schriftart abgleichen)
-    private static letterChar =
+    static letterChar =
         ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
         'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
         'ä', 'ö', 'ü', 'ß', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
@@ -23,71 +25,49 @@ class Parser
         'Д', 'Л', 'О', 'Р', 'П', 'А', 'В', 'Ы', 'Ф', 'Я', 'Ч', 'С',
         'М', 'И', 'Т', 'Ь', 'Б', 'Ю', '\''];
     //TODO: Vervollständigen
-    private static namedChars = {'alpha' : 'α', 'beta' : 'β', 'pi' : 'π', 'tri' : 'ш'};
-    private static specialChars;
-    private static leftBraceChars = ['(','[','{','<','«'];
-    private static rightBraceChars = [')',']','}','>','»'];
-    private static braceChars;
-    private static separatorChars = [';'];
-    private static forbiddenToMultiplyWithMeChars;
-    private static forbiddenToMultiplyMeTokens;
+    static namedChars = {'alpha' : 'α', 'beta' : 'β', 'pi' : 'π', 'tri' : 'ш'};
+    static specialChars;
+    static leftBraceChars = ['(','[','{','<','«'];
+    static rightBraceChars = [')',']','}','>','»'];
+    static braceChars;
+    static separatorChars = [';'];
+    static forbiddenToMultiplyWithMeChars;
+    static forbiddenToMultiplyMeTokens;
 
     static init()
     {
         if (commaIsDecimalPoint)
-            self.numChars.push(',');
+            this.numChars = ',';
         else {
-            self.separatorChars.push(',');
+            this.separatorChars = ',';
         }
-        self.braceChars = array_merge(self.leftBraceChars, self.rightBraceChars);
-        temp = [
-            "#",
-            "%",
-            "&",
-            "*",
-            "+",
-            "-",
-            "/",
-            ":",
-            ";",
-            "?",
-            "@",
-            "^",
-            "_",
-            "|",
-            "~",
-            "‖",
-            "×",
-            "·",
-            "¶",
-            "±",
-            "¤",
-            "÷",
-            "‼",
-            "⌂"
-    ].concat( self.separatorChars );
-        self.forbiddenToMultiplyWithMeChars = array_merge(temp, self.rightBraceChars);
-        self.forbiddenToMultiplyMeTokens = array_merge(temp, self.leftBraceChars, array_keys(operations));
-        self.specialChars = array_merge(temp, self.braceChars);
+        this.braceChars = array_merge(this.leftBraceChars, this.rightBraceChars);
+        temp = array_merge(["#","%","&","*","+","-", "/", ":", ";", "?", "@", "^", "_", "|", "~",
+            "‖","×","·","¶","±","¤","÷","‼","⌂"], this.separatorChars );
+        this.forbiddenToMultiplyWithMeChars = array_merge(temp, this.rightBraceChars);
+        this.forbiddenToMultiplyMeTokens = array_merge(temp, this.leftBraceChars, array_keys(operations));
+        this.specialChars = array_merge(temp, this.braceChars);
     }
 
 
-    static parseStringToFunktionElement(string inputStr) {
-        tokens = self.tokenize(inputStr);
-        result += "Tokens: " + implode(" ", tokens) + "<br>";
-        RPN = self.parseTokensToRPN(tokens);
-        result += "RPN: " + implode(" ", RPN) + "<br>";
-        return self.parseRPNToFunktionElement(RPN);
+    static parseStringToFunktionElement(inputStr) {
+        tokens = this.tokenize(inputStr);
+        //TODO
+        //alert("Tokens: " + implode(" ", tokens) + "<br>";
+        RPN = this.parseTokensToRPN(tokens);
+        //TODO
+        //alert("RPN: " + implode(" ", RPN) + "<br>";
+        return this.parseRPNToFunktionElement(RPN);
     }
 
-    private static tokenize(string inputStr) : array
+    static tokenize(inputStr)
     {
         //So muss man splitten, weil str[i] nach bytes geht und von allen 2-Byte Zeichen beide einzeln nimmt,
         input = preg_split('//u', inputStr, null, PREG_SPLIT_NO_EMPTY);
         //var_dump(input);
-        tokens = {};
+        tokens = [];
         for (i = 0; isset(input[i]); i++) {
-            chr = input[i};
+            chr = input[i];
 
             if (ctype_space(chr)) {
                 continue;
@@ -97,73 +77,72 @@ class Parser
             //UND der nächste auch kein Operator wird, oder eine Klammer auf (also noch ein Operand);
             //DANN fügt er einen Malpunkt ein.
             if ( tokens &&
-                !in_array((string) end(tokens), self.forbiddenToMultiplyMeTokens) &&
-                !in_array(chr,self.forbiddenToMultiplyWithMeChars)) {
-                //result += "Nach dem Token ".end(tokens).", vor das Zeichen chr setze ich ·<br>";
-                tokens.push("·");
+                !in_array(end(tokens), this.forbiddenToMultiplyMeTokens) &&
+                !in_array(chr,this.forbiddenToMultiplyWithMeChars)) {
+                //alert("Nach dem Token ".end(tokens).", vor das Zeichen chr setze ich ·<br>";
+                tokens = "·";
             }
 
 
-            if (in_array(chr, self.specialChars)) { //All special characters are single tokens
-                tokens.push(chr);
+            if (in_array(chr, this.specialChars)) { //All special characters are single tokens
+                tokens = chr;
             }
-            else if (in_array(chr, self.numChars)) {
+            else if (in_array(chr, this.numChars)) {
                 // entire number as one token
                 number = chr;
-                isnumber = true;
+                isInt = true;
 
-                while (isset(input[i + 1]) && in_array(input[i + 1], self.numChars)) {
+                while (isset(input[i + 1]) && in_array(input[i + 1], this.numChars)) {
 
-                    digit = input[++i}; //erst hier erhöhen
+                    digit = input[++i]; //erst hier erhöhen
                     if (digit == '.' || digit == ',') {
-                        digit = isnumber ? '.' : '';
-                        isnumber = false;
+                        digit = isInt ? '.' : '';
+                        isInt = false;
                     }
                     if (digit != '\'')
-                        number .= digit;
+                        number += digit;
                 }
-                //tokens.push(isnumber ? numberval(number) : floatval(number)) ;
-                tokens.push(floatval(number));
+                //tokens = isInt ? intval(number) : floatval(number) ;
+                tokens = floatval(number);
             }
-            else if (in_array(chr, self.letterChar)) {
+            else if (in_array(chr, this.letterChar)) {
                 text = chr;
-                while (isset(input[i + 1]) && in_array(input[i + 1], self.letterChar))
-                    text .= input[++i}; //erst hier erhöhen
-                if (key_exists(text, self.namedChars))
-                    tokens.push(self.namedChars[text});
+                while (isset(input[i + 1]) && in_array(input[i + 1], this.letterChar))
+                    text += input[++i]; //erst hier erhöhen
+                if (key_exists(text, this.namedChars))
+                    tokens = this.namedChars[text];
                 else
                     //TODO: Hier noch in einzelne Faktoren splitten, falls mehrbuchstabige Variablen nicht erwünscht sind
-                    tokens.push(text);
+                    tokens = text;
             }
             else {
-                result += "Achtung das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)";
+                //TODO
+                alert("Achtung das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)");
             }
         }
         return tokens;
     }
 
-    private static precedence(string token)
+    static precedence(token)
     {
-        global operations;
         if (isset(operations[token]))
-            return operations[token]['precedence'};
+            return operations[token]['precedence'];
         //; und ) haben -inf Präzedenz, weil sie alles poppen (auswerten lassen), was davor kam.
         //( hat -inf Präzedenz, weil es bei dem Vorgang nicht gepoppt werden darf (Stopper)
-        return PHP_number_MIN;
+        return PHP_INT_MIN;
     }
 
-    private static parseTokensToRPN(array tokens) : array
+    static parseTokensToRPN(tokens)
     {
-        global operations;
-        output_queue = array();
-        operator_stack = array();
-        wasOperand = false;
+        var output_queue = array();
+        var operator_stack = array();
+        var wasOperand = false;
 
         for (j = 0; isset(tokens[j]); j++) {
-            token = tokens[j};
+            token = tokens[j];
 
             if (is_float(token)) { //ZAHL
-                output_queue.push(token);
+                output_queue = token;
                 wasOperand = true;
             }
             else if (key_exists(token, operations)) { //OPERATOR / Funktion
@@ -173,57 +152,57 @@ class Parser
                 //UND das nächtste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
                 //DANN fügt er einen leeren Operanden ein, der für den entsprechenden Standardwert steht (z.b. neutrales Element).
                 //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) : 0-baum oder /z : 1/z
-                if(!wasOperand && operations[token]['arity'] >= 2 && !(isset(tokens[j+1]) && in_array(tokens[j+1], self.leftBraceChars))) {
-                    output_queue.push('');
-                    result += "leerer Operand wurde eingefügt für token <br>";
+                if(!wasOperand && operations[token]['arity'] >= 2 && !(isset(tokens[j+1]) && in_array(tokens[j+1], this.leftBraceChars))) {
+                    output_queue = '';
+                    alert("leerer Operand wurde eingefügt für token <br>");
                 }
 
 
                 //Operatoren mit engerer Bindung (größerer Präzedenz) werden zuerst ausgeführt, d.h. zuerst auf
                 //die RPN-Warteschlange geschoben. Bei links-Assoziativität (Links-Gruppierung) werden auch gleichrangige
                 //Operatoren, die schon auf dem Operatorstapel sind (weil sie links stehen) zuerst ausgeführt (auf die Queue gelegt)
-                myOP = self.precedence(token);
+                myOP = this.precedence(token);
                 while (true)
                 {
                     if (!operator_stack)
                         break;
 
-                    earlierOP = self.precedence(end(operator_stack));
+                    earlierOP = this.precedence(end(operator_stack));
                     if (earlierOP > myOP ||
                         (earlierOP == myOP && !isset(operations[end(operator_stack)]['rightAssociative'])))
                         //push higher precedence stuff from stack to output
-                        output_queue.push(operator_stack.pop());
+                        output_queue= array_pop(operator_stack);
                     else
                         break;
                 }
-                operator_stack.push(token);
+                operator_stack= token;
                 wasOperand = false;
 
-            } else if (in_array(token, self.leftBraceChars)) { //LINKE KLAMMER
-                operator_stack.push('(');
+            } else if (in_array(token, this.leftBraceChars)) { //LINKE KLAMMER
+                operator_stack = '(';
                 wasOperand = false;
-            } else if (in_array(token, self.rightBraceChars)) { //RECHTE KLAMMER
+            } else if (in_array(token, this.rightBraceChars)) { //RECHTE KLAMMER
                 // Alles bis zur linken Klammer & die linke Klammer pop-,pushen
-                while (end(operator_stack) !== '(') {
-                    output_queue.push(operator_stack.pop();
+                while (end(operator_stack) !== "(" ) {
+                    output_queue = array_pop(operator_stack);
                     if (!operator_stack) {
-                        result += "Zu wenige öffnende Klammern.<br>";
+                        alert("Zu wenige öffnende Klammern.<br>");
                         //array_pop unten wirft keinen Fehler :)
                         break;
                     }
                 }
                 // pop the left bracket from the stack.
-                operator_stack.pop();
+                array_pop(operator_stack);
                 wasOperand = true;
             }
-            else if (in_array(token,self.separatorChars)){ //KOMMA / ;
+            else if (in_array(token,this.separatorChars)){ //KOMMA / ;
                 // Alles bis zur linken Klammer pop-,pushen
                 if (end(operator_stack) !== '(')
-                    output_queue.push('');
+                    output_queue = '';
                 while (end(operator_stack) !== '(') {
-                    output_queue.push(operator_stack.pop());
+                    output_queue  = array_pop(operator_stack);
                     if (!operator_stack) {
-                        result += "Zu wenige öffnende Klammern.<br>";
+                        alert("Zu wenige öffnende Klammern.<br>");
                         //array_pop unten wirft keinen Fehler :)
                         break;
                     }
@@ -231,80 +210,79 @@ class Parser
                 wasOperand = false;
             }
             else {                                          //VARIABLE / KONSTANTE
-                output_queue.push(token);
+                output_queue  = token;
                 wasOperand = true;
             }
         }
 
         //Pop remaining operations / functions
         while (operator_stack) {
-            token = operator_stack.pop();
+            token = array_pop(operator_stack);
              /* if the operator token on the top of the stack is a bracket, then
             there are mismatched parentheses. */
             if (token == '(') {
-                result += "Zu viele öffnende Klammern!<br>";
+                alert("Zu viele öffnende Klammern!<br>");
             }
             else // pop the operator onto the output queue.
-                output_queue.push(token);
+                output_queue  = token;
         }
 
         return output_queue;
     }
 
-    private static stack;
-    private static parseRPNToFunktionElement(array RPNQueue) : FunktionElement
+    static stack;
+    static parseRPNToFunktionElement(RPNQueue)
     {
         if (!RPNQueue)
-            return Numeric.zero;
-        self.stack = array();
-        foreach (RPNQueue as token) {
-            //result += "Ich verarbeite " + token;
-            funkEl = token === '' ? null : self.parseRPNToFunctionElementnumberernal(token);
-            self.stack.push(funkEl);
-            //result += " zu ".get_class(funkEl)."-Element: <math displaystyle='true'>" + funkEl.ausgeben() + "</math><br>";
-        }
+            return Numeric.zero();
+        this.stack = array();
+        RPNQueue.foreach(function dostuff(token, index) {
+            //alert("Ich verarbeite " + token;
+            funkEl = token === '' ? null : this.parseRPNToFunctionElementInternal(token);
+            this.stack = funkEl;
+            //alert(" zu ".get_class(funkEl)."-Element: <math displaystyle='true'>" + funkEl->ausgeben() + "</math><br>";
+        });
 
-        result = self.stack.pop();
+        result = array_pop(this.stack);
  //Fehlerbehandlung
-        if (self.stack)
-            result +="HÄ? {"
+        if (this.stack)
+            alert("HÄ? {"
                 + implode
                 (", ",
                     array_map (
-                        (FunktionElement a)
+                        function (a)
                         {
                             return a.ausgeben();
                         },
-                    self.stack )
+                    this.stack )
                 )
                 + "} is the stack left after parsing RPNQueue: {"
                 +  implode(", ", RPNQueue )
                 + "}<br>"
-            ;
+            );
 
         return result;
     }
 
-    private static parseRPNToFunctionElementnumberernal(token)
+    static parseRPNToFunctionElementInternal(token)
     {
         if (is_float(token))
             return Numeric.ofF(token);
 
-        global operations;
 
         if (key_exists(token, operations)){
             switch (operations[token]['arity']) {
                 case 1:
-                    return new operations[token]['name'](self.stack.pop());
+                    return new operations[token]['name'](array_pop(this.stack));
                 case 2:
-                    o2 = self.stack.pop();
-                    o1 = self.stack.pop();
-                    //result += " {Token ".token ." wird geparst mit <math> ".o1.ausgeben() ."</math> und <math>". o2.ausgeben()."</math>] ";
+                    o2 = array_pop(this.stack);
+                    o1 = array_pop(this.stack);
+                    //alert(" [Token ".token ." wird geparst mit <math> ".o1->ausgeben() ."</math> und <math>". o2->ausgeben()."</math>] ";
                     return new operations[token]['name'](o1, o2);
                 default:
                     args = array();
-                    for (i = 0; i < operations[token]['arity'}; i++)
-                        args.push(self.stack.pop());
+                    for (i = 0; i < operations[token]['arity']; i++)
+                        args = array_pop(this.stack);
                     return new operations[token]['name'](array_reverse(args));
             }
         }
@@ -312,6 +290,3 @@ class Parser
     }
 
 }
-
-
-Parser.init();

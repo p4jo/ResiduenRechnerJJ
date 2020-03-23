@@ -41,35 +41,35 @@ operations = {
  * Class FunktionElement: IMMUTABLE
  */
 class FunktionElement {
-    get ausgeben(outerPrecedence = 0) ;
-    get inlineAusgeben(outerPrecedence = 0);
+    ausgeben(outerPrecedence = 0) ;
+    inlineAusgeben(outerPrecedence = 0);
 
-    get derivative();
+    derivative();
 
-    get simplified() ;
+    simplified() ;
 
     /**
      * bezüglich der konstanten Variablen konstant
      */
-    get isNumeric();
+    isNumeric();
 
     /**
      * bezüglich der Arbeitsvariablen konstant
      */
-    get isConstant();
+    isConstant();
 
-    get isOne(){
+    isOne(){
         return false;
     }
-    get isZero(){
+    isZero(){
         return false;
     }
 
     // WARNING: ONLY CALL ON (RELATIVELY) NUMERIC OBJECTS
-    get getValue()  ;
+    getValue()  ;
 
 
-    get equals(other)
+    equals(other)
     {
         if (this.isNumeric() != other.isNumeric() || this.isConstant() != other.isConstant())
             return false;
@@ -80,22 +80,22 @@ class FunktionElement {
 
     //ENDE ABSTRAKTE FUNKTIONEN
 
-    get add (other) {
+    add (other) {
         return new Addition(this,other);
     }
-    get subtract (other)  {
+    subtract (other)  {
         return new Subtraktion(this,other);
     }
-    get multiply (other)  {
+    multiply (other)  {
         return new Multiplikation(this,other);
     }
-    get divideBy (other) {
+    divideBy (other) {
         return new Division(this,other);
     }
-    get toPower (other)  {
+    toPower (other)  {
         return new Potenz(this,other);
     }
-    get sqrt() {
+    sqrt() {
         return new sqrt(this);
     }
 
@@ -111,11 +111,12 @@ class FunktionElement {
 class Operation extends FunktionElement {
 
     
-    get __construct(op) {
+   constructor(op) {
+       super();
         this.op = op;
     }
 
-    get isNumeric(){
+    isNumeric(){
         var result = true;
         this.op.foreach(function doStuff() {
             result = result && o + isNumeric();
@@ -123,7 +124,7 @@ class Operation extends FunktionElement {
         return result;
     }
 
-    get isConstant(){
+    isConstant(){
         var result = true;
         this.op.foreach(function doStuff() {
             result = result && o + isConstant();
@@ -131,10 +132,10 @@ class Operation extends FunktionElement {
         return result;
     }
 
-    get ausgeben(outerPrecedence = 0)   {
+    ausgeben(outerPrecedence = 0)   {
         return "\\mathrm{" + get_class(this) + "}\\left(" .
             implode(", ", array_map(
-                function get (a)
+                function (a)
                 {
                     return a.ausgeben();
                 },
@@ -146,28 +147,29 @@ class Operation extends FunktionElement {
 
 class UnaryOperation extends FunktionElement {
 
-    get __construct(op)
+   constructor(op)
     {
+       super();
         this.op = op;
     }
 
-    get isNumeric()
+    isNumeric()
     {
         return this.op.isNumeric();
     }
 
-    get isConstant()
+    isConstant()
     {
         return this.op.isConstant();
     }
 
-    get ausgeben(outerPrecedence = 0)//Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
+    ausgeben(outerPrecedence = 0)//Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
     {
         //ausgeben gibt mit Klammern aus
         return "\\mathrm{" + get_class(this) + "}\\left(" + this.op.ausgeben() +'\\right)';
     }
 
-    get inlineAusgeben(outerPrecedence = 0)//Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
+    inlineAusgeben(outerPrecedence = 0)//Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
     {
         return get_class(this) +'('+ this.op.inlineAusgeben() + ")";
     }
@@ -177,43 +179,44 @@ class UnaryOperation extends FunktionElement {
 class BinaryOperation extends FunktionElement  {
 
 
-    get __construct(op1, op2)
+   constructor(op1, op2)
     {
+       super();
         this.op1 = op1;
         this.op2 = op2;
     }
 
-    get isNumeric()
+    isNumeric()
     {
         return this.op1.isNumeric() && this.op2.isNumeric();
     }
 
-    get isConstant()
+    isConstant()
     {
         return this.op1.isConstant() && this.op2.isConstant();
     }
 
-    get ausgeben(outerPrecedence = 0)   {
+    ausgeben(outerPrecedence = 0)   {
         innerPrec = this.precedence();
         if (outerPrecedence > innerPrec)
             return "\\left(" + this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben(innerPrec)) + "\\right)";
         return this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben(innerPrec));
     }
 
-    get normalAusgeben(left,right){
+    normalAusgeben(left,right){
         return this.normalInlineAusgeben(left,right);
     }
 
-    get inlineAusgeben(outerPrecedence = 0)   {
+    inlineAusgeben(outerPrecedence = 0)   {
         innerPrec = this.precedence();
         if (outerPrecedence > innerPrec)
             return "(" + this.normalInlineAusgeben(this.op1.inlineAusgeben(innerPrec), this.op2.inlineAusgeben(innerPrec)) + ")";
         return this.normalInlineAusgeben(this.op1.inlineAusgeben(innerPrec), this.op2.inlineAusgeben(innerPrec));
     }
 
-    get normalInlineAusgeben(left,right);
+    normalInlineAusgeben(left,right);
 
-    get precedence()  { return 3; }
+    precedence()  { return 3; }
 
 }
 
@@ -225,12 +228,13 @@ class Variable extends FunktionElement
 
     constructor(name, inner = null, useInner = false)
     {
+        super();
         this.name = name;
         this.inner = isset(inner) ? inner.simplified() : null;
         this.useInner = useInner;
     }
 
-    get derivative()
+    derivative()
     {
         if (self.workVariable == this.name)
             return Numeric.one();
@@ -239,7 +243,7 @@ class Variable extends FunktionElement
         return Numeric.zero();
     }
 
-    get ausgeben(outerPrecedence = 0)   {
+    ausgeben(outerPrecedence = 0)   {
         return this.isConstant()
                 ?(this.isNumeric()
                     ? this.inner.getValue().ausgeben()
@@ -249,11 +253,11 @@ class Variable extends FunktionElement
                 :"\\mathit{" + this.name + "}" ;
     }
 
-    get inlineAusgeben(outerPrecedence = 0)   {
+    inlineAusgeben(outerPrecedence = 0)   {
         return this.name;
     }
 
-    get simplified()
+    simplified()
     {
         if (this.useInner())
             //ist schon simplified
@@ -262,26 +266,26 @@ class Variable extends FunktionElement
             return this;
     } 
 
-    get isNumeric()
+    isNumeric()
     {
         return this.isConstant() && this.useInner() && this.inner.isNumeric();
     }
 
-    get useInner()
+    useInner()
     {
         if (self.noNumerics)
             return this.name == 'i';
         return this.useInner;
     }
 
-    get isConstant()
+    isConstant()
     {
         return this.name != self.workVariable && (!this.useInner() || this.inner + isConstant());
     }
 
     // wirft entweder Fehler, oder rechnet mit nichtssagenden, konstanten Werten, wenn
     // getValue aufgerufen wird, obwohl diese Variable nicht numeric ist.
-    get getValue() 
+    getValue() 
     {
         if (!this.isNumeric())
         //to-do
@@ -289,12 +293,12 @@ class Variable extends FunktionElement
         return this.inner.getValue();
     }
 
-    get isOne()
+    isOne()
     {
         return this.isNumeric() && this.getValue().isOne();
     }
 
-    get isZero()
+    isZero()
     {
         return this.isNumeric() && this.getValue().isZero();
     }
@@ -302,7 +306,7 @@ class Variable extends FunktionElement
     /// Element-wise
     /// Static
 
-    get init(){
+    init(){
         //User kann hier eigene "Null-äre Operationen" eintragen, d.h. Kurzschreibweisen wie sin(3x^2), oder pi+e (vereinfachbar)
         registeredVariables = {
             'τ' : new Variable ('τ', new Numeric(new FloatReal(2*pi()))),
@@ -315,7 +319,7 @@ class Variable extends FunktionElement
         //registeredVariables{'ш'} = new Variable('ш', registeredVariables{'τ'} .divideBy(new Numeric(new RationalReal(4),new RationalReal(0))), true);
     }
 
-    get ofName(name) {
+    ofName(name) {
         if (array_key_exists(name, registeredVariables))
             return registeredVariables[name];
 
@@ -328,30 +332,28 @@ class Variable extends FunktionElement
 
 class Numeric extends FunktionElement
 {
-    privateim;
-    privatere;
-
-    get re(){
+    re() {
         return this.re;
     }
-
-    get im(){
+    im() {
         return this.im;
     }
-    get reF()  {
+    reF()  {
         return this.re().floatValue();
     }
 
-    get imF()  {
+    imF()  {
         return this.im().floatValue();
     }
-    get __construct(re,im = null)
+    
+    constructor(re, im = null)
     {
+        super();
         this.re = re;
         this.im = im ?? RationalReal.zero;
     }
 
-    get ausgeben(outerPrecedence = 0){
+    ausgeben(outerPrecedence = 0){
         if (this.im.isZero())
             return this.re.ausgeben();
         if (this.re.isZero())
@@ -362,7 +364,7 @@ class Numeric extends FunktionElement
         return "\\left{" + this.re.ausgeben() + " + " + this.im.ausgeben() + "i\\right}";
     }
 
-    get inlineAusgeben(outerPrecedence = 0){
+    inlineAusgeben(outerPrecedence = 0){
         if (this.im.isZero())
             return this.re.inlineAusgeben();
         if (this.re.isZero())
@@ -370,69 +372,69 @@ class Numeric extends FunktionElement
         return "{" + this.re.inlineAusgeben() + " + " + this.im.inlineAusgeben() + "i}";
     }
 
-    get derivative() {
-        return self.zero();
+    derivative() {
+        return Numeric.zero();
     }
 
-    get simplified()
+    simplified()
     {
         return this;
-        //return new self(this.re.simplified(),this.im.simplified());
+        //return new Numeric(this.re.simplified(),this.im.simplified());
     }
 
-    get getValue()  {
+    getValue()  {
         return this;
     }
 
-    get isNumeric()
+    isNumeric()
     {
         return true;
     }
 
-    get isConstant()
+    isConstant()
     {
         return true;
     }
 
-    get isOne()
+    isOne()
     {
         return this.re().isOne() && this.im().isZero();
     }
 
 
-    get isZero()
+    isZero()
     {
         return this.re().isZero() && this.im().isZero();
     }
 
-    get equalsN(other)
+    equalsN(other)
     {
         return this.re() + equalsR (other.re) && this.im().equalsR (other.im());
     }
 
-    get addN(other) 
+    addN(other) 
     {
-        return new self(this.re() .addR (other.re()), this.im().addR (other.im()));
+        return new Numeric(this.re() .addR (other.re()), this.im().addR (other.im()));
     }
 
-    get subtractN(other) 
+    subtractN(other) 
     {
-        return new self(this.re() .subtractR (other.re()), this.im() .subtractR (other.im()));
+        return new Numeric(this.re() .subtractR (other.re()), this.im() .subtractR (other.im()));
     }
-    get negativeN()
+    negativeN()
     {
-        return new self(this.re.negativeR(), this.im.negativeR());
+        return new Numeric(this.re.negativeR(), this.im.negativeR());
     }
 
     // 1/z = z* / |z|²
 
-    get reciprocalN()
+    reciprocalN()
     {
-        return new self(this.re.divideByR(this.absSquared()), this.im.divideByR(this.absSquared()).negativeR());
+        return new Numeric(this.re.divideByR(this.absSquared()), this.im.divideByR(this.absSquared()).negativeR());
     }
-    get multiplyN(other) 
+    multiplyN(other) 
     {
-        return new self(this.re() .multiplyR(other.re())   .subtractR(
+        return new Numeric(this.re() .multiplyR(other.re())   .subtractR(
             this.im() .multiplyR(other.im()))  ,
             this.re() .multiplyR(other.im()) + addR(
                 this.im() + multiplyR (other.re())));
@@ -440,9 +442,9 @@ class Numeric extends FunktionElement
 
     //z / w = z mal w* / |w|²
 
-    get divideByN(other) 
+    divideByN(other) 
     {
-        return new self(
+        return new Numeric(
             this.re() + multiplyR (other.re())     .addR(
                 this.im() .multiplyR (other.im()))
                 .divideByR(other.absSquared())     ,
@@ -451,43 +453,43 @@ class Numeric extends FunktionElement
                 + divideByR (other.absSquared()));
     }
 
-    get toPowerN(other) 
+    toPowerN(other) 
     {
         r = this.absF();
         phi = this.argF();
-        return self.ofAbsArg(pow(r,other.reF()) * exp(phi * other + imF()),
+        return Numeric.ofAbsArg(pow(r,other.reF()) * exp(phi * other + imF()),
             phi * other .reF() + log(r) * other.imF());
     }
 
-    get sqrtN()
+    sqrtN()
     {
         //Todo Verzweigungsschnitt beachten, vielleicht 2-parametrige Wurzel einführen
-        return self.ofAbsArg(this.absF(), this.argF() / 2);
+        return Numeric.ofAbsArg(this.absF(), this.argF() / 2);
     }
 
-    get argF()  {
+    argF()  {
         return atan2(this.imF(), this.reF());
     }
 
-    get absSquared(){
+    absSquared(){
         re = this.re();
         im = this.im();
         return re .multiplyR(re) .addR(
             im .multiplyR(im));
     }
-    get absSquaredF()  {
+    absSquaredF()  {
         re = this.reF();
         im = this.imF();
         return re * re +  im * im;
     }
 
-    get absF()  {
+    absF()  {
         return sqrt(this.absSquaredF());
     }
 
-    get isRational()
+    isRational()
     {
-        return this.re instanceof Rational&& this.im instanceof RationalReal;
+        return this.re instanceof Rational && this.im instanceof RationalReal;
     }
     /// Element-wise
 
@@ -495,124 +497,125 @@ class Numeric extends FunktionElement
 
 
 
-    get init() {
+    init() {
         RationalReal.one = new RationalReal(1);
         RationalReal.zero = new RationalReal(0);
-        self.one = new self(RationalReal.one);
-        self.zero = new self(RationalReal.zero);
-        self.two = new self(new RationalReal(2));
-        self.infinity = new Infinity();
+        Numeric.one = new Numeric(RationalReal.one);
+        Numeric.zero = new Numeric(RationalReal.zero);
+        Numeric.two = new Numeric(new RationalReal(2));
+        Numeric.infinity = new Infinity();
     }
 
-    get zero()  {
-        return self.zero;
+    zero()  {
+        return Numeric.zero;
     }
 
-    get one()  {
-        return self.one;
+    one()  {
+        return Numeric.one;
     }
 
-    get two()  {
-        return self.two;
+    two()  {
+        return Numeric.two;
     }
 
-    get infinity()  {
-        return self.infinity;
+    infinity()  {
+        return Numeric.infinity;
     }
 
-    get ofAbsArg(r, arg) {
-        return self.ofF(r * cos(arg),r * sin(arg));
+    ofAbsArg(r, arg) {
+        return Numeric.ofF(r * cos(arg),r * sin(arg));
     }
 
-    get ofF(reF, imF = 0) {
-        return new self(Real.ofF(reF), Real.ofF(imF));
+    ofF(reF, imF = 0) {
+        return new Numeric(Real.ofF(reF), Real.ofF(imF));
     }
 
 
 }
 
 class Infinity extends Numeric {
-    get __construct()
+    constructor()
     {
-        parent.__construct(new FloatReal(NAN), new FloatReal(NAN));
+        super();
+        new Numeric(new FloatReal(NAN), new FloatReal(NAN));
     }
 
-    get isOne()
-    {
-        return false;
-    }
-
-    get isZero()
+    isOne()
     {
         return false;
     }
 
-    get equalsN(other)
+    isZero()
+    {
+        return false;
+    }
+
+    equalsN(other)
     {
         return false; //todo
     }
 
-    get addN(other)
+    addN(other)
     {
-        if (other instanceof self)
+        if (other instanceof Infinity)
             return null;
         return this;
     }
 
-    get subtractN(other)
+    subtractN(other)
     {
-        if (other instanceof self)
+        if (other instanceof Infinity)
             return null;//Todo
         return this;
     }
 
-    get negativeN()
+    negativeN()
     {
         return this;
     }
 
-    get reciprocalN()
+    reciprocalN()
     {
         return parent.zero();
     }
 
-    get multiplyN(other)
+    multiplyN(other)
     {
         if (other.isZero())
             return null;//Todo
         return this;
     }
 
-    get divideByN(other)
+    divideByN(other)
     {
-        if (other instanceof self)
+        if (other instanceof Infinity)
             return null;//Todo
         return this;
     }
 
-    get toPowerN(other)
+    toPowerN(other)
     {
         if (other.isZero())
             return null;//Todo
         return this;
     }
 
-    get absSquared()
+    absSquared()
     {
         return new FloatReal(INF);
     }
 
-    get argF()
+    argF()
     {
         return NAN;
     }
 
-    get ausgeben(outerPrecedence = 0)
+    ausgeben(outerPrecedence = 0)
     {
         return "\\infty";
     }
 
-    get inlineAusgeben(outerPrecedence = 0)
+    inlineAusgeben(outerPrecedence = 0)
     {
         return '∞';
     }
@@ -620,126 +623,127 @@ class Infinity extends Numeric {
 
 }
 
-class{
-    get floatValue()  ;
+abstract class Real {
+    abstract floatValue();
 
-    get ausgeben();
-    get inlineAusgeben();
-    get isZero();
-    get isOne();
+    abstract ausgeben();
+    abstract inlineAusgeben();
+    abstract isZero();
+    abstract isOne();
 
-    get equalsR(re);
-    get addR(other);
-    get subtractR(other);
-    get multiplyR(other);
+    abstract equalsR(re);
+    abstract addR(other);
+    abstract subtractR(other);
+    abstract multiplyR(other);
 
-    get divideByR(other);
-    get negativeR();
+    abstract divideByR(other);
+    abstract negativeR();
 
-    get reciprocalR();
+    abstract reciprocalR();
 
-    get ofF(reF){
+    ofF(reF) : Real{
         return (new FloatReal(reF)).simplified();
     }
 
 }
 
-class Float extends Real{
-
+class FloatReal extends Real{
+    value: any;
 
     /**
-     * Floatconstructor. USE ONLY WHEN VALUE IS DEFINITELY NOT RATIONAL, else use Real.ofF-function
-     * @param float value
+     * FloatRealconstructor. USE ONLY WHEN VALUE IS DEFINITELY NOT RATIONAL, else use Real.ofF-function
+     * @param FloatReal value
      */
-    get __construct(value)
+    constructor(value)
     {
+        super();
         this.value = value;
     }
 
-    get ausgeben(){
+    ausgeben(){
         return this.inlineAusgeben();
     }
 
-    get inlineAusgeben()
+    inlineAusgeben()
     {
-        if (self.displayDigits > 0) {
+        if (FloatReal.displayDigits > 0) {
             thousands_sep = '\'';
-            dec_po= commaIsDecimalPo? ',' : '.';
-            return number_format( this.value, self.displayDigits, dec_point, thousands_sep);
+            dec_po= commaIsDecimalPoint ? ',' : '.';
+            return number_format( this.value, FloatReal.displayDigits, dec_point, thousands_sep);
         }
         return this.value;
     }
 
-    get floatValue()
+    floatValue()
     {
         return this.value;
     }
 
-    get isZero()
+    isZero()
     {
         return this.value == 0;
     }
 
-    get isOne()
+    isOne()
     {
         return this.value == 1;
     }
 
-    get equalsR(other)
+    equalsR(other)
     {
-        epsilon = PHP_FLOAT_EPSILON;
+        epsilon = PHP_FloatReal_EPSILON;
         absA = abs(this.value);
-		absB = abs(other.floatValue());
-		diff = abs(this.value - other.floatValue());
+		absB = abs(other.FloatRealValue());
+		diff = abs(this.value - other.FloatRealValue());
 
-		if (this.floatValue() == other.floatValue()) { // shortcut, handles infinities
+		if (this.FloatRealValue() == other.FloatRealValue()) { // shortcut, handles infinities
             return true;
-        } else if (this.floatValue() == 0 || other.floatValue() == 0 || (absA + absB < PHP_FLOAT_MIN)) {
+        } else if (this.FloatRealValue() == 0 || other.FloatRealValue() == 0 || (absA + absB < PHP_FloatReal_MIN)) {
             // a or b is zero or both are extremely close to it
             // relative error is less meaningful here
-            return diff < (epsilon * PHP_FLOAT_MIN);
+            return diff < (epsilon * PHP_FloatReal_MIN);
         } else { // use relative error
-            return diff / min((absA + absB), PHP_FLOAT_MAX) < epsilon;
+            return diff / min((absA + absB), PHP_FloatReal_MAX) < epsilon;
         }
 	}
 
-    get addR(other)
+    addR(other)
     {
-        return new self(this.value + other.floatValue());
+        return new FloatReal(this.value + other.FloatRealValue());
     }
 
-    get subtractR(other)
+    subtractR(other)
     {
-        return new self(this.value - other.floatValue());
+        return new FloatReal(this.value - other.FloatRealValue());
     }
 
-    get multiplyR(other)
+    multiplyR(other)
     {
-        return new self(this.value * other.floatValue());
+        return new FloatReal(this.value * other.FloatRealValue());
     }
 
-    get divideByR(other)
+    divideByR(other)
     {
-        return new self(this.value / other.floatValue());
+        return new FloatReal(this.value / other.FloatRealValue());
     }
 
-    get negativeR()
+    negativeR()
     {
-        return new self(-this.value);
+        return new FloatReal(-this.value);
     }
 
-    get reciprocalR()
+    reciprocalR()
     {
-        return new self(1/this.value);
+        return new FloatReal(1/this.value);
     }
 
-    get simplified()
+    simplified()
     {
-        if(fmod(this.value, 1) == 0.0 && abs(this.value) <= PHP_INT_MAX){
+        if(fmod(this.value, 1) == 0.0 && abs(this.value) <= intmax){
             return RationalReal.of(this.value);
         }
-        //ALGORITHM TO CONVERT FLOAT TO RATIONAL
-        //global floatToRationalTolerance, floatToRationalMaxDen;
+        //ALGORITHM TO CONVERT FloatReal TO RATIONAL
+        //global FloatRealToRationalTolerance, FloatRealToRationalMaxDen;
 
         //Vorkommastellen
         vks = floor(this.value);
@@ -751,7 +755,7 @@ class Float extends Real{
         //letzter / vorletzter , d.h. "vorerster Bruch 1/0"
         oldNum = 1;
         oldDen = 0;
-        while (abs(this.value - num / den) > floatToRationalTolerance) {
+        while (abs(this.value - num / den) > FloatRealToRationalTolerance) {
             zahl = 1 / nks;
             vks = floor(zahl);
             nks = zahl - vks;
@@ -766,7 +770,7 @@ class Float extends Real{
             oldDen = temp;
 
             //Abbrechen bei zu großem Nenner
-            if (den > floatToRationalMaxDen)
+            if (den > FloatRealToRationalMaxDen)
                 return this;
         }
         return new RationalReal(num,den);
@@ -777,17 +781,19 @@ class Float extends Real{
  * Class RationalReal
  * represents a rational number as a reduced fraction with a positve denominator
  */
-class Rational extends Real
+class RationalReal extends Real
 {
-    /*self zero;
-    self one;
+    static zero: RationalReal;
+    static one: RationalReal;
 
-    num;
+    num: Number;
     //denominator is natural number
-    den;*/
+    den: Number;
 
-    get __construct(num, den = 1)
+    constructor( num, den = 1)
     {
+        super();
+        if (!Number.isSafeInteger(num))
         if (den == 0) {
             //TODO alert
            // echo "<br>ALARM! ERROR! Beim Teilen durch 0 überhitzt meine CPU!<br>";
@@ -807,123 +813,123 @@ class Rational extends Real
         this.simplify();
     }
 
-    get ausgeben() 
+    ausgeben() 
     {
         if (this.den == 1 || this.num == 0)
             return this.num;
-        return self.fractionAusgeben(this.num , this.den);
+        return RationalReal.fractionAusgeben(this.num , this.den);
     }
 
-    get inlineAusgeben()
+    inlineAusgeben()
     {
         if (this.den == 1 || this.num == 0)
             return this.num;
         return  this.num + '/' + this.den ;
     }
 
-    get isOne()
+    isOne()
     {
         return this.num == this.den;
     }
 
-    get isZero()
+    isZero()
     {
         return this.num == 0;
     }
 
-    get simplify()
+    simplify()
     {
-        g = self.gcd(this.num,this.den);
+        g = RationalReal.gcd(this.num,this.den);
         this.num = intdiv(this.num, g);
         this.den = intdiv(this.den, g);
     }
 
-    get floatValue()
+    floatValue()
     {
         return this.num / this.den;
     }
 
-    get equalsR(other)
+    equalsR(other)
     {
-        if (other instanceof self){
+        if (other instanceof RationalReal){
             return this.num == other.num && this.den == other.den;
         }
         return other.equalsR(this);
     }
 
-    get addR(other)
+    addR(other)
     {
-        if (other instanceof self) {
+        if (other instanceof RationalReal) {
             //ggT der Nenner
-            g = self.gcd(this.den,other.den);
+            g = RationalReal.gcd(this.den,other.den);
             b = intdiv (this.den, g);
             d = intdiv (other.den, g);
             //this.den * d ist auch der kgV (lcm) der Nenner
-            return new self(this.num * d + other.num * b, this.den * d);
+            return new RationalReal(this.num * d + other.num * b, this.den * d);
 
         }
         else
             return new FloatReal(this.floatValue() + other.floatValue());
     }
 
-    get subtractR(other)
+    subtractR(other)
     {
-        if (other instanceof self) {
-            g = self.gcd(this.den,other.den);
+        if (other instanceof RationalReal) {
+            g = RationalReal.gcd(this.den,other.den);
             b = intdiv (this.den, g);
             d = intdiv (other.den, g);
             //this.den * d ist auch lcm der Nenner
-            return new self(this.num * d - other.num * b, this.den * d);
+            return new RationalReal(this.num * d - other.num * b, this.den * d);
         }
         else
             return new FloatReal(this.floatValue() - other.floatValue());
     }
 
-    get multiplyR(other)
+    multiplyR(other)
     {
-        if (other instanceof self) {
+        if (other instanceof RationalReal) {
             num = this.num * other.num;
             den = this.den * other.den;
             if (is_int(num) && is_int(den))
-                return new self(num, den);
+                return new RationalReal(num, den);
         }
         return new FloatReal(this.floatValue() * other.floatValue());
     }
 
-    get divideByR(other)
+    divideByR(other)
     {
-        if (other instanceof self) {
+        if (other instanceof RationalReal) {
             num = this.num * other.den;
             den = this.den * other.num;
             if (is_int(num) && is_int(den))
-                return new self(num, den);
+                return new RationalReal(num, den);
         }
 
         return new FloatReal(this.floatValue() / other.floatValue());
     }
 
-    get negativeR()
+    negativeR()
     {
-        return new self(-this.num, this.den);
+        return new RationalReal(-this.num, this.den);
     }
 
-    get reciprocalR()
+    reciprocalR()
     {
-        return self.of(this.den,this.num);
+        return RationalReal.of(this.den,this.num);
     }
 
     ////////////////
 
-    get of(num = 0, den = 1)
+    of(num = 0, den = 1)
     {
         if (num == 0)
-            return self.zero;
+            return RationalReal.zero;
         if (num == den)
-            return self.one;
-        return new self(num, den);
+            return RationalReal.one;
+        return new RationalReal(num, den);
     }
 
-    get fractionAusgeben(num, den) {
+    fractionAusgeben(num, den) {
         return "\\frac{" + num +"}{"+ den + "}";
     }
 
@@ -933,7 +939,7 @@ class Rational extends Real
      * @param b only natural numbers
      * @return int
      */
-    get gcd(a, b) {
+    gcd(a, b) {
         do {
             r = a % b;
             a = b;
@@ -948,8 +954,8 @@ class Rational extends Real
      * @param b only natural numbers
      * @return int
      */
-    get lcm(a, b) {
-        return (a * b) / self.gcd(a, b);
+    lcm(a, b) {
+        return (a * b) / RationalReal.gcd(a, b);
     }
 }
 
@@ -957,17 +963,17 @@ class Rational extends Real
 Constant.init();
 class Constant extends Numeric {
     viewName;
-    get __construct(string viewName, float re, float im){
+   constructor(string viewName, float re, float im){
         parent.__construct(re, im);
         this.viewName = viewName;
     }
-    get ausgeben() {
+    ausgeben() {
             return "<mi> this.viewName </mi>";
     }
     /// Element-wise
     /// Static
     allConstants;
-    get init() {
+    init() {
         pi = new Constant("&pi;", pi(), 0);
         self.allConstants = {
             "π" : pi,
@@ -977,10 +983,10 @@ class Constant extends Numeric {
         };
         //echo "Constant init";
     }
-    get ofName(string name) {
+    ofName(string name) {
         return self.allConstants{name};
     }
-    get isConstantName(string name) {
+    isConstantName(string name) {
         return array_key_exists(name, self.allConstants);
     }
 }*/

@@ -1,17 +1,15 @@
+//GLOBAL CONSTANTS
 
 const floatToRationalTolerance: number = 1e-10;
 const floatToRationalMaxDen: number = 100000;
 
-Numeric.init();
-Variable.init();
-
-
+var registeredVariables: object
 // TODO: Auch Operationen müssen, wie Variablen, nur zu Numerics vereinfacht werden dürfen, wenn das gewünscht ist
 // (z.B. Additionen immer erlaubt (oder bei rational plus number nicht), aber Wurzel und ln nicht erlaubt, weil das in Zahlen in mathematischer Notation auch stehen bleibt
 
 // Enter any new Operator here. By default Operators are left-grouping within their precedence class, add key
 // 'rightAssociative' if meant otherwise
-operations = {
+const operations = {
     '+': { 'name': 'Addition', 'arity': 2, 'precedence': 2 },
     '-': { 'name': 'Subtraktion', 'arity': 2, 'precedence': 2 },
     '/': { 'name': 'Division', 'arity': 2, 'precedence': 4 },
@@ -241,10 +239,10 @@ class Variable extends FunktionElement
     derivative() : FunktionElement
     {
         if (self.workVariable == this.name)
-            return Numeric.one();
+            return Numeric.one;
         else if (this.useInner)
             return this.inner.derivative();
-        return Numeric.zero();
+        return Numeric.zero;
     }
 
     ausgeben(outerPrecendence : number = 0) : string    {
@@ -310,13 +308,12 @@ class Variable extends FunktionElement
     /// Static
 
     static init(){
-        global registeredVariables;
         //User kann hier eigene "Null-äre Operationen" enumberragen, d.h. Kurzschreibweisen wie sin(3x^2), oder pi+e (vereinfachbar)
         registeredVariables = {
-            'τ' : new Variable ('τ', new Numeric(new FloatReal(2*pi()))),
-            'e' : new Variable ('e', new Numeric(new FloatReal(2.718281828459045235))),
+            'τ' : new Variable ('τ', new Numeric(new FloatReal(2*Math.PI))),
+            'e' : new Variable ('e', new Numeric(new FloatReal(Math.E))),
             'i' : new Variable ('i', new Numeric(RationalReal.zero, RationalReal.one), true),
-            'φ' : new Variable('φ', Numeric.one() + add(new sqrt(new Numeric(new RationalReal(5)))) + divideBy(Numeric.two()), true)
+            'φ' : new Variable('φ', Numeric.one + add(new sqrt(new Numeric(new RationalReal(5)))) + divideBy(Numeric.two()), true)
         };
         registeredVariables['π'] = new Variable('π', registeredVariables['τ'].divideBy(Numeric.two()), true);
         //TODO tri-Symbol zu Schrift hinzufügen
@@ -374,7 +371,7 @@ class Numeric extends FunktionElement
     }
 
     derivative() : FunktionElement {
-        return Numeric.zero();
+        return Numeric.zero;
     }
 
     simplified(): FunktionElement
@@ -537,7 +534,7 @@ class Numeric extends FunktionElement
 
 }
 
-class Infinity extends Numeric {
+class InfinityNumeric extends Numeric {
     protected constructor()
     {
         super(new FloatReal(NaN), new FloatReal(NaN));
@@ -560,14 +557,14 @@ class Infinity extends Numeric {
 
     addN(other : Numeric): Numeric
     {
-        if (other instanceof self)
+        if (other instanceof InfinityNumeric)
             return null;
         return this;
     }
 
     subtractN(other : Numeric): Numeric
     {
-        if (other instanceof self)
+        if (other instanceof InfinityNumeric)
             return null;//Todo
         return this;
     }
@@ -579,7 +576,7 @@ class Infinity extends Numeric {
 
     reciprocalN()
     {
-        return parent.zero();
+        return Numeric.zero;
     }
 
     multiplyN(other : Numeric): Numeric
@@ -591,7 +588,7 @@ class Infinity extends Numeric {
 
     divideByN(other : Numeric): Numeric
     {
-        if (other instanceof self)
+        if (other instanceof InfinityNumeric)
             return null;//Todo
         return this;
     }
@@ -605,7 +602,7 @@ class Infinity extends Numeric {
 
     absSquared(): Real
     {
-        return new FloatReal(INF);
+        return new FloatReal(Infinity);
     }
 
     argF(): number
@@ -693,17 +690,17 @@ class FloatReal extends Real{
 
     equalsR(other: Real) : boolean
     {
-        epsilon = PHP_FLOAT_EPSILON;
-        absA = abs(this.value);
-		absB = abs(other.floatValue());
-		diff = abs(this.value - other.floatValue());
+        var epsilon = Number.EPSILON;
+        var absA = Math.abs(this.value);
+        var absB = Math.abs(other.floatValue());
+        var	diff = Math.abs(this.value - other.floatValue());
 
 		if (this.floatValue() == other.floatValue()) { // shortcut, handles infinities
             return true;
-        } else if (this.floatValue() == 0 || other.floatValue() == 0 || (absA + absB < PHP_FLOAT_MIN)) {
+        } else if (this.floatValue() == 0 || other.floatValue() == 0 || (absA + absB < Number.MIN_VALUE)) {
             // a or b is zero or both are extremely close to it
             // relative error is less meaningful here
-            return diff < (epsilon * PHP_FLOAT_MIN);
+            return diff < Number.MIN_VALUE;
         } else { // use relative error
             return diff / min((absA + absB), PHP_FLOAT_MAX) < epsilon;
         }
@@ -741,7 +738,7 @@ class FloatReal extends Real{
 
     simplified(): Real
     {
-        if(fmod(this.value, 1) == 0.0 && abs(this.value) <= ){
+        if(fmod(this.value, 1) == 0.0 && Math.abs(this.value) <= ){
             return RationalReal.of((number) this.value);
         }
         //ALGORITHM TO CONVERT FLOAT TO RATIONAL
@@ -756,7 +753,7 @@ class FloatReal extends Real{
         //letzter / vorletzter , d.h. "vorerster Bruch 1/0"
         oldNum = 1;
         oldDen = 0;
-        while (abs(this.value - num / den) > floatToRationalTolerance) {
+        while (Math.abs(this.value - num / den) > floatToRationalTolerance) {
             zahl = 1 / nks;
             vks = floor(zahl);
             nks = zahl - vks;
@@ -961,46 +958,6 @@ class RationalReal extends Real
     }
 }
 
-/*
-Constant.init();
 
-class Constant extends Numeric {
-
-    private viewName;
-
-    protected constructor(string viewName, number re, number im){
-        super(re, im);
-        this.viewName = viewName;
-    }
-
-    ausgeben() {
-            return "<mi> this.viewName </mi>";
-    }
-
-    /// Element-wise
-    /// Static
-
-    private static allConstants;
-
-    static init() {
-        pi = new Constant("&pi;", pi(), 0);
-        self.allConstants = {
-            "π" : pi,
-            "pi" : pi,
-            "e" : new Constant("e", 2.718281828459045235,0),
-            "i" : new Constant("i",0,1)
-        };
-        //result += "Constant init";
-    }
-
-    static ofName(string name) {
-        return self.allConstants[name};
-    }
-
-    static isConstantName(string name) {
-        return array_key_exists(name, self.allConstants);
-    }
-
-}*/
-
-
+Numeric.init();
+Variable.init();
