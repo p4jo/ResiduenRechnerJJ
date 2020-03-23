@@ -1,21 +1,16 @@
 //DIES IST DAS HAUPTSKRIPT
-
-
 /*
 //Wird beim laden der Website aktiviert
 window.addEventListener("load", function () {
-	session_start;
+    session_start;
 });*/
-
-
 var commaIsDecimalPoint = true;
-var registeredVariables : Object;
-var funktion, derivative : EntireFunktion;
-
+var registeredVariables;
 function Ausgabe() {
-    if (formData.loadData) { //Schon geparste Funktion und Ableitung verwenden, mit geänderten Variablen, die entsprechend eingesetzt werden
+    var result = '';
+    if (loadData) {
         for (var key in registeredVariables) {
-            let variable : Variable = registeredVariables[key];
+            var variable = registeredVariables[key];
             //Aktualisieren, wenn geändert
             if (formData["input_" + variable.name] != null &&
                 formData["input_" + variable.name] != ((variable.inner != null) ? variable.inner.inlineAusgeben() : '')) {
@@ -24,26 +19,26 @@ function Ausgabe() {
             variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
             if (variable.useInner())
                 //Debug
-                HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.ausgeben() + "\\) für Variable " + variable.name + "<br>";
+                result += "Eingesetzter Wert \\(" + variable.inner.ausgeben() + "\\) für Variable " + variable.name + "<br>";
         }
+        /*
+        funktion = _SESSION['funktion'];
+        funktionSimplified = _SESSION['funktionSimplified'];
+        derivative = _SESSION['derivative'];
+        derivativeSimplified = _SESSION['derivativeSimplified'];
+        */
     }
-    else { //Funktion neu parsen und keine Variablen einsetzen (außer i)
-        HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
+    else {
+        result += "Keine Variablen außer i werden eingesetzt.<br>";
         Variable.noNumerics = true;
-        let root = Parser.parseStringToFunktionElement(formData["formel"]);
+        root = Parser.parseStringToFunktionElement(formData["formel"]);
         funktion = new EntireFunktion(root, "f");
     }
-
-
-    HTMLoutput += "Eingabe: " + funktion.ausgeben();
-
+    result += "Eingabe: ".funktion.ausgeben();
     funktion = funktion.simplified();
-    HTMLoutput += "Vereinfacht: " + funktion.ausgeben();
-
+    result += "Vereinfacht: ".funktion.ausgeben();
     derivative = funktion.derivative();
-    HTMLoutput += "Abgeleitet: " + derivative.ausgeben();
-
+    result += "Abgeleitet: ".derivative.ausgeben();
     derivative = derivative.simplified();
-    HTMLoutput += "Ableitung Vereinfacht: " + derivative.ausgeben();
-
+    result += "Ableitung Vereinfacht: ".derivative.ausgeben();
 }

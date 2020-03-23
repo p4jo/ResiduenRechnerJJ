@@ -1,13 +1,11 @@
-function VariableList () {
-
+function VariableList() {
     HTMLoutput += "<form><fieldset>";
-
-    var variable : any;
+    var variable;
     for (variable in registeredVariables) {
         var valN = variable.inner;
         var mathOutput = '\textrm{(nicht gesetzt)}';
-        let output = '';
-        if(valN instanceof FunktionElement) {
+        var output = '';
+        if (valN instanceof FunktionElement) {
             mathOutput = valN.ausgeben();
             output = valN.inlineAusgeben();
         }
@@ -18,21 +16,9 @@ function VariableList () {
             <input class='II' type='checkbox' id='check_variable.name'> <br>
             ";
         */
-        HTMLoutput += 
-`\\( variable.name = mathOutput \\)  
-<label> Setzte eigenen Wert: 
-    <input class='II' type='text' id='input_variable.name' value='output' size='20'>. 
-</label> 
-<label>Direkt einsetzen:  
-    <input class='II' type='checkbox' id='check_variable.name' ". (variable.useInner() ? "checked='checked'" : '') .">
-</label>
-    <br>";
-}`;
-
+        HTMLoutput +=
+            "\\( variable.name = mathOutput \\)  \n<label> Setzte eigenen Wert: \n    <input class='II' type='text' id='input_variable.name' value='output' size='20'>. \n</label> \n<label>Direkt einsetzen:  \n    <input class='II' type='checkbox' id='check_variable.name' \". (variable.useInner() ? \"checked='checked'\" : '') .\">\n</label>\n    <br>\";\n}";
     }
-
     HTMLoutput +=
-`</fieldset></form>
-    <Button onclick=\"reloadSecondArea()\"> Aktualisieren </Button>
-`;
+        "</fieldset></form>\n    <Button onclick=\"reloadSecondArea()\"> Aktualisieren </Button>\n";
 }

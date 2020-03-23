@@ -24,10 +24,16 @@ function sendHTMLIntoDiv(htmlCode, outputDiv) {
 function sendInputTroughFunctionIntoDiv(outputFunction : Function, outputDiv, loadData : boolean) {
 
 	formData = {"loadData": loadData};
-	for (var element of document.getElementsByClassName("II"))
-		formData[element.id] = relevantData(element);
+	const interestingInputs = document.getElementsByClassName("II");
+	alert (Object.keys(interestingInputs));
+	for (var index in interestingInputs)
+		formData[interestingInputs[index].id] = relevantData(index); //Hinzufügen
 	
-	sendHTMLIntoDiv(outputFunction(), outputDiv);
+	//PHP-Style: HTMLoutput entspricht dem einer PHP file.
+
+	HTMLoutput = '';
+	outputFunction()
+	sendHTMLIntoDiv(HTMLoutput, outputDiv);
 }
 
 //BUTTON-EVENTS
