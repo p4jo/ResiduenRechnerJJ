@@ -1,4 +1,4 @@
-function in_array (needle, haystack, argStrict) { 
+function inObject (needle, haystack, argStrict = true) { 
 	var key = ''
 	var strict = !!argStrict
   

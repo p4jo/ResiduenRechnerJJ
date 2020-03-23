@@ -24,13 +24,13 @@ class Parser
         'М', 'И', 'Т', 'Ь', 'Б', 'Ю', '\''];
     //TODO: Vervollständigen
     private static namedChars = {'alpha' : 'α', 'beta' : 'β', 'pi' : 'π', 'tri' : 'ш'};
-    private static specialChars;
-    private static leftBraceChars = ['(','[','{','<','«'];
-    private static rightBraceChars = [')',']','}','>','»'];
-    private static braceChars;
-    private static separatorChars = [';'];
-    private static forbiddenToMultiplyWithMeChars;
-    private static forbiddenToMultiplyMeTokens;
+    private static specialChars : string[];
+    private static leftBraceChars : string[] = ['(','[','{','<','«'];
+    private static rightBraceChars : string[] = [')',']','}','>','»'];
+    private static braceChars : string[];
+    private static separatorChars : string[] = [';'];
+    private static forbiddenToMultiplyWithMeChars : string[];
+    private static forbiddenToMultiplyMeTokens : string[];
 
     static init()
     {
@@ -67,7 +67,7 @@ class Parser
             "⌂"
         ].concat( Parser.separatorChars );
         Parser.forbiddenToMultiplyWithMeChars = temp.concat(Parser.rightBraceChars);
-        Parser.forbiddenToMultiplyMeTokens = temp.concat(Parser.leftBraceChars, array_keys(operations));
+        Parser.forbiddenToMultiplyMeTokens = temp.concat(Parser.leftBraceChars, Object.keys(operations));
         Parser.specialChars = temp.concat(Parser.braceChars);
     }
 
@@ -80,10 +80,10 @@ class Parser
         return Parser.parseRPNToFunktionElement(RPN);
     }
 
-    private static tokenize(input : string) : string[]
+    private static tokenize(input : string) : any[]
     {
         //var_dump(input);
-        let tokens = {};
+        let tokens = [];
         for (let i = 0; i < input.length; i++) {
             let chr = input[i];
 
@@ -94,43 +94,42 @@ class Parser
             //WENN der letzte Token kein Operator war, oder eine Klammer zu (also ein Operand)
             //UND der nächste auch kein Operator wird, oder eine Klammer auf (also noch ein Operand);
             //DANN fügt er einen Malpunkt ein.
-            if ( tokens &&
-                !in_array((string) end(tokens), Parser.forbiddenToMultiplyMeTokens) &&
-                !in_array(chr,Parser.forbiddenToMultiplyWithMeChars)) {
+            if ( tokens.length > 0 &&
+                !Parser.forbiddenToMultiplyMeTokens.includes(tokens[tokens.length-1]) &&
+                !Parser.forbiddenToMultiplyWithMeChars.includes(chr)) {
                 //result += "Nach dem Token ".end(tokens).", vor das Zeichen chr setze ich ·<br>";
                 tokens.push("·");
             }
 
 
-            if (in_array(chr, Parser.specialChars)) { //All special characters are single tokens
+            if (inObject(chr, Parser.specialChars)) { //All special characters are single tokens
                 tokens.push(chr);
             }
-            else if (in_array(chr, Parser.numChars)) {
+            else if (inObject(chr, Parser.numChars)) {
                 // entire number as one token
-                number = chr;
-                isnumber = true;
+                let number : string = chr;
+                let isnumber = true;
 
-                while (isset(input[i + 1]) && in_array(input[i + 1], Parser.numChars)) {
+                while (input.length > i + 1 && inObject(input[i + 1], Parser.numChars)) {
 
-                    digit = input[++i}; //erst hier erhöhen
+                    let digit = input[++i]; //erst hier erhöhen
                     if (digit == '.' || digit == ',') {
                         digit = isnumber ? '.' : '';
                         isnumber = false;
                     }
                     if (digit != '\'')
-                        number .= digit;
+                        number += digit;
                 }
-                //tokens.push(isnumber ? numberval(number) : floatval(number)) ;
-                tokens.push(floatval(number));
+                tokens.push(Number.parseFloat(number));
             }
-            else if (in_array(chr, Parser.letterChar)) {
-                text = chr;
-                while (isset(input[i + 1]) && in_array(input[i + 1], Parser.letterChar))
-                    text .= input[++i}; //erst hier erhöhen
-                if (key_exists(text, Parser.namedChars))
-                    tokens.push(Parser.namedChars[text});
+            else if (inObject(chr, Parser.letterChar)) {
+                let text = chr;
+                while (input.length > i + 1 && inObject(input[i + 1], Parser.letterChar))
+                    text += input[++i]; //erst hier erhöhen
+                if (text in Parser.namedChars)
+                    tokens.push(Parser.namedChars[text]);
                 else
-                    //TODO: Hier noch in einzelne Faktoren splitten, falls mehrbuchstabige Variablen nicht erwünscht sind
+                    //TODO: Hier noch in einzelne Faktoren splitten, falls mehrbuchstabige Variablen nicht erwünscht sind. Dann muss auf in Operations geprüft werden
                     tokens.push(text);
             }
             else {
@@ -140,38 +139,36 @@ class Parser
         return tokens;
     }
 
-    private static precedence(string token)
+    private static precedence(token : string) : number
     {
-        global operations;
-        if (isset(operations[token]))
-            return operations[token]['precedence'};
+        if (token in operations)
+            return operations[token]['precedence'];
         //; und ) haben -inf Präzedenz, weil sie alles poppen (auswerten lassen), was davor kam.
         //( hat -inf Präzedenz, weil es bei dem Vorgang nicht gepoppt werden darf (Stopper)
-        return PHP_number_MIN;
+        return -1;
     }
 
-    private static parseTokensToRPN(array tokens) : array
+    private static parseTokensToRPN(tokens : any[]) : string[]
     {
-        global operations;
-        output_queue = array();
-        operator_stack = array();
-        wasOperand = false;
+        let output_queue = [];
+        let operator_stack = [];
+        let wasOperand = false;
 
-        for (j = 0; isset(tokens[j]); j++) {
-            token = tokens[j};
+        for (let j = 0; j in tokens; j++) {
+            let token = tokens[j];
 
-            if (is_float(token)) { //ZAHL
+            if (token instanceof Number) { //ZAHL
                 output_queue.push(token);
                 wasOperand = true;
             }
-            else if (key_exists(token, operations)) { //OPERATOR / Funktion
+            else if (token in operations) { //OPERATOR / Funktion
 
                 //WENN das letzte Token kein Operand war (Eine Operation oder eine Klammer auf, oder einfach der Anfang)
                 //UND dieses Token eine (mindestens) binäre Operation
                 //UND das nächtste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
                 //DANN fügt er einen leeren Operanden ein, der für den entsprechenden Standardwert steht (z.b. neutrales Element).
                 //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) : 0-baum oder /z : 1/z
-                if(!wasOperand && operations[token]['arity'] >= 2 && !(isset(tokens[j+1]) && in_array(tokens[j+1], Parser.leftBraceChars))) {
+                if(!wasOperand && operations[token]['arity'] >= 2 && !(isset(tokens[j+1]) && inObject(tokens[j+1], Parser.leftBraceChars))) {
                     output_queue.push('');
                     HTMLoutput += "leerer Operand wurde eingefügt für token <br>";
                 }
@@ -197,10 +194,10 @@ class Parser
                 operator_stack.push(token);
                 wasOperand = false;
 
-            } else if (in_array(token, Parser.leftBraceChars)) { //LINKE KLAMMER
+            } else if (inObject(token, Parser.leftBraceChars)) { //LINKE KLAMMER
                 operator_stack.push('(');
                 wasOperand = false;
-            } else if (in_array(token, Parser.rightBraceChars)) { //RECHTE KLAMMER
+            } else if (inObject(token, Parser.rightBraceChars)) { //RECHTE KLAMMER
                 // Alles bis zur linken Klammer & die linke Klammer pop-,pushen
                 while (end(operator_stack) !== '(') {
                     output_queue.push(operator_stack.pop();
@@ -214,7 +211,7 @@ class Parser
                 operator_stack.pop();
                 wasOperand = true;
             }
-            else if (in_array(token,Parser.separatorChars)){ //KOMMA / ;
+            else if (inObject(token,Parser.separatorChars)){ //KOMMA / ;
                 // Alles bis zur linken Klammer pop-,pushen
                 if (end(operator_stack) !== '(')
                     output_queue.push('');

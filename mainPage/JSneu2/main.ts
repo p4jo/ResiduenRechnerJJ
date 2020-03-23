@@ -1,11 +1,12 @@
 // DATEN
-
+declare const MathJax;
 var formData : Object;
 var HTMLoutput : string;
 
-function relevantData(element) {
+function relevantData(element) : string | boolean {
 	if (element.type === "text")
-		return element.value !== "" ? element.value : "null";
+	//vielleicht reicht = value
+		return element.value !== "" ? element.value : null;
 	if (element.type === "checkbox")
 		return element.checked;
 	return "nul";
