@@ -1,0 +1,116 @@
+
+class sqrt extends UnaryOperation {
+
+    getValue() : Numeric
+    {
+        return this.op + getValue().sqrtN();
+    }
+
+    ausgeben(outerPrecendence : number = 0) : string {
+        return "\\sqrt{" +  this.op.ausgeben(0) + "}";
+    }
+
+    derivative() : FunktionElement {
+        return this.isConstant() ? Numeric.zero() :  this + op + derivative() + divideBy(Numeric.two() + multiply(this));
+    }
+
+    simplified() : FunktionElement {
+
+        if (this.isNumeric())
+            return this.getValue();
+
+        simplerop = this.op.simplified();
+
+        if(simplerop instanceof Potenz) {
+            //TODO stimmt im komplexen nicht immer
+            simplerop.op2 = simplerop.op2.divideBy(Numeric.two());
+            return simplerop;
+        }
+
+        return new sqrt(simplerop);
+    }
+
+    isNumeric(): boolean
+    {
+        if (! this.op.isNumeric())
+            return false;
+        //TODO: wann nicht vereinfachen für Mathematische Exaktheit
+
+        //result += this.inlineAusgeben() + "=".this.getValue().inlineAusgeben();
+        if (this.getValue().isRational() || ! this.op.getValue().isRational())
+            return true;
+        return false;
+
+    }
+}
+
+class cos extends UnaryOperation {
+
+    derivative(): FunktionElement
+    {
+        return this.isConstant() ? Numeric.zero() : (Numeric.ofF(-1)) + multiply(new sin(this.op)) + multiply(this.op.derivative());
+    }
+
+    getValue() : Numeric
+    {
+        v = this.op.getValue();
+        return Numeric.ofF(cos(v.reF()) * cosh(v.imF()), -sin(v.reF()) * sinh(v.imF()));
+    }
+
+    simplified(): FunktionElement
+    {
+        simpler = new sqrt(this.op.simplified());
+        if (simpler.isNumeric())
+            return simpler.getValue();
+        // TODO: Implement simplify() method.
+        return simpler;
+    }
+}
+
+class sin extends UnaryOperation {
+
+    derivative(): FunktionElement
+    {
+        return this.isConstant() ? Numeric.zero() : (new cos(this.op)) + multiply(this.op.derivative());
+    }
+
+    getValue() : Numeric
+    {
+        v = this.op.getValue();
+        return Numeric.ofF(sin(v.reF()) * cosh(v.imF()), cos(v.reF()) * sinh(v.imF()));
+    }
+
+    simplified(): FunktionElement
+    {
+        simpler = new sqrt(this.op.simplified());
+        if (simpler.isNumeric())
+            return simpler.getValue();
+        // TODO: Implement simplify() method.
+
+        return simpler;
+    }
+}
+
+class ln extends UnaryOperation {
+
+    derivative(): FunktionElement
+    {
+        return this.isConstant() ? Numeric.zero() :  this.op. derivative() + divideBy (this.op);
+    }
+
+    getValue() : Numeric
+    {
+        //Todo Verzweigungsschnitt beachten, vielleicht 2-parametrigen Logarithmus einführen
+        return Numeric.ofF(log(this.op + getValue().absSquaredF()) / 2, this.op.getValue().argF());
+    }
+
+    simplified(): FunktionElement
+    {
+        simpler = new sqrt(this.op.simplified());
+        if (simpler.isNumeric())
+            return simpler.getValue();
+
+        // TODO: Implement simplify() method.
+        return simpler;
+    }
+}
