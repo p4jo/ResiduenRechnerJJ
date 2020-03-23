@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!-- DIES IST DIE TATSÄCHLICH AUFGERUFENE WEBSEITE -->
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Residuenrechner</title>
+        <link rel="stylesheet" type="text/css" href="style.css"/>
+        <link rel="shortcut icon" type="image/icon" href="icon.png"> 
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+        <script language="javascript" type="text/javascript" src="../neu/Utility.js"></script>
+        <script language="javascript" type="text/javascript" src="../neu/main.js"></script>
+		<script language="javascript" type="text/javascript" src="../neu/Ausgabe.js"></script>
+		<script language="javascript" type="text/javascript" src="../neu/EntireFunktion.js"></script>
+		<script language="javascript" type="text/javascript" src="../neu/Classes.js"></script>
+		<script language="javascript" type="text/javascript" src="../neu/ExplicitFunctions.js"></script>
+		<script language="javascript" type="text/javascript" src="../neu/ExplicitOperations.js"></script>
+		<script language="javascript" type="text/javascript" src="../neu/Parser.js"></script>
+        <script language="javascript" type="text/javascript" src="../neu/VariableList.js"></script>
+
+    </head>
+    <body>
+        <h1> Residuenrechner </h1>
+
+        <div id = constDiv>
+            <form>
+                <label> f(
+                <input class="II" type="text" id="workVariable" size="3">
+                ) = <br></label>
+                <input class="II" type="text" id="formel" size="80">
+                <br>
+                <label>
+                <input type="checkbox" checked="checked" class="II" id="cIDP"> , als Dezimaltrenner</label>
+            </form>
+            <br>
+            <button onclick = "funktionSubmit()"> Funktion parsen </button>
+      <!--      <button onclick = "showVariables()"> Variablenliste aktualisieren </button>
+            <button onclick = "mathReload()"> Mathe-Formeln aktualisieren </button>
+-->
+        </div>
+
+        <div id = ausgabe1></div>
+        <div id = ausgabe2></div>
+        <div id = ausgabe3></div>
+<!--
+        <footer>
+            <p>&#x00A9; 2019 jgeigers.de</p>
+            <p class="foot">
+                Diese Website ist noch in Bearbeitung! Einige Funktionen können fehlerhaft sein.
+            </p>
+			<a href="impressum">Impressum</a>
+        </footer>-->
+    </body>
+</html>

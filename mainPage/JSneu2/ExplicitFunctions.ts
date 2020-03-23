@@ -3,15 +3,15 @@ class sqrt extends UnaryOperation {
 
     getValue() : Numeric
     {
-        return this.op + getValue().sqrtN();
+        return this.op.getValue().sqrtN();
     }
 
     ausgeben(outerPrecendence : number = 0) : string {
-        return "\\sqrt{" +  this.op.ausgeben(0) + "}";
+        return "\\sqrt{" +  this.op.ausgeben() + "}";
     }
 
     derivative() : FunktionElement {
-        return this.isConstant() ? Numeric.zero :  this + op + derivative() + divideBy(Numeric.two() + multiply(this));
+        return this.isConstant() ? Numeric.zero :  this . op . derivative() . divideBy(Numeric.two.multiply(this));
     }
 
     simplified() : FunktionElement {
@@ -19,11 +19,11 @@ class sqrt extends UnaryOperation {
         if (this.isNumeric())
             return this.getValue();
 
-        simplerop = this.op.simplified();
+        let simplerop = this.op.simplified();
 
         if(simplerop instanceof Potenz) {
             //TODO stimmt im komplexen nicht immer
-            simplerop.op2 = simplerop.op2.divideBy(Numeric.two());
+            simplerop.op2 = simplerop.op2.divideBy(Numeric.two);
             return simplerop;
         }
 
@@ -48,18 +48,18 @@ class cos extends UnaryOperation {
 
     derivative(): FunktionElement
     {
-        return this.isConstant() ? Numeric.zero : (Numeric.ofF(-1)) + multiply(new sin(this.op)) + multiply(this.op.derivative());
+        return this.isConstant() ? Numeric.zero : (Numeric.ofF(-1)) . multiply(new sin(this.op)) . multiply(this.op.derivative());
     }
 
     getValue() : Numeric
     {
-        v = this.op.getValue();
-        return Numeric.ofF(cos(v.reF()) * cosh(v.imF()), -sin(v.reF()) * sinh(v.imF()));
+        let v = this.op.getValue();
+        return Numeric.ofF(Math.cos(v.reF()) * Math.cosh(v.imF()), -Math.sin(v.reF()) * Math.sinh(v.imF()));
     }
 
     simplified(): FunktionElement
     {
-        simpler = new sqrt(this.op.simplified());
+        let simpler = new sqrt(this.op.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         // TODO: Implement simplify() method.
@@ -71,18 +71,18 @@ class sin extends UnaryOperation {
 
     derivative(): FunktionElement
     {
-        return this.isConstant() ? Numeric.zero : (new cos(this.op)) + multiply(this.op.derivative());
+        return this.isConstant() ? Numeric.zero : (new cos(this.op)) . multiply(this.op.derivative());
     }
 
     getValue() : Numeric
     {
-        v = this.op.getValue();
-        return Numeric.ofF(sin(v.reF()) * cosh(v.imF()), cos(v.reF()) * sinh(v.imF()));
+        let v = this.op.getValue();
+        return Numeric.ofF(Math.sin(v.reF()) * Math.cosh(v.imF()), Math.cos(v.reF()) * Math.sinh(v.imF()));
     }
 
     simplified(): FunktionElement
     {
-        simpler = new sqrt(this.op.simplified());
+        let simpler = new sqrt(this.op.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         // TODO: Implement simplify() method.
@@ -95,18 +95,18 @@ class ln extends UnaryOperation {
 
     derivative(): FunktionElement
     {
-        return this.isConstant() ? Numeric.zero :  this.op. derivative() + divideBy (this.op);
+        return this.isConstant() ? Numeric.zero :  this.op. derivative() . divideBy (this.op);
     }
 
     getValue() : Numeric
     {
         //Todo Verzweigungsschnitt beachten, vielleicht 2-parametrigen Logarithmus einführen
-        return Numeric.ofF(log(this.op + getValue().absSquaredF()) / 2, this.op.getValue().argF());
+        return Numeric.ofF(Math.log(this.op . getValue().absSquaredF()) / 2, this.op.getValue().argF());
     }
 
     simplified(): FunktionElement
     {
-        simpler = new sqrt(this.op.simplified());
+        let simpler = new sqrt(this.op.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
 

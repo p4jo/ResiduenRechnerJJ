@@ -35,12 +35,12 @@ class Parser
     static init()
     {
         if (commaIsDecimalPoint)
-            self.numChars.push(',');
+            Parser.numChars.push(',');
         else {
-            self.separatorChars.push(',');
+            Parser.separatorChars.push(',');
         }
-        self.braceChars = array_merge(self.leftBraceChars, self.rightBraceChars);
-        temp = [
+        Parser.braceChars = Parser.leftBraceChars.concat(Parser.rightBraceChars);
+        let temp = [
             "#",
             "%",
             "&",
@@ -65,31 +65,29 @@ class Parser
             "÷",
             "‼",
             "⌂"
-    ].concat( self.separatorChars );
-        self.forbiddenToMultiplyWithMeChars = array_merge(temp, self.rightBraceChars);
-        self.forbiddenToMultiplyMeTokens = array_merge(temp, self.leftBraceChars, array_keys(operations));
-        self.specialChars = array_merge(temp, self.braceChars);
+        ].concat( Parser.separatorChars );
+        Parser.forbiddenToMultiplyWithMeChars = temp.concat(Parser.rightBraceChars);
+        Parser.forbiddenToMultiplyMeTokens = temp.concat(Parser.leftBraceChars, array_keys(operations));
+        Parser.specialChars = temp.concat(Parser.braceChars);
     }
 
 
-    static parseStringToFunktionElement(string inputStr) {
-        tokens = self.tokenize(inputStr);
-        result += "Tokens: " + implode(" ", tokens) + "<br>";
-        RPN = self.parseTokensToRPN(tokens);
-        result += "RPN: " + implode(" ", RPN) + "<br>";
-        return self.parseRPNToFunktionElement(RPN);
+    static parseStringToFunktionElement(inputStr : string) {
+        let tokens = Parser.tokenize(inputStr);
+        HTMLoutput += "Tokens: " + tokens.join(' ') + "<br>";
+        let RPN = Parser.parseTokensToRPN(tokens);
+        HTMLoutput += "RPN: " + RPN.join(' ') + "<br>";
+        return Parser.parseRPNToFunktionElement(RPN);
     }
 
-    private static tokenize(string inputStr) : array
+    private static tokenize(input : string) : string[]
     {
-        //So muss man splitten, weil str[i] nach bytes geht und von allen 2-Byte Zeichen beide einzeln nimmt,
-        input = preg_split('//u', inputStr, null, PREG_SPLIT_NO_EMPTY);
         //var_dump(input);
-        tokens = {};
-        for (i = 0; isset(input[i]); i++) {
-            chr = input[i};
+        let tokens = {};
+        for (let i = 0; i < input.length; i++) {
+            let chr = input[i];
 
-            if (ctype_space(chr)) {
+            if (chr.trim() === '') {
                 continue;
             }
 
@@ -97,22 +95,22 @@ class Parser
             //UND der nächste auch kein Operator wird, oder eine Klammer auf (also noch ein Operand);
             //DANN fügt er einen Malpunkt ein.
             if ( tokens &&
-                !in_array((string) end(tokens), self.forbiddenToMultiplyMeTokens) &&
-                !in_array(chr,self.forbiddenToMultiplyWithMeChars)) {
+                !in_array((string) end(tokens), Parser.forbiddenToMultiplyMeTokens) &&
+                !in_array(chr,Parser.forbiddenToMultiplyWithMeChars)) {
                 //result += "Nach dem Token ".end(tokens).", vor das Zeichen chr setze ich ·<br>";
                 tokens.push("·");
             }
 
 
-            if (in_array(chr, self.specialChars)) { //All special characters are single tokens
+            if (in_array(chr, Parser.specialChars)) { //All special characters are single tokens
                 tokens.push(chr);
             }
-            else if (in_array(chr, self.numChars)) {
+            else if (in_array(chr, Parser.numChars)) {
                 // entire number as one token
                 number = chr;
                 isnumber = true;
 
-                while (isset(input[i + 1]) && in_array(input[i + 1], self.numChars)) {
+                while (isset(input[i + 1]) && in_array(input[i + 1], Parser.numChars)) {
 
                     digit = input[++i}; //erst hier erhöhen
                     if (digit == '.' || digit == ',') {
@@ -125,18 +123,18 @@ class Parser
                 //tokens.push(isnumber ? numberval(number) : floatval(number)) ;
                 tokens.push(floatval(number));
             }
-            else if (in_array(chr, self.letterChar)) {
+            else if (in_array(chr, Parser.letterChar)) {
                 text = chr;
-                while (isset(input[i + 1]) && in_array(input[i + 1], self.letterChar))
+                while (isset(input[i + 1]) && in_array(input[i + 1], Parser.letterChar))
                     text .= input[++i}; //erst hier erhöhen
-                if (key_exists(text, self.namedChars))
-                    tokens.push(self.namedChars[text});
+                if (key_exists(text, Parser.namedChars))
+                    tokens.push(Parser.namedChars[text});
                 else
                     //TODO: Hier noch in einzelne Faktoren splitten, falls mehrbuchstabige Variablen nicht erwünscht sind
                     tokens.push(text);
             }
             else {
-                result += "Achtung das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)";
+                HTMLoutput += "Achtung das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)";
             }
         }
         return tokens;
@@ -173,22 +171,22 @@ class Parser
                 //UND das nächtste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
                 //DANN fügt er einen leeren Operanden ein, der für den entsprechenden Standardwert steht (z.b. neutrales Element).
                 //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) : 0-baum oder /z : 1/z
-                if(!wasOperand && operations[token]['arity'] >= 2 && !(isset(tokens[j+1]) && in_array(tokens[j+1], self.leftBraceChars))) {
+                if(!wasOperand && operations[token]['arity'] >= 2 && !(isset(tokens[j+1]) && in_array(tokens[j+1], Parser.leftBraceChars))) {
                     output_queue.push('');
-                    result += "leerer Operand wurde eingefügt für token <br>";
+                    HTMLoutput += "leerer Operand wurde eingefügt für token <br>";
                 }
 
 
                 //Operatoren mit engerer Bindung (größerer Präzedenz) werden zuerst ausgeführt, d.h. zuerst auf
                 //die RPN-Warteschlange geschoben. Bei links-Assoziativität (Links-Gruppierung) werden auch gleichrangige
                 //Operatoren, die schon auf dem Operatorstapel sind (weil sie links stehen) zuerst ausgeführt (auf die Queue gelegt)
-                myOP = self.precedence(token);
+                myOP = Parser.precedence(token);
                 while (true)
                 {
                     if (!operator_stack)
                         break;
 
-                    earlierOP = self.precedence(end(operator_stack));
+                    earlierOP = Parser.precedence(end(operator_stack));
                     if (earlierOP > myOP ||
                         (earlierOP == myOP && !isset(operations[end(operator_stack)]['rightAssociative'])))
                         //push higher precedence stuff from stack to output
@@ -199,15 +197,15 @@ class Parser
                 operator_stack.push(token);
                 wasOperand = false;
 
-            } else if (in_array(token, self.leftBraceChars)) { //LINKE KLAMMER
+            } else if (in_array(token, Parser.leftBraceChars)) { //LINKE KLAMMER
                 operator_stack.push('(');
                 wasOperand = false;
-            } else if (in_array(token, self.rightBraceChars)) { //RECHTE KLAMMER
+            } else if (in_array(token, Parser.rightBraceChars)) { //RECHTE KLAMMER
                 // Alles bis zur linken Klammer & die linke Klammer pop-,pushen
                 while (end(operator_stack) !== '(') {
                     output_queue.push(operator_stack.pop();
                     if (!operator_stack) {
-                        result += "Zu wenige öffnende Klammern.<br>";
+                        HTMLoutput += "Zu wenige öffnende Klammern.<br>";
                         //array_pop unten wirft keinen Fehler :)
                         break;
                     }
@@ -216,14 +214,14 @@ class Parser
                 operator_stack.pop();
                 wasOperand = true;
             }
-            else if (in_array(token,self.separatorChars)){ //KOMMA / ;
+            else if (in_array(token,Parser.separatorChars)){ //KOMMA / ;
                 // Alles bis zur linken Klammer pop-,pushen
                 if (end(operator_stack) !== '(')
                     output_queue.push('');
                 while (end(operator_stack) !== '(') {
                     output_queue.push(operator_stack.pop());
                     if (!operator_stack) {
-                        result += "Zu wenige öffnende Klammern.<br>";
+                        HTMLoutput += "Zu wenige öffnende Klammern.<br>";
                         //array_pop unten wirft keinen Fehler :)
                         break;
                     }
@@ -242,7 +240,7 @@ class Parser
              /* if the operator token on the top of the stack is a bracket, then
             there are mismatched parentheses. */
             if (token == '(') {
-                result += "Zu viele öffnende Klammern!<br>";
+                HTMLoutput += "Zu viele öffnende Klammern!<br>";
             }
             else // pop the operator onto the output queue.
                 output_queue.push(token);
@@ -256,18 +254,18 @@ class Parser
     {
         if (!RPNQueue)
             return Numeric.zero;
-        self.stack = array();
+        Parser.stack = array();
         foreach (RPNQueue as token) {
             //result += "Ich verarbeite " + token;
-            funkEl = token === '' ? null : self.parseRPNToFunctionElementnumberernal(token);
-            self.stack.push(funkEl);
+            funkEl = token === '' ? null : Parser.parseRPNToFunctionElementnumberernal(token);
+            Parser.stack.push(funkEl);
             //result += " zu ".get_class(funkEl)."-Element: <math displaystyle='true'>" + funkEl.ausgeben() + "</math><br>";
         }
 
-        result = self.stack.pop();
+        HTMLoutput = Parser.stack.pop();
  //Fehlerbehandlung
-        if (self.stack)
-            result +="HÄ? {"
+        if (Parser.stack)
+            HTMLoutput +="HÄ? {"
                 + implode
                 (", ",
                     array_map (
@@ -275,14 +273,14 @@ class Parser
                         {
                             return a.ausgeben();
                         },
-                    self.stack )
+                    Parser.stack )
                 )
                 + "} is the stack left after parsing RPNQueue: {"
                 +  implode(", ", RPNQueue )
                 + "}<br>"
             ;
 
-        return result;
+        return HTMLoutput;
     }
 
     private static parseRPNToFunctionElementnumberernal(token)
@@ -295,16 +293,16 @@ class Parser
         if (key_exists(token, operations)){
             switch (operations[token]['arity']) {
                 case 1:
-                    return new operations[token]['name'](self.stack.pop());
+                    return new operations[token]['name'](Parser.stack.pop());
                 case 2:
-                    o2 = self.stack.pop();
-                    o1 = self.stack.pop();
+                    o2 = Parser.stack.pop();
+                    o1 = Parser.stack.pop();
                     //result += " {Token ".token ." wird geparst mit <math> ".o1.ausgeben() ."</math> und <math>". o2.ausgeben()."</math>] ";
                     return new operations[token]['name'](o1, o2);
                 default:
                     args = array();
                     for (i = 0; i < operations[token]['arity'}; i++)
-                        args.push(self.stack.pop());
+                        args.push(Parser.stack.pop());
                     return new operations[token]['name'](array_reverse(args));
             }
         }

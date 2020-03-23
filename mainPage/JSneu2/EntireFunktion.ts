@@ -16,7 +16,7 @@ class EntireFunktion
     {
         /*mathvariant=\"bold\"*/
         return "\\( " +
-            this.name + "\\left(\\mathit{" + Variable.workVariable + "}\\right) =  " + this.root.ausgeben(0) + "\\)<br>";
+            this.name + "\\left(\\mathit{" + Variable.workVariable + "}\\right) =  " + this.root.ausgeben() + "\\)<br>";
     }
 
     simplified()

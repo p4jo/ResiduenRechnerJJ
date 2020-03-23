@@ -10,102 +10,80 @@ abstract class AdditionType extends BinaryOperation {
     {
         super(op1 ?? Numeric.zero, op2 ?? Numeric.zero);
     }
- 
-    extractNumeric(output: Numeric) {
-        if(this.op1.isNumeric()) {
-            output = this.op1.getValue();
-            return this.op2;
-        }
-        if(this.op2.isNumeric()) {
-            output = this.op2.getValue();
-            return this.op1;
-        }
-
-        if(this.op1 instanceof AdditionType) {
-            //TOdo Immutable
-            this.op1 = this.op1.extractNumeric(output);
-            //new self(this.op1.extractNumeric(output),this.op2);
-            return this;
-        }
-
-        if(this.op2 instanceof AdditionType) {
-            this.op2 = this.op2.extractNumeric(output);
-            return this;
-        }
-        return this;
-    }
 
     //Mit Multiplizität
-    allSummands() : [Numeric, FunktionElement[]] //Tupel
+    allSummands() : [Numeric, FunktionElement[]] //Tupel  //vielleicht speichern 
     {
-        var output : [Numeric, FunktionElement[]] = [Numeric.zero, []];
+        let numeric = Numeric.zero;
+        let list : FunktionElement[]; 
         if (this.op1.isNumeric()) 
-            output[0] = this.op1.getValue();
+            numeric = this.op1.getValue();
         else if (this.op1 instanceof AdditionType)
-            output = this.op1.allSummands();
+            [numeric, list] = this.op1.allSummands();
         else if (this.op1 instanceof MultiplicationType) {
             var factors = this.op1.allFactors();
             //TODO Rest
-            output.push(factors["REST"], factors[0]);
+            list.push(this.op1);
         }
         //else
           //  output{this.op1, Numeric.one};
 
         if (this.op2.isNumeric()) {
             if (this instanceof Addition)
-                output[0] = output[0] .addN(this.op2.getValue());
+                numeric = numeric.addN(this.op2.getValue());
             else
-                output[0] = output[0] .subtractN(this.op2.getValue());
+                numeric = numeric.subtractN(this.op2.getValue());
         }
         else if (this.op2 instanceof AdditionType) {
             if (this instanceof Addition)
-                output[0] = output[0].addN(this.op2.getValue());
+                numeric = numeric.addN(this.op2.getValue());
             else
-                output[0] = output[0].subtractN(this.op2.getValue());
-            output = array_merge(this.op2.allSummands(), output);
+                numeric = numeric.subtractN(this.op2.getValue());
+            list = list.concat((this.op2 as AdditionType).allSummands()[1]);
         }
         else
-            output.push(this.op2, this instanceof Addition ? Numeric.one : Numeric.one.negativeN());
+            list.push(this.op2);
 
-        return output;
+        return [numeric, list];
     }
 
-    simplify(instance: FunktionElement) : FunktionElement {
+    //Soll allSummands benutzen
+    simplify() : FunktionElement {
 
         //0 kann weg
-        if(instance.op1.isZero()) {
+        if(this.op1.isZero()) {
             if (this instanceof Addition)
-                return instance.op2;
-            return instance;
+                return this.op2;
+            return this;
         }
-        if(instance.op2.isZero()) {
-            return instance.op1;
+        if(this.op2.isZero()) {
+            return this.op1;
         }
-
+/*  TODO 
         //Fall 1
-        if(instance.op2 instanceof AdditionType && instance.op1 + isNumeric()) {
-            result = null;
-            simplerop2 = instance.op2.extractNumeric(result);
+        if(this.op2 instanceof AdditionType && this.op1.isNumeric()) {
+            let result = null;
+            let simplerop2 = this.op2.extractNumeric(result);
             if (result instanceof Numeric && !result.isZero()) {
                 return this instanceof Addition ?
                     //TODO korrigieren, vielleicht wieder aufspalten auf Untertypen
-                    instance.op1.getValue() + addN (result) + add (simplerop2) :
-                    instance.op1.getValue() + subtractN (result) + add (simplerop2);
+                    this.op1.getValue() . addN (result) . add (simplerop2) :
+                    this.op1.getValue() . subtractN (result) . add (simplerop2);
             }
         }
 
         //Fall 2
-        if(instance.op1 instanceof AdditionType && instance.op2 + isNumeric()) {
-            result = null;
-            simplerop1 = instance.op1.extractNumeric(result);
+        if(this.op1 instanceof AdditionType && this.op2 . isNumeric()) {
+            let result = null;
+            let simplerop1 = this.op1.extractNumeric(result);
             if (result instanceof Numeric && !result.isZero()) {
                 return this instanceof Addition ?
-                    instance.op2.getValue() + addN (result) + add (simplerop1) :
-                    instance.op2.getValue() + subtractN (result) + add (simplerop1);
+                    this.op2.getValue() . addN (result) . add (simplerop1) :
+                    this.op2.getValue() . subtractN (result) . add (simplerop1);
             }
         }
-
-        return instance;
+*/
+        return this;
     }
 }
 
@@ -116,7 +94,7 @@ class Addition extends AdditionType {
     }
 
     derivative() : FunktionElement {
-        return this.isConstant() ? Numeric.zero : this.op1.derivative() + add(  this.op2.derivative());
+        return this.isConstant() ? Numeric.zero : this.op1.derivative() . add(  this.op2.derivative());
     }
 
 
@@ -128,17 +106,17 @@ class Addition extends AdditionType {
     simplified(): FunktionElement
     {
         // Todo So sollte jedes Simplified beginnen
-        simpler = new self(this.op1.simplified(), this.op2.simplified());
+        let simpler = new Addition(this.op1.simplified(), this.op2.simplified());
 
         if(simpler.isNumeric()) {
             return simpler.getValue();
         }
         //ENDE so
-        return parent.simplify(simpler);
+        return simpler.simplify();
     }
 }
 
-class Subtraktion extends AdditionType {
+class Subtraction extends AdditionType {
 
     normalInlineAusgeben(left, right)
     {
@@ -157,7 +135,7 @@ class Subtraktion extends AdditionType {
     simplified(): FunktionElement
     {
         // Todo So sollte jedes Simplified beginnen
-        simpler = new self(this.op1.simplified(), this.op2.simplified());
+        let simpler = new Subtraction(this.op1.simplified(), this.op2.simplified());
 
         if(simpler.isNumeric()) {
             return simpler.getValue();
@@ -167,7 +145,7 @@ class Subtraktion extends AdditionType {
         if (simpler.op1.equals(simpler.op2))
             return Numeric.zero;
 
-        return parent.simplify(simpler);
+        return simpler.simplify();
     }
 }
 abstract class MultiplicationType extends BinaryOperation {
@@ -176,9 +154,13 @@ abstract class MultiplicationType extends BinaryOperation {
         super(op1 ?? Numeric.one, op2 ?? Numeric.one);
     }
 
-    allFactors() : array {
-
+    allFactors() : [Numeric, FunktionElement[]] //Tupel  //vielleicht speichern 
+    {
+        //TODO
+        return null;
     }
+
+    //TODO: WIE BEI ADDITION
 }
 
 
@@ -200,25 +182,25 @@ class Multiplikation extends MultiplicationType {
     }
 
     simplified() : FunktionElement {
-        simpler = new self(this.op1.simplified(), this.op2.simplified());
+        let simpler = new Multiplikation(this.op1.simplified(), this.op2.simplified());
 
         if (simpler.isNumeric())
             return simpler.getValue();
 
-        if(simpler.op1 + isNumeric() && simpler.op1.isZero()) {
+        if(simpler.op1 . isNumeric() && simpler.op1.isZero()) {
             return Numeric.zero;
         }
-        if(simpler.op1 + isNumeric() && simpler.op1.isOne()) {
+        if(simpler.op1 . isNumeric() && simpler.op1.isOne()) {
             return simpler.op2;
         }
 
-        if(simpler.op2 + isNumeric() && simpler.op2.isZero()) {
+        if(simpler.op2 . isNumeric() && simpler.op2.isZero()) {
             return Numeric.zero;
         }
-        if(simpler.op2 + isNumeric() && simpler.op2.isOne()) {
+        if(simpler.op2 . isNumeric() && simpler.op2.isOne()) {
             return simpler.op1;
         }
-        //result += "Nichts vereinfacht (multiplikation) <math>" + simpler.ausgeben() + "</math><br>";
+        //result += "Nichts vereinfacht (multiplikation) <math>" . simpler.ausgeben() . "</math><br>";
         //TODO
         return simpler;
     }
@@ -233,17 +215,16 @@ class Division extends MultiplicationType {
 
     constructor(op1, op2){
         super(op1, op2);
-        if(this.op2 + isZero()) {
-            result += "<br>ALARM! ERROR! Beim Teilen durch 0 überhitzt meine CPU!<br>";
-            result += "ich habe das jetzt mal zu einer 1 geändert...<br>";
+        if(this.op2 . isZero()) {
+            HTMLoutput += "<br>ALARM! ERROR! Beim Teilen durch 0 überhitzt meine CPU!<br>";
+            HTMLoutput += "ich habe das jetzt mal zu einer 1 geändert...<br>";
             this.op2 = Numeric.one;
         }
     }
 
     //Nur wegen Ausnahme bei Bruchstrich + Keine Klammern
-    ausgeben(outerPrecendence : number = 0) : string    {
-        innerPrec = this.precedence();
-        if (outerPrecedence > innerPrec)
+    ausgeben(outerPrecedence : number = 0) : string {
+        if (outerPrecedence > this.precedence())
             return "\\left(" + this.normalAusgeben(this.op1.ausgeben(), this.op2.ausgeben()) + "\\right)";
         return this.normalAusgeben(this.op1.ausgeben(), this.op2.ausgeben());
     }
@@ -259,11 +240,11 @@ class Division extends MultiplicationType {
     }
 
     derivative() : FunktionElement {
-        return this.isConstant() ? Numeric.zero : new Division(new Subtraktion(new Multiplikation(this.op1.derivative(), this.op2), new Multiplikation(this.op1, this.op2.derivative())), new Potenz(this.op2, Numeric.ofF(2)));
+        return this.isConstant() ? Numeric.zero : new Division(new Subtraction(new Multiplikation(this.op1.derivative(), this.op2), new Multiplikation(this.op1, this.op2.derivative())), new Potenz(this.op2, Numeric.ofF(2)));
     }
 
     simplified() : FunktionElement {
-        simpler = new self(this.op1.simplified(), this.op2.simplified());
+        let simpler = new Division(this.op1.simplified(), this.op2.simplified());
 
         if (simpler.isNumeric())
             return simpler.getValue();
@@ -287,8 +268,8 @@ class Potenz extends BinaryOperation {
 
 
     //Nur wegen Ausnahme bei Hochstellung + Keine Klammer
-    ausgeben(outerPrecendence : number = 0) : string    {
-        innerPrec = this.precedence();
+    ausgeben(outerPrecedence : number = 0) : string    {
+        let innerPrec = this.precedence();
         if (outerPrecedence > innerPrec)
             return "\\left(" + this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben()) + "\\right)";
         return this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben());
@@ -307,22 +288,22 @@ class Potenz extends BinaryOperation {
 
     derivative() : FunktionElement {
         if (this.isConstant())  return Numeric.zero;
-        if (this.op2 + isConstant()) {
-            return this.op2 + multiply(this.op1 + toPower(this.op2.subtract(Numeric.one))) + multiply(this.op1.derivative());
-        } else if(this.op1 + equals(Variable.ofName('e'))) {
+        if (this.op2 . isConstant()) {
+            return this.op2 . multiply(this.op1 . toPower(this.op2.subtract(Numeric.one))) . multiply(this.op1.derivative());
+        } else if(this.op1 . equals(Variable.ofName('e'))) {
             return this.op2.derivative() .multiply (this);
-        } else if(this.op1 + isConstant()) {
-            return this.op2.derivative() + multiply(new ln(this.op1)) .multiply (this);
+        } else if(this.op1 . isConstant()) {
+            return this.op2.derivative() . multiply(new ln(this.op1)) .multiply (this);
         } else {
             return this.multiply(
-                (new ln(this.op1)).multiply(this.op2.derivative()) + add(
+                (new ln(this.op1)).multiply(this.op2.derivative()) . add(
                 this.op1.derivative().divideBy(this.op1).multiply(this.op2))
             );
         }
     }
 
     simplified() : FunktionElement {
-        simpler = new self(this.op1.simplified(), this.op2.simplified());
+        let simpler = new Potenz(this.op1.simplified(), this.op2.simplified());
 
         if(simpler.isNumeric()) {
             return simpler.getValue();
@@ -342,6 +323,6 @@ class Potenz extends BinaryOperation {
 
     getValue() : Numeric
     {
-        return this.op1.getValue() + toPowerN( this.op2.getValue());
+        return this.op1.getValue() . toPowerN( this.op2.getValue());
     }
 }
