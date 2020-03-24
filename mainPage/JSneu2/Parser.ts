@@ -110,7 +110,7 @@ class Parser
                 let number : string = chr;
                 let isInt = true;
 
-                while (input.length > i + 1 && inObject(input[i + 1], Parser.numChars)) {
+                while (input.length > i + 1 && Parser.numChars.includes(input[i + 1])) {
 
                     let digit = input[++i]; //erst hier erhöhen
                     if (digit == '.' || digit == ',') {
@@ -122,9 +122,9 @@ class Parser
                 }
                 tokens.push(parseFloat(number));
             }
-            else if (inObject(chr, Parser.letterChar)) {
+            else if (Parser.letterChar.includes(chr)) {
                 let text = chr;
-                while (input.length > i + 1 && inObject(input[i + 1], Parser.letterChar))
+                while (input.length > i + 1 && Parser.letterChar.includes(input[i + 1]))
                     text += input[++i]; //erst hier erhöhen
                 if (text in Parser.namedChars)
                     tokens.push(Parser.namedChars[text]);
@@ -168,7 +168,7 @@ class Parser
                 //UND das nächste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
                 //DANN fügt er einen leeren Operanden ein, der für den entsprechenden Standardwert steht (z.b. neutrales Element).
                 //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) : 0-baum oder /z : 1/z
-                if(!wasOperand && operations[token]['arity'] >= 2 && !(j+1 in tokens && inObject(tokens[j+1], Parser.leftBraceChars))) {
+                if(!wasOperand && operations[token]['arity'] >= 2 && !(j+1 in tokens && Parser.leftBraceChars.includes(tokens[j+1]))) {
                     output_queue.push('');
                     HTMLoutput += "leerer Operand wurde eingefügt für token <br>";
                 }
@@ -194,10 +194,10 @@ class Parser
                 operator_stack.push(token);
                 wasOperand = false;
 
-            } else if (inObject(token, Parser.leftBraceChars)) { //LINKE KLAMMER
+            } else if (Parser.leftBraceChars.includes(token)) { //LINKE KLAMMER
                 operator_stack.push('(');
                 wasOperand = false;
-            } else if (inObject(token, Parser.rightBraceChars)) { //RECHTE KLAMMER
+            } else if (Parser.rightBraceChars.includes(token)) { //RECHTE KLAMMER
                 // Alles bis zur linken Klammer & die linke Klammer pop-,pushen
                 while (operator_stack[operator_stack.length-1] !== '(') {
                     output_queue.push(operator_stack.pop());
@@ -211,7 +211,7 @@ class Parser
                 operator_stack.pop();
                 wasOperand = true;
             }
-            else if (inObject(token,Parser.separatorChars)){ //KOMMA / ;
+            else if (Parser.separatorChars.includes(token)) { //KOMMA / ;
                 // Alles bis zur linken Klammer pop-,pushen
                 if (operator_stack[operator_stack.length-1] !== '(')
                     output_queue.push('');
@@ -255,7 +255,7 @@ class Parser
         for (var index in RPNQueue) {
             let token = RPNQueue[index];
             //HTMLoutput += "Ich verarbeite " + token;
-            let funkEl = token === '' ? null : Parser.parseRPNToFunctionElementinternal(token);
+            let funkEl = token === '' ? null : Parser.parseRPNToFunctionElementInternal(token);
             Parser.stack.push(funkEl);
             //HTMLoutput += " zu ".get_class(funkEl)."-Element: <math displaystyle='true'>" + funkEl.ausgeben() + "</math><br>";
         }
@@ -264,7 +264,7 @@ class Parser
  //Fehlerbehandlung
         if (Parser.stack.length > 0)
             HTMLoutput += "HÄ? {"
-                + Parser.stack.map(a =>  a.ausgeben()).join(', ')                
+                + Parser.stack.map(a =>  a.display()).join(', ')                
                 + "} is the stack left after parsing RPNQueue: {"
                 +  RPNQueue.join(', ')
                 + "}<br>"
@@ -273,34 +273,31 @@ class Parser
         return result;
     }
 
-    private static parseRPNToFunctionElementinternal(token)
-    {
-
-        if (typeof token == "number")
-            return Numeric.ofF(token);
-        //alert("typeof " + token + "is not number");
-        if (token in operations){
-            switch (operations[token]['arity']) {
-                case 1:
-                    let op = Parser.stack.pop();
-                    //instantiates new Object of the type named = value of (operations[token]['name'])
-                    return new globalThis[operations[token]['name']](op);
-                case 2:
-                    let o2 = Parser.stack.pop();
-                    let o1 = Parser.stack.pop();
-                    return new globalThis[operations[token]['name']](o1,o2);
+        static parseRPNToFunctionElementInternal(token) {
+            if (typeof token == "number")
+                return Numeric.ofF(token);
+            //alert("typeof " + token + "is not number");
+            if (token in operations) {
+                switch (operations[token]['arity']) {
+                    case 1:
+                        let op = Parser.stack.pop();
+                        //instantiates new Object of the type named = value of (operations[token]['name'])
+                        return new Function('a', "return new " + [operations[token]['name']] + "(a);") (op);
+                    case 2:
+                        let o2 = Parser.stack.pop();
+                        let o1 = Parser.stack.pop();
+                        return new Function('a', 'b', "return new " + [operations[token]['name']] + "(a, b);") (o1, o2);
                     //result += " {Token ".token ." wird geparst mit <math> ".o1.ausgeben() ."</math> und <math>". o2.ausgeben()."</math>] ";
-                default:
-                    let args = [];
-                    for (let i = 0; i < operations[token]['arity']; i++)
-                        args.push(Parser.stack.pop());
-                    return new globalThis[operations[token]['name']](args.reverse);
+                    default:
+                        let args = [];
+                        for (let i = 0; i < operations[token]['arity']; i++)
+                            args.push(Parser.stack.pop());
+                        return new Function('a', "return new " + [operations[token]['name']] + "(a);") (args.reverse());
+                }
             }
+            else
+                return Variable.ofName(token);
         }
-        else
-            return Variable.ofName(token);
-    }
-
 }
 
 

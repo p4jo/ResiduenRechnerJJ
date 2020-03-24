@@ -1,7 +1,9 @@
 //GLOBAL CONSTANTS
 
-const floatToRationalTolerance: number = 1e-10;
-const floatToRationalMaxDen: number = 100000;
+const floatToRationalTolerance: number = Number.EPSILON;
+const floatToRationalMaxDen: number = 100000;    
+const displayDigits : number = 30;
+
 
 var registeredVariables: Object;
 // TODO: Auch Operationen müssen, wie Variablen, nur zu Numerics vereinfacht werden dürfen, wenn das gewünscht ist
@@ -35,8 +37,8 @@ const operations = {
  * Class FunktionElement: IMMUTABLE
  */
 abstract class FunktionElement {
-    abstract ausgeben(outerPrecedence? : number): string;
-    abstract inlineAusgeben(outerPrecedence?: number): string;
+    abstract display(outerPrecedence? : number): string;
+    abstract displayInline(outerPrecedence?: number): string;
 
     abstract derivative() : FunktionElement;
 
@@ -129,9 +131,9 @@ abstract class Operation extends FunktionElement {
         return result;
     }
 
-    ausgeben(outerPrecendence : number = 0) : string    {
+    display(outerPrecendence : number = 0) : string    {
         return "\\mathrm{" + this.constructor.name + "}\\left(" +
-        this.op.map(a => a.ausgeben()).join(', ') + "\\right)";
+        this.op.map(a => a.display()).join(', ') + "\\right)";
     }
 
 }
@@ -156,15 +158,15 @@ abstract class UnaryOperation extends FunktionElement {
         return this.op.isConstant();
     }
 
-    ausgeben(outerPrecedence : number = 0) : string //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
+    display(outerPrecedence : number = 0) : string //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
     {
         //ausgeben gibt mit Klammern aus
-        return "\\mathrm{" + this.constructor.name  + "}\\left(" + this.op.ausgeben() + '\\right)';
+        return "\\mathrm{" + this.constructor.name  + "}\\left(" + this.op.display() + '\\right)';
     }
 
-    inlineAusgeben(outerPrecedence : number = 0) : string //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
+    displayInline(outerPrecedence : number = 0) : string //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
     {
-        return this.constructor.name + '('  + this.op.inlineAusgeben() + ")";
+        return this.constructor.name + '('  + this.op.displayInline() + ")";
     }
 
 }
@@ -191,25 +193,25 @@ abstract class BinaryOperation extends FunktionElement  {
         return this.op1.isConstant() && this.op2.isConstant();
     }
 
-    ausgeben(outerPrecedence : number = 0) : string    {
+    display(outerPrecedence : number = 0) : string    {
         var innerPrec = this.precedence();
         if (outerPrecedence > innerPrec)
-            return "\\left(" + this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben(innerPrec)) + "\\right)";
-        return this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben(innerPrec));
+            return "\\left(" + this.displayNormally(this.op1.display(innerPrec), this.op2.display(innerPrec)) + "\\right)";
+        return this.displayNormally(this.op1.display(innerPrec), this.op2.display(innerPrec));
     }
 
-    normalAusgeben(left,right){
-        return this.normalInlineAusgeben(left,right);
+    displayNormally(left,right){
+        return this.diplayInlineNormally(left,right);
     }
 
-    inlineAusgeben(outerPrecedence : number = 0) : string    {
+    displayInline(outerPrecedence : number = 0) : string    {
         var innerPrec = this.precedence();
         if (outerPrecedence > innerPrec)
-            return "(" + this.normalInlineAusgeben(this.op1.inlineAusgeben(innerPrec), this.op2.inlineAusgeben(innerPrec)) + ")";
-        return this.normalInlineAusgeben(this.op1.inlineAusgeben(innerPrec), this.op2.inlineAusgeben(innerPrec));
+            return "(" + this.diplayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec)) + ")";
+        return this.diplayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec));
     }
 
-    abstract normalInlineAusgeben(left, right);
+    abstract diplayInlineNormally(left, right);
 
     precedence() : number { return 3; }
 
@@ -217,7 +219,7 @@ abstract class BinaryOperation extends FunktionElement  {
 
 class Variable extends FunktionElement
 {
-    static noNumerics : boolean = false;
+    static activateInner : boolean = true;
     static workVariable : string = '';
 
     name : string;
@@ -241,17 +243,17 @@ class Variable extends FunktionElement
         return Numeric.zero;
     }
 
-    ausgeben(outerPrecendence : number = 0) : string    {
+    display(outerPrecendence : number = 0) : string    {
         return this.isConstant()
                 ?(this.isNumeric()
-                    ? this.inner.getValue().ausgeben()
+                    ? this.inner.getValue().display()
                     : (this.useInner()
                         ? "\\mathbf{" + this.name + '}'
                         : "" + this.name ))
                 :"\\mathit{" + this.name + "}" ;
     }
 
-    inlineAusgeben(outerPrecedence : number= 0) : string    {
+    displayInline(outerPrecedence : number= 0) : string    {
         return this.name;
     }
 
@@ -273,8 +275,10 @@ class Variable extends FunktionElement
     {
         if (this.inner === null)
             return false;
-        if (Variable.noNumerics)
+        //alert("inner is not null on " + this.name);
+        if (!Variable.activateInner)
             return this.name == 'i';
+        //alert("nonumerics is false")
         return this.useinner;
     }
 
@@ -311,7 +315,7 @@ class Variable extends FunktionElement
             'τ' : new Variable ('τ', new Numeric(new FloatReal(2*Math.PI))),
             'e' : new Variable ('e', new Numeric(new FloatReal(Math.E))),
             'i' : new Variable ('i', new Numeric(RationalReal.zero, RationalReal.one), true),
-            'φ' : new Variable ('φ', Numeric.one . add(new sqrt(new Numeric(new RationalReal(5)))) . divideBy(Numeric.two), true)
+            'φ' : new Variable ('φ', Numeric.one . add(new sqrt(new Numeric(new RationalReal(5)))) . divideBy(Numeric.two))
         };
         registeredVariables['π'] = new Variable('π', registeredVariables['τ'].divideBy(Numeric.two), true);
         //TODO tri-Symbol zu Schrift hinzufügen
@@ -349,23 +353,23 @@ class Numeric extends FunktionElement
         this.im = im ?? RationalReal.zero;
     }
 
-    ausgeben(outerPrecendence : number = 0) : string {
+    display(outerPrecendence : number = 0) : string {
         if (this.im.isZero())
-            return this.re.ausgeben();
+            return this.re.display();
         if (this.re.isZero())
             if (this.im.isOne())
                 return "i";
             else
-                return this.im.ausgeben() + "i";
-        return "\\left[" + this.re.ausgeben() + " + " + this.im.ausgeben() + "i\\right]";
+                return this.im.display() + "i";
+        return "\\left[" + this.re.display() + " + " + this.im.display() + "i\\right]";
     }
 
-    inlineAusgeben(outerPrecendence : number = 0) : string {
+    displayInline(outerPrecendence : number = 0) : string {
         if (this.im.isZero())
-            return this.re.inlineAusgeben();
+            return this.re.displayInline();
         if (this.re.isZero())
-            return this.im.inlineAusgeben() + "i";
-        return "[" + this.re.inlineAusgeben() + " + " + this.im.inlineAusgeben() + "i]";
+            return this.im.displayInline() + "i";
+        return "[" + this.re.displayInline() + " + " + this.im.displayInline() + "i]";
     }
 
     derivative() : FunktionElement {
@@ -590,12 +594,12 @@ class InfinityNumeric extends Numeric {
         return NaN;
     }
 
-    ausgeben(outerPrecendence : number = 0): string
+    display(outerPrecendence : number = 0): string
     {
         return "\\infty";
     }
 
-    inlineAusgeben(outerPrecendence : number = 0): string
+    displayInline(outerPrecendence : number = 0): string
     {
         return '∞';
     }
@@ -606,8 +610,8 @@ class InfinityNumeric extends Numeric {
 abstract class Real {
     abstract floatValue() : number ;
 
-    abstract ausgeben() : string ;
-    abstract inlineAusgeben() : string ;
+    abstract display() : string ;
+    abstract displayInline() : string ;
     abstract isZero() : boolean ;
     abstract isOne() : boolean ;
 
@@ -624,13 +628,33 @@ abstract class Real {
      * Returns new Real number. If it is very close to a rational number with limited denominator it is simplified to a RationalReal
      */
     static ofF(reF : number){
-        return (new FloatReal(reF)).simplified();
+        
+        //ALGORITHM TO CONVERT FLOAT TO RATIONAL
+
+        let zahl : number = reF, vks : number, nks : number, num : number = 1, den : number = 0, oldNum : number = 0, oldDen : number = 1;
+        do {
+            //Vorkommastellen
+            vks = Math.floor(zahl);
+            //Nachkommastellen
+            nks = zahl - vks;
+
+            //Zähler und Nenner auf vks mal den letzten, plus den vorletzten (Z|N) setzen
+            [num, oldNum] = [vks * num + oldNum, num];
+
+            [den, oldDen] = [vks * den + oldDen, den];
+
+            //Abbrechen bei zu großem Nenner
+            if (den > floatToRationalMaxDen)
+                return new FloatReal(reF);
+            
+            zahl = 1 / nks;
+        }  while (Math.abs(reF - num / den) > floatToRationalTolerance)
+        return RationalReal.of(num,den);
     }
 
 }
 
 class FloatReal extends Real{
-    static displayDigits : number = 30;
     value : number = 0.0;
 
     /**
@@ -642,14 +666,19 @@ class FloatReal extends Real{
         this.value = value;
     }
 
-    ausgeben() : string {
-        return this.inlineAusgeben();
+    display() : string {
+        return this.displayInline();
     }
 
-    inlineAusgeben(): string
+    displayInline(): string
     {
-        if (FloatReal.displayDigits > 0) {
-            return this.value.toLocaleString(commaIsDecimalPoint ? 'en-us' : 'de-de').substring(0,FloatReal.displayDigits);
+        if (displayDigits > 0) {
+            /*
+            let thousands_sep = '\'';
+            let dec_point = commaIsDecimalPoint ? ',' : '.';
+            return number_format( this.value, displayDigits, dec_point, thousands_sep);
+            */
+            return this.value.toLocaleString(commaIsDecimalPoint ? 'en-us' : 'de-de', {minimumFractionDigits: 0, maximumFractionDigits: displayDigits});
         }
         return this.value.toString();
     }
@@ -689,22 +718,22 @@ class FloatReal extends Real{
 
     addR(other: Real) : Real
     {
-        return new FloatReal(this.value + other.floatValue());
+        return Real.ofF(this.value + other.floatValue());
     }
 
     subtractR(other: Real) : Real
     {
-        return new FloatReal(this.value - other.floatValue());
+        return Real.ofF(this.value - other.floatValue());
     }
 
     multiplyR(other: Real) : Real
     {
-        return new FloatReal(this.value * other.floatValue());
+        return Real.ofF(this.value * other.floatValue());
     }
 
     divideByR(other: Real) : Real
     {
-        return new FloatReal(this.value / other.floatValue());
+        return Real.ofF(this.value / other.floatValue());
     }
 
     negativeR() : Real
@@ -717,44 +746,6 @@ class FloatReal extends Real{
         return new FloatReal(1/this.value);
     }
 
-    simplified(): Real
-    {
-        //if(this.value % 1 == 0.0 && Math.abs(this.value) <= Number.MAX_SAFE_INTEGER){
-        if (Number.isInteger(this.value)) {
-            return RationalReal.of(this.value);
-        }
-        //ALGORITHM TO CONVERT FLOAT TO RATIONAL
-
-        //Vorkommastellen
-        var vks = Math.floor(this.value);
-        //Nachkommastellen (jetztiger / letzter)
-        var nks = this.value - vks;
-        //jetztiger / letzter , d.h. erster Bruch ist einfach der Ganzzahlteil der Zahl/1
-        var num = vks;
-        var den = 1;
-        //letzter / vorletzter , d.h. "vorerster Bruch 1/0"
-        var oldNum = 1;
-        var oldDen = 0;
-        while (Math.abs(this.value - num / den) > floatToRationalTolerance) {
-            var zahl = 1 / nks;
-            vks = Math.floor(zahl);
-            nks = zahl - vks;
-
-            //Zähler und Nenner auf vks mal den letzten, plus den vorletzten (Z|N) setzen
-            var temp = num;
-            num = vks * num + oldNum;
-            oldNum = temp;
-
-            temp = den;
-            den = vks * den + oldDen;
-            oldDen = temp;
-
-            //Abbrechen bei zu großem Nenner
-            if (den > floatToRationalMaxDen)
-                return this;
-        }
-        return new RationalReal(num,den);
-    }
 }
 
 /**
@@ -791,14 +782,14 @@ class RationalReal extends Real
         this.simplify();
     }
 
-    ausgeben() : string
+    display() : string
     {
         if (this.den == 1 || this.num == 0)
             return this.num.toString();
         return RationalReal.fractionAusgeben(this.num, this.den);
     }
 
-    inlineAusgeben(): string
+    displayInline(): string
     {
         if (this.den == 1 || this.num == 0)
             return this.num.toString();

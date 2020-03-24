@@ -8,23 +8,17 @@ function VariableList () {
         let mathOutput = '\\textrm{(nicht gesetzt)}';
         let output = '';
         if(valN instanceof FunktionElement) {
-            mathOutput = valN.ausgeben();
-            output = valN.inlineAusgeben();
+            mathOutput = valN.display();
+            output = valN.displayInline();
         }
-        /*
-        HTMLoutput += "<a> <math> <mi> variable.name </mi> = ". valN.ausgeben() ."</math>. Setzte eigenen Wert: <a>
-            <input class='II' type='text' id='input_variable.name' value='reF' size='8'> <a> + </a>
-            <input class='II' type='text' id='input_variable.name' value='imF' size='8'> <a>i. Direkt einsetzen: </a>
-            <input class='II' type='checkbox' id='check_variable.name'> <br>
-            ";
-        */
+        let temp = variable.useInner() ? "checked='checked'" : '';
         HTMLoutput += 
 `\\( ${variable.name} = ${mathOutput} \\)  
 <label> Setzte eigenen Wert: 
     <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
 </label> 
 <label>Direkt einsetzen:  
-    <input class='II' type='checkbox' id='check_${variable.name}' ${variable.useInner() ? "checked='checked'" : '' }">
+    <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
 </label>
     <br>`;
 

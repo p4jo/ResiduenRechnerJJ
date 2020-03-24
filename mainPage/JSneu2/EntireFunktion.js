@@ -1,21 +1,18 @@
-var EntireFunktion = /** @class */ (function () {
-    function EntireFunktion(inner, name) {
-        if (name === void 0) { name = 'f'; }
+class EntireFunktion {
+    constructor(inner, name = 'f') {
         this.inner = inner;
         this.name = name;
     }
-    EntireFunktion.prototype.ausgeben = function () {
+    display() {
         /*mathvariant=\"bold\"*/
-        dump(this);
         return "\\( " +
-            this.name + "\\left(\\mathit{" + Variable.workVariable + "}\\right) =  " + this.inner.ausgeben() + "\\)<br>";
-    };
-    EntireFunktion.prototype.simplified = function () {
+            this.name + "\\left(\\mathit{" + Variable.workVariable + "}\\right) =  " + this.inner.display() + "\\)<br>";
+    }
+    simplified() {
         //muss vielleicht so oft wiederholt werden, bis sich nichts mehr ändert
         return new EntireFunktion(this.inner.simplified(), this.name);
-    };
-    EntireFunktion.prototype.derivative = function () {
+    }
+    derivative() {
         return new EntireFunktion(this.inner.derivative(), this.name + "'");
-    };
-    return EntireFunktion;
-}());
+    }
+}

@@ -1,33 +1,18 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var AdditionType = /** @class */ (function (_super) {
-    __extends(AdditionType, _super);
-    function AdditionType(op1, op2) {
-        return _super.call(this, op1 !== null && op1 !== void 0 ? op1 : Numeric.zero, op2 !== null && op2 !== void 0 ? op2 : Numeric.zero) || this;
-    }
-    AdditionType.prototype.precedence = function () {
+class AdditionType extends BinaryOperation {
+    precedence() {
         return 2;
-    };
+    }
+    constructor(op1, op2) {
+        super(op1 ?? Numeric.zero, op2 ?? Numeric.zero);
+    }
     //Mit Multiplizität
-    AdditionType.prototype.allSummands = function () {
-        var _a;
-        var numeric = Numeric.zero;
-        var list;
+    allSummands() {
+        let numeric = Numeric.zero;
+        let list;
         if (this.op1.isNumeric())
             numeric = this.op1.getValue();
         else if (this.op1 instanceof AdditionType)
-            _a = this.op1.allSummands(), numeric = _a[0], list = _a[1];
+            [numeric, list] = this.op1.allSummands();
         else if (this.op1 instanceof MultiplicationType) {
             var factors = this.op1.allFactors();
             //TODO Rest
@@ -51,9 +36,9 @@ var AdditionType = /** @class */ (function (_super) {
         else
             list.push(this.op2);
         return [numeric, list];
-    };
+    }
     //Soll allSummands benutzen
-    AdditionType.prototype.simplify = function () {
+    simplify() {
         //0 kann weg
         if (this.op1.isZero()) {
             if (this instanceof Addition)
@@ -88,51 +73,41 @@ var AdditionType = /** @class */ (function (_super) {
                 }
         */
         return this;
-    };
-    return AdditionType;
-}(BinaryOperation));
-var Addition = /** @class */ (function (_super) {
-    __extends(Addition, _super);
-    function Addition() {
-        return _super !== null && _super.apply(this, arguments) || this;
     }
-    Addition.prototype.normalInlineAusgeben = function (left, right) {
+}
+class Addition extends AdditionType {
+    diplayInlineNormally(left, right) {
         return left + " + " + right;
-    };
-    Addition.prototype.derivative = function () {
+    }
+    derivative() {
         return this.isConstant() ? Numeric.zero : this.op1.derivative().add(this.op2.derivative());
-    };
-    Addition.prototype.getValue = function () {
+    }
+    getValue() {
         return this.op1.getValue().addN(this.op2.getValue());
-    };
-    Addition.prototype.simplified = function () {
+    }
+    simplified() {
         // Todo So sollte jedes Simplified beginnen
-        var simpler = new Addition(this.op1.simplified(), this.op2.simplified());
+        let simpler = new Addition(this.op1.simplified(), this.op2.simplified());
         if (simpler.isNumeric()) {
             return simpler.getValue();
         }
         //ENDE so
         return simpler.simplify();
-    };
-    return Addition;
-}(AdditionType));
-var Subtraction = /** @class */ (function (_super) {
-    __extends(Subtraction, _super);
-    function Subtraction() {
-        return _super !== null && _super.apply(this, arguments) || this;
     }
-    Subtraction.prototype.normalInlineAusgeben = function (left, right) {
+}
+class Subtraction extends AdditionType {
+    diplayInlineNormally(left, right) {
         return left + '-' + right;
-    };
-    Subtraction.prototype.derivative = function () {
+    }
+    derivative() {
         return this.isConstant() ? Numeric.zero : this.op1.derivative().subtract(this.op2.derivative());
-    };
-    Subtraction.prototype.getValue = function () {
+    }
+    getValue() {
         return this.op1.getValue().subtractN(this.op2.getValue());
-    };
-    Subtraction.prototype.simplified = function () {
+    }
+    simplified() {
         // Todo So sollte jedes Simplified beginnen
-        var simpler = new Subtraction(this.op1.simplified(), this.op2.simplified());
+        let simpler = new Subtraction(this.op1.simplified(), this.op2.simplified());
         if (simpler.isNumeric()) {
             return simpler.getValue();
         }
@@ -140,37 +115,30 @@ var Subtraction = /** @class */ (function (_super) {
         if (simpler.op1.equals(simpler.op2))
             return Numeric.zero;
         return simpler.simplify();
-    };
-    return Subtraction;
-}(AdditionType));
-var MultiplicationType = /** @class */ (function (_super) {
-    __extends(MultiplicationType, _super);
-    function MultiplicationType(op1, op2) {
-        return _super.call(this, op1 !== null && op1 !== void 0 ? op1 : Numeric.one, op2 !== null && op2 !== void 0 ? op2 : Numeric.one) || this;
     }
-    MultiplicationType.prototype.allFactors = function () {
+}
+class MultiplicationType extends BinaryOperation {
+    constructor(op1, op2) {
+        super(op1 ?? Numeric.one, op2 ?? Numeric.one);
+    }
+    allFactors() {
         //TODO
         return null;
-    };
-    return MultiplicationType;
-}(BinaryOperation));
-var Multiplikation = /** @class */ (function (_super) {
-    __extends(Multiplikation, _super);
-    function Multiplikation() {
-        return _super !== null && _super.apply(this, arguments) || this;
     }
-    Multiplikation.prototype.normalAusgeben = function (left, right) {
+}
+class Multiplikation extends MultiplicationType {
+    displayNormally(left, right) {
         return left + '\\cdot ' + right;
-    };
-    Multiplikation.prototype.normalInlineAusgeben = function (left, right) {
+    }
+    diplayInlineNormally(left, right) {
         return left + '·' + right;
-    };
-    Multiplikation.prototype.derivative = function () {
+    }
+    derivative() {
         return this.isConstant() ? Numeric.zero :
             this.op1.derivative().multiply(this.op2).add(this.op1.multiply(this.op2.derivative()));
-    };
-    Multiplikation.prototype.simplified = function () {
-        var simpler = new Multiplikation(this.op1.simplified(), this.op2.simplified());
+    }
+    simplified() {
+        let simpler = new Multiplikation(this.op1.simplified(), this.op2.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         if (simpler.op1.isNumeric() && simpler.op1.isZero()) {
@@ -188,73 +156,63 @@ var Multiplikation = /** @class */ (function (_super) {
         //result += "Nichts vereinfacht (multiplikation) <math>" . simpler.ausgeben() . "</math><br>";
         //TODO
         return simpler;
-    };
-    Multiplikation.prototype.getValue = function () {
+    }
+    getValue() {
         return this.op1.getValue().multiplyN(this.op2.getValue());
-    };
-    return Multiplikation;
-}(MultiplicationType));
-var Division = /** @class */ (function (_super) {
-    __extends(Division, _super);
-    function Division(op1, op2) {
-        var _this = _super.call(this, op1, op2) || this;
-        if (_this.op2.isZero()) {
+    }
+}
+class Division extends MultiplicationType {
+    constructor(op1, op2) {
+        super(op1, op2);
+        if (this.op2.isZero()) {
             HTMLoutput += "<br>ALARM! ERROR! Beim Teilen durch 0 überhitzt meine CPU!<br>";
             HTMLoutput += "ich habe das jetzt mal zu einer 1 geändert...<br>";
-            _this.op2 = Numeric.one;
+            this.op2 = Numeric.one;
         }
-        return _this;
     }
     //Nur wegen Ausnahme bei Bruchstrich + Keine Klammern
-    Division.prototype.ausgeben = function (outerPrecedence) {
-        if (outerPrecedence === void 0) { outerPrecedence = 0; }
+    display(outerPrecedence = 0) {
         if (outerPrecedence > this.precedence())
-            return "\\left(" + this.normalAusgeben(this.op1.ausgeben(), this.op2.ausgeben()) + "\\right)";
-        return this.normalAusgeben(this.op1.ausgeben(), this.op2.ausgeben());
-    };
-    Division.prototype.normalAusgeben = function (left, right) {
+            return "\\left(" + this.displayNormally(this.op1.display(), this.op2.display()) + "\\right)";
+        return this.displayNormally(this.op1.display(), this.op2.display());
+    }
+    displayNormally(left, right) {
         return RationalReal.fractionAusgeben(left, right);
-    };
-    Division.prototype.normalInlineAusgeben = function (left, right) {
+    }
+    diplayInlineNormally(left, right) {
         return left + " ÷ " + right;
-    };
-    Division.prototype.derivative = function () {
+    }
+    derivative() {
         return this.isConstant() ? Numeric.zero : new Division(new Subtraction(new Multiplikation(this.op1.derivative(), this.op2), new Multiplikation(this.op1, this.op2.derivative())), new Potenz(this.op2, Numeric.ofF(2)));
-    };
-    Division.prototype.simplified = function () {
-        var simpler = new Division(this.op1.simplified(), this.op2.simplified());
+    }
+    simplified() {
+        let simpler = new Division(this.op1.simplified(), this.op2.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         if (simpler.op1.equals(simpler.op2))
             return Numeric.one;
         return simpler;
-    };
-    Division.prototype.getValue = function () {
-        return this.op1.getValue().divideByN(this.op2.getValue());
-    };
-    return Division;
-}(MultiplicationType));
-var Potenz = /** @class */ (function (_super) {
-    __extends(Potenz, _super);
-    function Potenz() {
-        return _super !== null && _super.apply(this, arguments) || this;
     }
-    Potenz.prototype.precedence = function () { return 4; };
+    getValue() {
+        return this.op1.getValue().divideByN(this.op2.getValue());
+    }
+}
+class Potenz extends BinaryOperation {
+    precedence() { return 4; }
     //Nur wegen Ausnahme bei Hochstellung + Keine Klammer
-    Potenz.prototype.ausgeben = function (outerPrecedence) {
-        if (outerPrecedence === void 0) { outerPrecedence = 0; }
-        var innerPrec = this.precedence();
+    display(outerPrecedence = 0) {
+        let innerPrec = this.precedence();
         if (outerPrecedence > innerPrec)
-            return "\\left(" + this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben()) + "\\right)";
-        return this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben());
-    };
-    Potenz.prototype.normalAusgeben = function (left, right) {
+            return "\\left(" + this.displayNormally(this.op1.display(innerPrec), this.op2.display()) + "\\right)";
+        return this.displayNormally(this.op1.display(innerPrec), this.op2.display());
+    }
+    displayNormally(left, right) {
         return left + "^{" + right + "}";
-    };
-    Potenz.prototype.normalInlineAusgeben = function (left, right) {
+    }
+    diplayInlineNormally(left, right) {
         return left + "^(" + right + ")";
-    };
-    Potenz.prototype.derivative = function () {
+    }
+    derivative() {
         if (this.isConstant())
             return Numeric.zero;
         if (this.op2.isConstant()) {
@@ -269,9 +227,9 @@ var Potenz = /** @class */ (function (_super) {
         else {
             return this.multiply((new ln(this.op1)).multiply(this.op2.derivative()).add(this.op1.derivative().divideBy(this.op1).multiply(this.op2)));
         }
-    };
-    Potenz.prototype.simplified = function () {
-        var simpler = new Potenz(this.op1.simplified(), this.op2.simplified());
+    }
+    simplified() {
+        let simpler = new Potenz(this.op1.simplified(), this.op2.simplified());
         if (simpler.isNumeric()) {
             return simpler.getValue();
         }
@@ -284,9 +242,8 @@ var Potenz = /** @class */ (function (_super) {
         if (simpler.op2.isOne())
             return simpler.op1;
         return simpler;
-    };
-    Potenz.prototype.getValue = function () {
+    }
+    getValue() {
         return this.op1.getValue().toPowerN(this.op2.getValue());
-    };
-    return Potenz;
-}(BinaryOperation));
+    }
+}

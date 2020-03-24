@@ -12,22 +12,25 @@ function relevantData(element) : string | boolean {
 	return "nul";
 }
 
+function loadData() {
+	formData = {};
+	let interestingInputs = document.getElementsByClassName("II");
+	//alert (Object.keys(interestingInputs));
+	for (var index in interestingInputs)
+		formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
+}
+
 //JAVASCRIPT FUNKTIONALITÄT
 
 function sendHTMLIntoDiv(htmlCode, outputDiv) {
 	var div = document.getElementById("ausgabe" + outputDiv);
 	div.innerHTML = htmlCode;
 	MathJax.typesetPromise();
-	// alert("still working");
 }
 
-function sendInputTroughFunctionIntoDiv(outputFunction : Function, outputDiv, loadData : boolean) {
+function sendInputTroughFunctionIntoDiv(outputFunction : Function, outputDiv) {
 
-	formData = {"loadData": loadData};
-	const interestingInputs = document.getElementsByClassName("II");
-	//alert (Object.keys(interestingInputs));
-	for (var index in interestingInputs)
-		formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
+	loadData(); 
 	
 	//PHP-Style: HTMLoutput entspricht dem einer PHP file.
 
@@ -40,17 +43,17 @@ function sendInputTroughFunctionIntoDiv(outputFunction : Function, outputDiv, lo
 //BUTTON-EVENTS
 
 function funktionSubmit() {
-	sendInputTroughFunctionIntoDiv(Ausgabe, 1, false);
+	sendInputTroughFunctionIntoDiv(Ausgabe1, 1);
 	showVariables();
 	sendHTMLIntoDiv('', 3);
 }
 
 function showVariables() {
-	sendInputTroughFunctionIntoDiv(VariableList, 2, true);
+	sendInputTroughFunctionIntoDiv(VariableList, 2);
 }
 
 function reloadSecondArea() {
-	sendInputTroughFunctionIntoDiv(Ausgabe, 3, true);
+	sendInputTroughFunctionIntoDiv(Ausgabe2, 3);
 	showVariables();
 }
 

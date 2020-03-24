@@ -6,8 +6,8 @@ class sqrt extends UnaryOperation {
         return this.op.getValue().sqrtN();
     }
 
-    ausgeben(outerPrecendence : number = 0) : string {
-        return "\\sqrt{" +  this.op.ausgeben() + "}";
+    display(outerPrecendence : number = 0) : string {
+        return "\\sqrt{" +  this.op.display() + "}";
     }
 
     derivative() : FunktionElement {

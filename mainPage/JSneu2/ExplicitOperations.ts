@@ -89,7 +89,7 @@ abstract class AdditionType extends BinaryOperation {
 
 class Addition extends AdditionType {
 
-    normalInlineAusgeben(left, right) {
+    diplayInlineNormally(left, right) {
         return left + " + " + right;
     }
 
@@ -118,7 +118,7 @@ class Addition extends AdditionType {
 
 class Subtraction extends AdditionType {
 
-    normalInlineAusgeben(left, right)
+    diplayInlineNormally(left, right)
     {
         return left + '-' + right;
     }
@@ -167,12 +167,12 @@ abstract class MultiplicationType extends BinaryOperation {
 
 
 class Multiplikation extends MultiplicationType {
-    normalAusgeben(left, right)
+    displayNormally(left, right)
     {
         return left + '\\cdot ' + right;
     }
 
-    normalInlineAusgeben(left, right)
+    diplayInlineNormally(left, right)
     {
         return left + '·' + right;
     }
@@ -225,18 +225,18 @@ class Division extends MultiplicationType {
     }
 
     //Nur wegen Ausnahme bei Bruchstrich + Keine Klammern
-    ausgeben(outerPrecedence : number = 0) : string {
+    display(outerPrecedence : number = 0) : string {
         if (outerPrecedence > this.precedence())
-            return "\\left(" + this.normalAusgeben(this.op1.ausgeben(), this.op2.ausgeben()) + "\\right)";
-        return this.normalAusgeben(this.op1.ausgeben(), this.op2.ausgeben());
+            return "\\left(" + this.displayNormally(this.op1.display(), this.op2.display()) + "\\right)";
+        return this.displayNormally(this.op1.display(), this.op2.display());
     }
 
-    normalAusgeben(left, right)
+    displayNormally(left, right)
     {
         return RationalReal.fractionAusgeben(left, right);
     }
 
-    normalInlineAusgeben(left, right)
+    diplayInlineNormally(left, right)
     {
         return left + " ÷ " + right;
     }
@@ -270,19 +270,19 @@ class Potenz extends BinaryOperation {
 
 
     //Nur wegen Ausnahme bei Hochstellung + Keine Klammer
-    ausgeben(outerPrecedence : number = 0) : string    {
+    display(outerPrecedence : number = 0) : string    {
         let innerPrec = this.precedence();
         if (outerPrecedence > innerPrec)
-            return "\\left(" + this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben()) + "\\right)";
-        return this.normalAusgeben(this.op1.ausgeben(innerPrec), this.op2.ausgeben());
+            return "\\left(" + this.displayNormally(this.op1.display(innerPrec), this.op2.display()) + "\\right)";
+        return this.displayNormally(this.op1.display(innerPrec), this.op2.display());
     }
 
-    normalAusgeben(left, right)
+    displayNormally(left, right)
     {
         return  left + "^{" + right + "}";
     }
 
-    normalInlineAusgeben(left, right)
+    diplayInlineNormally(left, right)
     {
         return  left + "^(" + right + ")";
     }

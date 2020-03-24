@@ -11,12 +11,11 @@ class EntireFunktion
     }
 
 
-    ausgeben()
+    display()
     {
         /*mathvariant=\"bold\"*/
-        dump (this);
         return "\\( " +
-            this.name + "\\left(\\mathit{" + Variable.workVariable + "}\\right) =  " + this.inner.ausgeben() + "\\)<br>";
+            this.name + "\\left(\\mathit{" + Variable.workVariable + "}\\right) =  " + this.inner.display() + "\\)<br>";
     }
 
     simplified()

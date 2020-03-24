@@ -10,40 +10,61 @@ window.addEventListener("load", function () {
 
 var commaIsDecimalPoint = true;
 var registeredVariables : Object;
-var funktion, derivative : EntireFunktion;
+var funktion : EntireFunktion;
 
-function Ausgabe() {
-    if (formData.loadData) { //Schon geparste Funktion und Ableitung verwenden, mit geänderten Variablen, die entsprechend eingesetzt werden
-        for (var key in registeredVariables) {
-            let variable : Variable = registeredVariables[key];
-            //Aktualisieren, wenn geändert
-            if (formData["input_" + variable.name] != null &&
-                formData["input_" + variable.name] != ((variable.inner != null) ? variable.inner.inlineAusgeben() : '')) {
-                variable.inner = Parser.parseStringToFunktionElement(formData["input_" + variable.name]);
-            }
-            variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
-            if (variable.useInner())
-                //Debug
-                HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.ausgeben() + "\\) für Variable " + variable.name + "<br>";
-        }
-    }
-    else { //Funktion neu parsen und keine Variablen einsetzen (außer i)
-        HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
-        Variable.noNumerics = true;
-        let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
-        funktion = new EntireFunktion(theFunktion, "f");
-    }
+function Ausgabe1() {
+
+    Variable.activateInner = false;
+    Variable.workVariable = formData["workVariable"];
+
+    //Funktion neu parsen und keine Variablen einsetzen (außer i)
+    HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
+    let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
+    funktion = new EntireFunktion(theFunktion, "f");
 
 
-    HTMLoutput += "Eingabe: " + funktion.ausgeben();
+    HTMLoutput += "Eingabe: " + funktion.display();
 
     funktion = funktion.simplified();
-    HTMLoutput += "Vereinfacht: " + funktion.ausgeben();
+    HTMLoutput += "Vereinfacht: " + funktion.display();
 
-    derivative = funktion.derivative();
-    HTMLoutput += "Abgeleitet: " + derivative.ausgeben();
+    var derivative : EntireFunktion = funktion.derivative();
+    HTMLoutput += "Abgeleitet: " + derivative.display();
 
     derivative = derivative.simplified();
-    HTMLoutput += "Ableitung Vereinfacht: " + derivative.ausgeben();
+    HTMLoutput += "Ableitung Vereinfacht: " + derivative.display();
+
+}
+
+function Ausgabe2() {
+
+    Variable.activateInner = true;
+    Variable.workVariable = formData["workVariable"];
+
+    //Schon geparste Funktion und Ableitung verwenden, mit geänderten Variablen, die entsprechend eingesetzt werden
+    for (var key in registeredVariables) {
+        let variable : Variable = registeredVariables[key];
+        //Aktualisieren, wenn geändert
+        if (formData["input_" + variable.name] != null &&
+            formData["input_" + variable.name] != ((variable.inner != null) ? variable.inner.displayInline() : '')) {
+            variable.inner = Parser.parseStringToFunktionElement(formData["input_" + variable.name]);
+        }
+        variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
+        // alert(`${variable.name} : useinner: ${variable.useinner}, useInner(): ${variable.useInner()}`);
+        if (variable.useInner())
+            //Debug
+            HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
+    }
+
+    HTMLoutput += "Eingabe: " + funktion.display();
+
+    funktion = funktion.simplified();
+    HTMLoutput += "Vereinfacht: " + funktion.display();
+
+    var derivative : EntireFunktion = funktion.derivative();
+    HTMLoutput += "Abgeleitet: " + derivative.display();
+
+    derivative = derivative.simplified();
+    HTMLoutput += "Ableitung Vereinfacht: " + derivative.display();
 
 }

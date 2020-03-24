@@ -8,19 +8,21 @@ function relevantData(element) {
         return element.checked;
     return "nul";
 }
+function loadData() {
+    formData = {};
+    let interestingInputs = document.getElementsByClassName("II");
+    //alert (Object.keys(interestingInputs));
+    for (var index in interestingInputs)
+        formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
+}
 //JAVASCRIPT FUNKTIONALITÄT
 function sendHTMLIntoDiv(htmlCode, outputDiv) {
     var div = document.getElementById("ausgabe" + outputDiv);
     div.innerHTML = htmlCode;
     MathJax.typesetPromise();
-    // alert("still working");
 }
-function sendInputTroughFunctionIntoDiv(outputFunction, outputDiv, loadData) {
-    formData = { "loadData": loadData };
-    var interestingInputs = document.getElementsByClassName("II");
-    //alert (Object.keys(interestingInputs));
-    for (var index in interestingInputs)
-        formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
+function sendInputTroughFunctionIntoDiv(outputFunction, outputDiv) {
+    loadData();
     //PHP-Style: HTMLoutput entspricht dem einer PHP file.
     HTMLoutput = '';
     outputFunction();
@@ -29,15 +31,15 @@ function sendInputTroughFunctionIntoDiv(outputFunction, outputDiv, loadData) {
 }
 //BUTTON-EVENTS
 function funktionSubmit() {
-    sendInputTroughFunctionIntoDiv(Ausgabe, 1, false);
+    sendInputTroughFunctionIntoDiv(Ausgabe1, 1);
     showVariables();
     sendHTMLIntoDiv('', 3);
 }
 function showVariables() {
-    sendInputTroughFunctionIntoDiv(VariableList, 2, true);
+    sendInputTroughFunctionIntoDiv(VariableList, 2);
 }
 function reloadSecondArea() {
-    sendInputTroughFunctionIntoDiv(Ausgabe, 3, true);
+    sendInputTroughFunctionIntoDiv(Ausgabe2, 3);
     showVariables();
 }
 function mathReload() {
