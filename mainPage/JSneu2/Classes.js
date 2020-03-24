@@ -1,7 +1,7 @@
 //GLOBAL CONSTANTS
 const floatToRationalTolerance = Number.EPSILON;
 const floatToRationalMaxDen = 100000;
-const displayDigits = 30;
+const displayDigits = 8;
 var registeredVariables;
 // TODO: Auch Operationen müssen, wie Variablen, nur zu Numerics vereinfacht werden dürfen, wenn das gewünscht ist
 // (z.B. Additionen immer erlaubt (oder bei rational plus number nicht), aber Wurzel und ln nicht erlaubt, weil das in Zahlen in mathematischer Notation auch stehen bleibt
@@ -212,12 +212,12 @@ let Variable = /** @class */ (() => {
             registeredVariables = {
                 'τ': new Variable('τ', new Numeric(new FloatReal(2 * Math.PI))),
                 'e': new Variable('e', new Numeric(new FloatReal(Math.E))),
-                'i': new Variable('i', new Numeric(RationalReal.zero, RationalReal.one), true),
+                'i': new Variable('i', new Numeric(Real.zero, Real.one), true),
                 'φ': new Variable('φ', Numeric.one.add(new sqrt(new Numeric(new RationalReal(5)))).divideBy(Numeric.two))
             };
             registeredVariables['π'] = new Variable('π', registeredVariables['τ'].divideBy(Numeric.two), true);
             //TODO tri-Symbol zu Schrift hinzufügen
-            registeredVariables['ш'] = new Variable('ш', registeredVariables['τ'].divideBy(new Numeric(new RationalReal(4), new RationalReal(0))), true);
+            registeredVariables['ш'] = new Variable('ш', registeredVariables['τ'].divideBy(new Numeric(new RationalReal(4), Real.zero)), true);
         }
         static ofName(name) {
             if (name in registeredVariables)
@@ -235,7 +235,7 @@ class Numeric extends FunktionElement {
     constructor(re, im = null) {
         super();
         this.re = re;
-        this.im = im ?? RationalReal.zero;
+        this.im = im ?? Real.zero;
     }
     reF() {
         return this.re.floatValue();
@@ -334,10 +334,10 @@ class Numeric extends FunktionElement {
         return this.re instanceof RationalReal && this.im instanceof RationalReal;
     }
     static init() {
-        RationalReal.one = new RationalReal(1);
-        RationalReal.zero = new RationalReal(0);
-        Numeric.one = new Numeric(RationalReal.one);
-        Numeric.zero = new Numeric(RationalReal.zero);
+        Real.one = new RationalReal(1);
+        Real.zero = new RationalReal(0);
+        Numeric.one = new Numeric(Real.one);
+        Numeric.zero = new Numeric(Real.zero);
         Numeric.two = new Numeric(new RationalReal(2));
         Numeric.infinity = new InfinityNumeric();
     }
@@ -503,6 +503,8 @@ class FloatReal extends Real {
 class RationalReal extends Real {
     constructor(num, den = 1) {
         super();
+        if (!Number.isSafeInteger(num) || !Number.isSafeInteger(den))
+            throw "Not safe integers: " + num + ", " + den + ".";
         if (den == 0) {
             HTMLoutput += "<br>ALARM! ERROR! Beim Teilen durch 0 überhitzt meine CPU!<br>";
             HTMLoutput += "ich habe das jetzt mal zu einer 1 geändert...<br>";
@@ -516,7 +518,11 @@ class RationalReal extends Real {
             this.num = num;
             this.den = den;
         }
-        this.simplify();
+        let g = RationalReal.gcd(this.num, this.den);
+        this.num /= g;
+        this.den /= g;
+        if (!Number.isSafeInteger(this.num) || !Number.isSafeInteger(this.den))
+            throw "MADE Not safe integers: " + this.num + ", " + this.den + ".";
     }
     display() {
         if (this.den == 1 || this.num == 0)
@@ -533,11 +539,6 @@ class RationalReal extends Real {
     }
     isZero() {
         return this.num == 0;
-    }
-    simplify() {
-        let g = RationalReal.gcd(this.num, this.den);
-        this.num /= g;
-        this.den /= g;
     }
     floatValue() {
         return this.num / this.den;
@@ -557,8 +558,7 @@ class RationalReal extends Real {
             //this.den * d ist auch der kgV (lcm) der Nenner
             return new RationalReal(this.num * d + other.num * b, this.den * d);
         }
-        else
-            return new FloatReal(this.floatValue() + other.floatValue());
+        return Real.ofF(this.floatValue() + other.floatValue());
     }
     subtractR(other) {
         if (other instanceof RationalReal) {
@@ -569,8 +569,7 @@ class RationalReal extends Real {
             //this.den * d ist auch der kgV (lcm) der Nenner
             return new RationalReal(this.num * d - other.num * b, this.den * d);
         }
-        else
-            return new FloatReal(this.floatValue() - other.floatValue());
+        return Real.ofF(this.floatValue() - other.floatValue());
     }
     multiplyR(other) {
         if (other instanceof RationalReal) {
@@ -597,12 +596,10 @@ class RationalReal extends Real {
     ////////////////
     static of(num = 0, den = 1) {
         if (num == 0)
-            return RationalReal.zero;
+            return Real.zero;
         if (num == den)
-            return RationalReal.one;
-        if (Number.isSafeInteger(num) && Number.isSafeInteger(den))
-            return new RationalReal(num, den);
-        throw "Not safe integers: " + num + ", " + den + ".";
+            return Real.one;
+        return new RationalReal(num, den);
     }
     static fractionAusgeben(num, den) {
         return "\\frac{" + num + "}{" + den + "}";
@@ -614,11 +611,12 @@ class RationalReal extends Real {
      * @return number
      */
     static gcd(a, b) {
-        var r;
+        if (a * b == 0)
+            return 1;
+        a = Math.abs(a);
+        b = Math.abs(b);
         do {
-            r = a % b;
-            a = b;
-            b = r;
+            [a, b] = [b, a % b];
         } while (b > 0);
         return a;
     }

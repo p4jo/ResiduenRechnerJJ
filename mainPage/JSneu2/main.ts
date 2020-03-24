@@ -20,18 +20,23 @@ function loadData() {
 		formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
 }
 
-//JAVASCRIPT FUNKTIONALITÄT
+function prepare() {
+	loadData();
 
-function sendHTMLIntoDiv(htmlCode, outputDiv) {
-	var div = document.getElementById("ausgabe" + outputDiv);
-	div.innerHTML = htmlCode;
-	MathJax.typesetPromise();
+    Variable.workVariable = formData["workVariable"];
+    commaIsDecimalPoint = formData["cIDP"];
 }
 
-function sendInputTroughFunctionIntoDiv(outputFunction : Function, outputDiv) {
+//JAVASCRIPT FUNKTIONALITÄT
 
-	loadData(); 
-	
+function sendHTMLIntoDiv(htmlCode : string, outputDiv) {
+	var div = document.getElementById("ausgabe" + outputDiv);
+	div.innerHTML = htmlCode;
+	mathReload();
+}
+
+function sendOutputIntoDiv(outputFunction : Function, outputDiv) {
+
 	//PHP-Style: HTMLoutput entspricht dem einer PHP file.
 
 	HTMLoutput = '';
@@ -40,23 +45,28 @@ function sendInputTroughFunctionIntoDiv(outputFunction : Function, outputDiv) {
 	sendHTMLIntoDiv(HTMLoutput, outputDiv);
 }
 
+function mathReload() {
+	MathJax.typesetPromise();
+}
+
+
 //BUTTON-EVENTS
 
 function funktionSubmit() {
-	sendInputTroughFunctionIntoDiv(Ausgabe1, 1);
+	prepare(); 
+	
+	sendOutputIntoDiv(Ausgabe1, 1);
 	showVariables();
 	sendHTMLIntoDiv('', 3);
 }
 
 function showVariables() {
-	sendInputTroughFunctionIntoDiv(VariableList, 2);
+	sendOutputIntoDiv(VariableList, 2);
 }
 
 function reloadSecondArea() {
-	sendInputTroughFunctionIntoDiv(Ausgabe2, 3);
-	showVariables();
-}
+	prepare(); 
 
-function mathReload() {
-	MathJax.typesetPromise();
+	sendOutputIntoDiv(Ausgabe2, 3);
+	showVariables();
 }

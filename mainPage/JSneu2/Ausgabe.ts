@@ -15,7 +15,6 @@ var funktion : EntireFunktion;
 function Ausgabe1() {
 
     Variable.activateInner = false;
-    Variable.workVariable = formData["workVariable"];
 
     //Funktion neu parsen und keine Variablen einsetzen (außer i)
     HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
@@ -39,8 +38,7 @@ function Ausgabe1() {
 function Ausgabe2() {
 
     Variable.activateInner = true;
-    Variable.workVariable = formData["workVariable"];
-
+    
     //Schon geparste Funktion und Ableitung verwenden, mit geänderten Variablen, die entsprechend eingesetzt werden
     for (var key in registeredVariables) {
         let variable : Variable = registeredVariables[key];

@@ -15,33 +15,39 @@ function loadData() {
     for (var index in interestingInputs)
         formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
 }
+function prepare() {
+    loadData();
+    Variable.workVariable = formData["workVariable"];
+    commaIsDecimalPoint = formData["cIDP"];
+}
 //JAVASCRIPT FUNKTIONALITÄT
 function sendHTMLIntoDiv(htmlCode, outputDiv) {
     var div = document.getElementById("ausgabe" + outputDiv);
     div.innerHTML = htmlCode;
-    MathJax.typesetPromise();
+    mathReload();
 }
-function sendInputTroughFunctionIntoDiv(outputFunction, outputDiv) {
-    loadData();
+function sendOutputIntoDiv(outputFunction, outputDiv) {
     //PHP-Style: HTMLoutput entspricht dem einer PHP file.
     HTMLoutput = '';
     outputFunction();
     //alert(HTMLoutput);
     sendHTMLIntoDiv(HTMLoutput, outputDiv);
 }
+function mathReload() {
+    MathJax.typesetPromise();
+}
 //BUTTON-EVENTS
 function funktionSubmit() {
-    sendInputTroughFunctionIntoDiv(Ausgabe1, 1);
+    prepare();
+    sendOutputIntoDiv(Ausgabe1, 1);
     showVariables();
     sendHTMLIntoDiv('', 3);
 }
 function showVariables() {
-    sendInputTroughFunctionIntoDiv(VariableList, 2);
+    sendOutputIntoDiv(VariableList, 2);
 }
 function reloadSecondArea() {
-    sendInputTroughFunctionIntoDiv(Ausgabe2, 3);
+    prepare();
+    sendOutputIntoDiv(Ausgabe2, 3);
     showVariables();
-}
-function mathReload() {
-    MathJax.typesetPromise();
 }
