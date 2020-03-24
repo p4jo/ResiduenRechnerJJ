@@ -61,7 +61,7 @@ var cos = /** @class */ (function (_super) {
         return Numeric.ofF(Math.cos(v.reF()) * Math.cosh(v.imF()), -Math.sin(v.reF()) * Math.sinh(v.imF()));
     };
     cos.prototype.simplified = function () {
-        var simpler = new sqrt(this.op.simplified());
+        var simpler = new cos(this.op.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         // TODO: Implement simplify() method.
@@ -82,7 +82,7 @@ var sin = /** @class */ (function (_super) {
         return Numeric.ofF(Math.sin(v.reF()) * Math.cosh(v.imF()), Math.cos(v.reF()) * Math.sinh(v.imF()));
     };
     sin.prototype.simplified = function () {
-        var simpler = new sqrt(this.op.simplified());
+        var simpler = new sin(this.op.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         // TODO: Implement simplify() method.
@@ -103,7 +103,7 @@ var ln = /** @class */ (function (_super) {
         return Numeric.ofF(Math.log(this.op.getValue().absSquaredF()) / 2, this.op.getValue().argF());
     };
     ln.prototype.simplified = function () {
-        var simpler = new sqrt(this.op.simplified());
+        var simpler = new ln(this.op.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         // TODO: Implement simplify() method.

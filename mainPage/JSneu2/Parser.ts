@@ -108,14 +108,14 @@ class Parser
             else if (Parser.numChars.includes(chr)) {
                 // entire number as one token
                 let number : string = chr;
-                let isnumber = true;
+                let isInt = true;
 
                 while (input.length > i + 1 && inObject(input[i + 1], Parser.numChars)) {
 
                     let digit = input[++i]; //erst hier erhöhen
                     if (digit == '.' || digit == ',') {
-                        digit = isnumber ? '.' : '';
-                        isnumber = false;
+                        digit = isInt ? '.' : '';
+                        isInt = false;
                     }
                     if (digit != '\'')
                         number += digit;
@@ -285,7 +285,6 @@ class Parser
                     let op = Parser.stack.pop();
                     //instantiates new Object of the type named = value of (operations[token]['name'])
                     return new globalThis[operations[token]['name']](op);
-                    break;
                 case 2:
                     let o2 = Parser.stack.pop();
                     let o1 = Parser.stack.pop();

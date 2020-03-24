@@ -69,12 +69,12 @@ var Parser = /** @class */ (function () {
             else if (Parser.numChars.includes(chr)) {
                 // entire number as one token
                 var number = chr;
-                var isnumber = true;
+                var isInt = true;
                 while (input.length > i + 1 && inObject(input[i + 1], Parser.numChars)) {
                     var digit = input[++i]; //erst hier erhöhen
                     if (digit == '.' || digit == ',') {
-                        digit = isnumber ? '.' : '';
-                        isnumber = false;
+                        digit = isInt ? '.' : '';
+                        isInt = false;
                     }
                     if (digit != '\'')
                         number += digit;
@@ -223,7 +223,6 @@ var Parser = /** @class */ (function () {
                     var op = Parser.stack.pop();
                     //instantiates new Object of the type named = value of (operations[token]['name'])
                     return new globalThis[operations[token]['name']](op);
-                    break;
                 case 2:
                     var o2 = Parser.stack.pop();
                     var o1 = Parser.stack.pop();

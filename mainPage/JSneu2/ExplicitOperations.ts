@@ -94,7 +94,7 @@ class Addition extends AdditionType {
     }
 
     derivative() : FunktionElement {
-        return this.isConstant() ? Numeric.zero : this.op1.derivative() . add(  this.op2.derivative());
+        return this.isConstant() ? Numeric.zero : this.op1.derivative() . add(this.op2.derivative());
     }
 
 
@@ -148,6 +148,8 @@ class Subtraction extends AdditionType {
         return simpler.simplify();
     }
 }
+
+
 abstract class MultiplicationType extends BinaryOperation {
     constructor(op1 : FunktionElement, op2: FunktionElement)
     {

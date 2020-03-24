@@ -84,46 +84,39 @@ var FunktionElement = /** @class */ (function () {
  * sie können simplify und müssen ableiten überschreiben, statische Funktionen sollten nicht
  * und ausgeben muss nicht überschrieben werden.
  * Jeder Operator und jede Funktion muss in operations eingetragen werden.
- */ /*
-abstract class Operation extends FunktionElement {
-
-   protected array op;
-
-   constructor(op : FunktionElement []) {
-       this.op = op;
-   }
-
-   isNumeric() : boolean {
-       result = true;
-       foreach (this.op as o)
-       {
-           result = result && o + isNumeric();
-       }
-       return result;
-   }
-
-   isConstant() : boolean {
-       result = true;
-       foreach (this.op as o)
-       {
-           result = result && o + isConstant();
-       }
-       return result;
-   }
-
-   ausgeben(outerPrecendence : number = 0) : string    {
-       return "\\mathrm{" + this.constructor.toString() + "}\\left(" .
-           implode(", ", array_map(
-               (FunktionElement a)
-               {
-                   return a.ausgeben();
-               },
-               this.op))
-           + "\\right)";
-   }
-
-}
-*/
+ */
+var Operation = /** @class */ (function (_super) {
+    __extends(Operation, _super);
+    function Operation() {
+        var op = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            op[_i] = arguments[_i];
+        }
+        var _this = _super.call(this) || this;
+        _this.op = op;
+        return _this;
+    }
+    Operation.prototype.isNumeric = function () {
+        var result = true;
+        for (var index in this.op) {
+            result = result && this.op[index].isNumeric();
+        }
+        return result;
+    };
+    Operation.prototype.isConstant = function () {
+        var result = true;
+        for (var index in this.op) {
+            result = result && this.op[index].isConstant();
+        }
+        return result;
+    };
+    Operation.prototype.ausgeben = function (outerPrecendence) {
+        if (outerPrecendence === void 0) { outerPrecendence = 0; }
+        return "\\mathrm{" + this.constructor.name + "}\\left(" +
+            this.op.map(function (a) { return a.ausgeben(); }).join(', ') + "\\right)";
+    };
+    return Operation;
+}(FunktionElement));
 var UnaryOperation = /** @class */ (function (_super) {
     __extends(UnaryOperation, _super);
     function UnaryOperation(op) {
@@ -140,11 +133,11 @@ var UnaryOperation = /** @class */ (function (_super) {
     UnaryOperation.prototype.ausgeben = function (outerPrecedence) {
         if (outerPrecedence === void 0) { outerPrecedence = 0; }
         //ausgeben gibt mit Klammern aus
-        return "\\mathrm{" + this.constructor.toString() + "}\\left(" + this.op.ausgeben() + '\\right)';
+        return "\\mathrm{" + this.constructor.name + "}\\left(" + this.op.ausgeben() + '\\right)';
     };
     UnaryOperation.prototype.inlineAusgeben = function (outerPrecedence) {
         if (outerPrecedence === void 0) { outerPrecedence = 0; }
-        return this.constructor.toString() + '(' + this.op.inlineAusgeben() + ")";
+        return this.constructor.name + '(' + this.op.inlineAusgeben() + ")";
     };
     return UnaryOperation;
 }(FunktionElement));
@@ -223,9 +216,11 @@ var Variable = /** @class */ (function (_super) {
             return this;
     };
     Variable.prototype.isNumeric = function () {
-        return this.isConstant() && this.useInner() && this.inner.isNumeric();
+        return this.useInner() && this.isConstant() && this.inner.isNumeric();
     };
     Variable.prototype.useInner = function () {
+        if (this.inner === null)
+            return false;
         if (Variable.noNumerics)
             return this.name == 'i';
         return this.useinner;
@@ -459,6 +454,9 @@ var InfinityNumeric = /** @class */ (function (_super) {
 var Real = /** @class */ (function () {
     function Real() {
     }
+    /**
+     * Returns new Real number. If it is very close to a rational number with limited denominator it is simplified to a RationalReal
+     */
     Real.ofF = function (reF) {
         return (new FloatReal(reF)).simplified();
     };
@@ -468,7 +466,6 @@ var FloatReal = /** @class */ (function (_super) {
     __extends(FloatReal, _super);
     /**
      * FloatReal constructor. USE ONLY WHEN VALUE IS DEFINITELY NOT RATIONAL, else use Real.ofF-function
-     * @param number value
      */
     function FloatReal(value) {
         var _this = _super.call(this) || this;
@@ -608,8 +605,8 @@ var RationalReal = /** @class */ (function (_super) {
     };
     RationalReal.prototype.simplify = function () {
         var g = RationalReal.gcd(this.num, this.den);
-        this.num = this.num / g;
-        this.den = this.den / g;
+        this.num /= g;
+        this.den /= g;
     };
     RationalReal.prototype.floatValue = function () {
         return this.num / this.den;
@@ -650,7 +647,7 @@ var RationalReal = /** @class */ (function (_super) {
             var den = this.den * other.den;
             return RationalReal.of(num, den);
         }
-        return new FloatReal(this.floatValue() * other.floatValue());
+        return Real.ofF(this.floatValue() * other.floatValue());
     };
     RationalReal.prototype.divideByR = function (other) {
         if (other instanceof RationalReal) {
@@ -658,7 +655,7 @@ var RationalReal = /** @class */ (function (_super) {
             var den = this.den * other.num;
             return RationalReal.of(num, den);
         }
-        return new FloatReal(this.floatValue() / other.floatValue());
+        return Real.ofF(this.floatValue() / other.floatValue());
     };
     RationalReal.prototype.negativeR = function () {
         return new RationalReal(-this.num, this.den);

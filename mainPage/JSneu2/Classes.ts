@@ -101,46 +101,41 @@ abstract class FunktionElement {
  * sie können simplify und müssen ableiten überschreiben, statische Funktionen sollten nicht
  * und ausgeben muss nicht überschrieben werden.
  * Jeder Operator und jede Funktion muss in operations eingetragen werden.
- */ /*
+ */ 
 abstract class Operation extends FunktionElement {
 
-    protected array op;
+    protected op : FunktionElement[];
 
-    constructor(op : FunktionElement []) {
+    constructor(...op : FunktionElement []) {
+        super();
         this.op = op;
     }
 
     isNumeric() : boolean {
-        result = true;
-        foreach (this.op as o)
+        let result = true;
+        for (let index in this.op)
         {
-            result = result && o + isNumeric();
+            result = result && this.op[index] . isNumeric();
         }
         return result;
     }
 
     isConstant() : boolean {
-        result = true;
-        foreach (this.op as o)
+        let result = true;
+        for (let index in this.op)
         {
-            result = result && o + isConstant();
+            result = result && this.op[index] . isConstant();
         }
         return result;
     }
 
     ausgeben(outerPrecendence : number = 0) : string    {
-        return "\\mathrm{" + this.constructor.toString() + "}\\left(" .
-            implode(", ", array_map(
-                (FunktionElement a)
-                {
-                    return a.ausgeben();
-                },
-                this.op))
-            + "\\right)";
+        return "\\mathrm{" + this.constructor.name + "}\\left(" +
+        this.op.map(a => a.ausgeben()).join(', ') + "\\right)";
     }
 
 }
-*/
+
 abstract class UnaryOperation extends FunktionElement {
 
     protected op: FunktionElement;
@@ -164,12 +159,12 @@ abstract class UnaryOperation extends FunktionElement {
     ausgeben(outerPrecedence : number = 0) : string //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
     {
         //ausgeben gibt mit Klammern aus
-        return "\\mathrm{" + this.constructor.toString() + "}\\left(" + this.op.ausgeben() + '\\right)';
+        return "\\mathrm{" + this.constructor.name  + "}\\left(" + this.op.ausgeben() + '\\right)';
     }
 
     inlineAusgeben(outerPrecedence : number = 0) : string //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
     {
-        return this.constructor.toString() + '('  + this.op.inlineAusgeben() + ")";
+        return this.constructor.name + '('  + this.op.inlineAusgeben() + ")";
     }
 
 }
@@ -223,7 +218,7 @@ abstract class BinaryOperation extends FunktionElement  {
 class Variable extends FunktionElement
 {
     static noNumerics : boolean = false;
-    static workVariable : string= '';
+    static workVariable : string = '';
 
     name : string;
     inner : FunktionElement;
@@ -271,11 +266,13 @@ class Variable extends FunktionElement
 
     isNumeric(): boolean
     {
-        return this.isConstant() && this.useInner() && this.inner.isNumeric();
+        return this.useInner() && this.isConstant() && this.inner.isNumeric();
     }
 
     useInner(): boolean
     {
+        if (this.inner === null)
+            return false;
         if (Variable.noNumerics)
             return this.name == 'i';
         return this.useinner;
@@ -623,7 +620,9 @@ abstract class Real {
     abstract negativeR() : Real ;
 
     abstract reciprocalR() : Real ;
-
+    /**
+     * Returns new Real number. If it is very close to a rational number with limited denominator it is simplified to a RationalReal
+     */
     static ofF(reF : number){
         return (new FloatReal(reF)).simplified();
     }
@@ -636,7 +635,6 @@ class FloatReal extends Real{
 
     /**
      * FloatReal constructor. USE ONLY WHEN VALUE IS DEFINITELY NOT RATIONAL, else use Real.ofF-function
-     * @param number value
      */
     constructor(value : number)
     {
@@ -820,8 +818,8 @@ class RationalReal extends Real
     private simplify()
     {
         let g = RationalReal.gcd(this.num,this.den);
-        this.num = this.num / g;
-        this.den = this.den / g;
+        this.num /= g;
+        this.den /= g;
     }
 
     floatValue(): number
@@ -873,7 +871,7 @@ class RationalReal extends Real
             var den = this.den * other.den;
             return RationalReal.of(num, den);
         }
-        return new FloatReal(this.floatValue() * other.floatValue());
+        return Real.ofF(this.floatValue() * other.floatValue());
     }
 
     divideByR(other: Real) : Real
@@ -884,7 +882,7 @@ class RationalReal extends Real
             return RationalReal.of(num, den);
         }
 
-        return new FloatReal(this.floatValue() / other.floatValue());
+        return Real.ofF(this.floatValue() / other.floatValue());
     }
 
     negativeR(): Real

@@ -59,7 +59,7 @@ class cos extends UnaryOperation {
 
     simplified(): FunktionElement
     {
-        let simpler = new sqrt(this.op.simplified());
+        let simpler = new cos(this.op.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         // TODO: Implement simplify() method.
@@ -82,7 +82,7 @@ class sin extends UnaryOperation {
 
     simplified(): FunktionElement
     {
-        let simpler = new sqrt(this.op.simplified());
+        let simpler = new sin(this.op.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         // TODO: Implement simplify() method.
@@ -106,7 +106,7 @@ class ln extends UnaryOperation {
 
     simplified(): FunktionElement
     {
-        let simpler = new sqrt(this.op.simplified());
+        let simpler = new ln(this.op.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
 
