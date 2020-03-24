@@ -11,8 +11,8 @@ function VariableList() {
         }
         let temp = variable.useInner() ? "checked='checked'" : '';
         HTMLoutput +=
-            `\\( ${variable.name} = ${mathOutput} \\)  
-<label> Setzte eigenen Wert: 
+            `\\( ${variable.name} = ${mathOutput} \\).  
+<label> Setze eigenen Wert: 
     <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
 </label> 
 <label>Direkt einsetzen:  

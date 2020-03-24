@@ -132,13 +132,13 @@ class BinaryOperation extends FunktionElement {
         return this.displayNormally(this.op1.display(innerPrec), this.op2.display(innerPrec));
     }
     displayNormally(left, right) {
-        return this.diplayInlineNormally(left, right);
+        return this.displayInlineNormally(left, right);
     }
     displayInline(outerPrecedence = 0) {
         var innerPrec = this.precedence();
         if (outerPrecedence > innerPrec)
-            return "(" + this.diplayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec)) + ")";
-        return this.diplayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec));
+            return "(" + this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec)) + ")";
+        return this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec));
     }
     precedence() { return 3; }
 }
@@ -164,7 +164,7 @@ let Variable = /** @class */ (() => {
                     ? this.inner.getValue().display()
                     : (this.useInner()
                         ? "\\mathbf{" + this.name + '}'
-                        : "" + this.name))
+                        : this.name))
                 : "\\mathit{" + this.name + "}";
         }
         displayInline(outerPrecedence = 0) {

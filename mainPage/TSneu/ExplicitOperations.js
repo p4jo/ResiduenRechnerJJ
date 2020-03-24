@@ -76,7 +76,7 @@ class AdditionType extends BinaryOperation {
     }
 }
 class Addition extends AdditionType {
-    diplayInlineNormally(left, right) {
+    displayInlineNormally(left, right) {
         return left + " + " + right;
     }
     derivative() {
@@ -96,7 +96,7 @@ class Addition extends AdditionType {
     }
 }
 class Subtraction extends AdditionType {
-    diplayInlineNormally(left, right) {
+    displayInlineNormally(left, right) {
         return left + '-' + right;
     }
     derivative() {
@@ -130,7 +130,7 @@ class Multiplikation extends MultiplicationType {
     displayNormally(left, right) {
         return left + '\\cdot ' + right;
     }
-    diplayInlineNormally(left, right) {
+    displayInlineNormally(left, right) {
         return left + '·' + right;
     }
     derivative() {
@@ -179,7 +179,7 @@ class Division extends MultiplicationType {
     displayNormally(left, right) {
         return RationalReal.fractionAusgeben(left, right);
     }
-    diplayInlineNormally(left, right) {
+    displayInlineNormally(left, right) {
         return left + " ÷ " + right;
     }
     derivative() {
@@ -206,10 +206,16 @@ class Potenz extends BinaryOperation {
             return "\\left(" + this.displayNormally(this.op1.display(innerPrec), this.op2.display()) + "\\right)";
         return this.displayNormally(this.op1.display(innerPrec), this.op2.display());
     }
+    displayInline(outerPrecedence = 0) {
+        let innerPrec = this.precedence();
+        if (outerPrecedence > innerPrec)
+            return "(" + this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline()) + ")";
+        return this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline());
+    }
     displayNormally(left, right) {
         return left + "^{" + right + "}";
     }
-    diplayInlineNormally(left, right) {
+    displayInlineNormally(left, right) {
         return left + "^(" + right + ")";
     }
     derivative() {

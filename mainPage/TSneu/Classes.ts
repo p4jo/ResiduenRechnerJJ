@@ -201,17 +201,17 @@ abstract class BinaryOperation extends FunktionElement  {
     }
 
     displayNormally(left,right){
-        return this.diplayInlineNormally(left,right);
+        return this.displayInlineNormally(left,right);
     }
 
     displayInline(outerPrecedence : number = 0) : string    {
         var innerPrec = this.precedence();
         if (outerPrecedence > innerPrec)
-            return "(" + this.diplayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec)) + ")";
-        return this.diplayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec));
+            return "(" + this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec)) + ")";
+        return this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec));
     }
 
-    abstract diplayInlineNormally(left, right);
+    abstract displayInlineNormally(left, right);
 
     precedence() : number { return 3; }
 
@@ -249,11 +249,11 @@ class Variable extends FunktionElement
                     ? this.inner.getValue().display()
                     : (this.useInner()
                         ? "\\mathbf{" + this.name + '}'
-                        : "" + this.name ))
+                        : this.name ))
                 :"\\mathit{" + this.name + "}" ;
     }
 
-    displayInline(outerPrecedence : number= 0) : string    {
+    displayInline(outerPrecedence : number = 0) : string    {
         return this.name;
     }
 

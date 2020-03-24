@@ -39,6 +39,7 @@ let Parser = /** @class */ (() => {
             Parser.specialChars = temp.concat(Parser.braceChars);
         }
         static parseStringToFunktionElement(inputStr) {
+            inputStr = inputStr ?? (inputStr != '' ? inputStr : '0');
             let tokens = Parser.tokenize(inputStr);
             HTMLoutput += "Tokens: " + tokens.join(' ') + "<br>";
             let RPN = Parser.parseTokensToRPN(tokens);

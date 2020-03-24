@@ -1,29 +1,11 @@
-//DIES IST DAS HAUPTSKRIPT
-/*
-//Wird beim laden der Website aktiviert
-window.addEventListener("load", function () {
-    session_start;
-});*/
 var commaIsDecimalPoint = true;
 var registeredVariables;
 var funktion;
-function Ausgabe1() {
-    Variable.activateInner = false;
-    //Funktion neu parsen und keine Variablen einsetzen (außer i)
-    HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
+function parseFunktion() {
     let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
     funktion = new EntireFunktion(theFunktion, "f");
-    HTMLoutput += "Eingabe: " + funktion.display();
-    funktion = funktion.simplified();
-    HTMLoutput += "Vereinfacht: " + funktion.display();
-    var derivative = funktion.derivative();
-    HTMLoutput += "Abgeleitet: " + derivative.display();
-    derivative = derivative.simplified();
-    HTMLoutput += "Ableitung Vereinfacht: " + derivative.display();
 }
-function Ausgabe2() {
-    Variable.activateInner = true;
-    //Schon geparste Funktion und Ableitung verwenden, mit geänderten Variablen, die entsprechend eingesetzt werden
+function updateVariables() {
     for (var key in registeredVariables) {
         let variable = registeredVariables[key];
         //Aktualisieren, wenn geändert
@@ -37,6 +19,27 @@ function Ausgabe2() {
             //Debug
             HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
     }
+}
+/** Funktion neu parsen und keine Variablen einsetzen (außer i)
+ * */
+function Ausgabe1() {
+    Variable.activateInner = false;
+    HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
+    parseFunktion();
+    Ausgabe();
+}
+/**
+ * Schon geparste Funktion und Ableitung verwenden, mit geänderten Variablen, die entsprechend eingesetzt werden
+ */
+function Ausgabe2() {
+    Variable.activateInner = true;
+    updateVariables();
+    Ausgabe();
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//TODO: Noch zum Residuen berechnen umschreiben. Zwischenschritte angeben (wie Integralrechner). 
+//Evtl. HTML-Bereiche verwenden und mit CSS farbig / mit Rand etc. machen
+function Ausgabe() {
     HTMLoutput += "Eingabe: " + funktion.display();
     funktion = funktion.simplified();
     HTMLoutput += "Vereinfacht: " + funktion.display();

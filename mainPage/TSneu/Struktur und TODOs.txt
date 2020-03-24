@@ -1,0 +1,7 @@
+FRONT-END:  Die Dateien index.html, main.ts, Ausgabe.ts und VariableList.ts. Hier muss noch das eigentliche Residuen-Berechnen programmiert werden.
+
+BACK-END: Die restlichen ts-Dateien. Hier muss die Vereinfachung noch verbessert werden.
+
+Wir können das auf uns aufteilen, Johannes habe momentan noch keine Präferenz (vielleicht tendenziell front-end).
+
+Heute, 24.3.20, ist die Übersetzung PHP -> TypeScript nach 2 Tagen fertig, sorry, dass das PHP -> JS nicht so viel gebracht hat.

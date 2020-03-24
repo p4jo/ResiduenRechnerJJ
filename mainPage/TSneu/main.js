@@ -48,6 +48,6 @@ function showVariables() {
 }
 function reloadSecondArea() {
     prepare();
-    sendOutputIntoDiv(Ausgabe2, 3);
+    sendOutputIntoDiv(Ausgabe2, 1);
     showVariables();
 }
