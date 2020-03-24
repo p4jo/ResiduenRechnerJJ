@@ -31,3 +31,5 @@ function dump(obj) {
 
 	alert(out);
 }
+
+var global = Function('return this;')() || eval('this');

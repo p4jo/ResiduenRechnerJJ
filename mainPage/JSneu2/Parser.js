@@ -199,7 +199,7 @@ var Parser = /** @class */ (function () {
         for (var index in RPNQueue) {
             var token = RPNQueue[index];
             //HTMLoutput += "Ich verarbeite " + token;
-            var funkEl = token === '' ? null : Parser.parseRPNToFunctionElementnumberernal(token);
+            var funkEl = token === '' ? null : Parser.parseRPNToFunctionElementinternal(token);
             Parser.stack.push(funkEl);
             //HTMLoutput += " zu ".get_class(funkEl)."-Element: <math displaystyle='true'>" + funkEl.ausgeben() + "</math><br>";
         }
@@ -213,24 +213,27 @@ var Parser = /** @class */ (function () {
                 + "}<br>";
         return result;
     };
-    Parser.parseRPNToFunctionElementnumberernal = function (token) {
+    Parser.parseRPNToFunctionElementinternal = function (token) {
         if (typeof token == "number")
             return Numeric.ofF(token);
         //alert("typeof " + token + "is not number");
         if (token in operations) {
             switch (operations[token]['arity']) {
                 case 1:
-                    return window[operations[token]['name']](Parser.stack.pop());
+                    var op = Parser.stack.pop();
+                    //instantiates new Object of the type named = value of (operations[token]['name'])
+                    return new globalThis[operations[token]['name']](op);
+                    break;
                 case 2:
                     var o2 = Parser.stack.pop();
                     var o1 = Parser.stack.pop();
-                    //result += " {Token ".token ." wird geparst mit <math> ".o1.ausgeben() ."</math> und <math>". o2.ausgeben()."</math>] ";
-                    return window[operations[token]['name']](o1, o2);
+                    return new globalThis[operations[token]['name']](o1, o2);
+                //result += " {Token ".token ." wird geparst mit <math> ".o1.ausgeben() ."</math> und <math>". o2.ausgeben()."</math>] ";
                 default:
                     var args = [];
                     for (var i = 0; i < operations[token]['arity']; i++)
                         args.push(Parser.stack.pop());
-                    return window[operations[token]['name']](args.reverse);
+                    return new globalThis[operations[token]['name']](args.reverse);
             }
         }
         else
