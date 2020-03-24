@@ -18,11 +18,13 @@ function sendHTMLIntoDiv(htmlCode, outputDiv) {
 function sendInputTroughFunctionIntoDiv(outputFunction, outputDiv, loadData) {
     formData = { "loadData": loadData };
     var interestingInputs = document.getElementsByClassName("II");
-    alert(Object.keys(interestingInputs));
-    for (var element in interestingInputs)
-        formData[interestingInputs[element].id] = relevantData(element);
+    //alert (Object.keys(interestingInputs));
+    for (var index in interestingInputs)
+        formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
+    //PHP-Style: HTMLoutput entspricht dem einer PHP file.
     HTMLoutput = '';
     outputFunction();
+    //alert(HTMLoutput);
     sendHTMLIntoDiv(HTMLoutput, outputDiv);
 }
 //BUTTON-EVENTS
@@ -40,11 +42,4 @@ function reloadSecondArea() {
 }
 function mathReload() {
     MathJax.typesetPromise();
-}
-function dump(obj) {
-    var out = '';
-    for (var i in obj) {
-        out += i + ": " + obj[i] + "\n";
-    }
-    alert(out);
 }

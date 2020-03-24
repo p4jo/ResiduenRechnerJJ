@@ -2,10 +2,10 @@ function VariableList () {
 
     HTMLoutput += "<form><fieldset>";
 
-    var variable : any;
-    for (variable in registeredVariables) {
-        var valN = variable.inner;
-        var mathOutput = '\textrm{(nicht gesetzt)}';
+    for (let index in registeredVariables) {
+        let variable = registeredVariables[index];
+        let valN = variable.inner;
+        let mathOutput = '\\textrm{(nicht gesetzt)}';
         let output = '';
         if(valN instanceof FunktionElement) {
             mathOutput = valN.ausgeben();
@@ -19,17 +19,18 @@ function VariableList () {
             ";
         */
         HTMLoutput += 
-`\\( variable.name = mathOutput \\)  
+`\\( ${variable.name} = ${mathOutput} \\)  
 <label> Setzte eigenen Wert: 
-    <input class='II' type='text' id='input_variable.name' value='output' size='20'>. 
+    <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
 </label> 
 <label>Direkt einsetzen:  
-    <input class='II' type='checkbox' id='check_variable.name' ". (variable.useInner() ? "checked='checked'" : '') .">
+    <input class='II' type='checkbox' id='check_${variable.name}' ${variable.useInner() ? "checked='checked'" : '' }">
 </label>
-    <br>";
-}`;
+    <br>`;
+
 
     }
+
 
     HTMLoutput +=
 `</fieldset></form>

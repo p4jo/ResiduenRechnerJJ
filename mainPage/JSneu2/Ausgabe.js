@@ -6,9 +6,9 @@ window.addEventListener("load", function () {
 });*/
 var commaIsDecimalPoint = true;
 var registeredVariables;
+var funktion, derivative;
 function Ausgabe() {
-    var result = '';
-    if (loadData) {
+    if (formData.loadData) { //Schon geparste Funktion und Ableitung verwenden, mit geänderten Variablen, die entsprechend eingesetzt werden
         for (var key in registeredVariables) {
             var variable = registeredVariables[key];
             //Aktualisieren, wenn geändert
@@ -19,26 +19,20 @@ function Ausgabe() {
             variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
             if (variable.useInner())
                 //Debug
-                result += "Eingesetzter Wert \\(" + variable.inner.ausgeben() + "\\) für Variable " + variable.name + "<br>";
+                HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.ausgeben() + "\\) für Variable " + variable.name + "<br>";
         }
-        /*
-        funktion = _SESSION['funktion'];
-        funktionSimplified = _SESSION['funktionSimplified'];
-        derivative = _SESSION['derivative'];
-        derivativeSimplified = _SESSION['derivativeSimplified'];
-        */
     }
-    else {
-        result += "Keine Variablen außer i werden eingesetzt.<br>";
+    else { //Funktion neu parsen und keine Variablen einsetzen (außer i)
+        HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
         Variable.noNumerics = true;
-        root = Parser.parseStringToFunktionElement(formData["formel"]);
-        funktion = new EntireFunktion(root, "f");
+        var theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
+        funktion = new EntireFunktion(theFunktion, "f");
     }
-    result += "Eingabe: ".funktion.ausgeben();
+    HTMLoutput += "Eingabe: " + funktion.ausgeben();
     funktion = funktion.simplified();
-    result += "Vereinfacht: ".funktion.ausgeben();
+    HTMLoutput += "Vereinfacht: " + funktion.ausgeben();
     derivative = funktion.derivative();
-    result += "Abgeleitet: ".derivative.ausgeben();
+    HTMLoutput += "Abgeleitet: " + derivative.ausgeben();
     derivative = derivative.simplified();
-    result += "Ableitung Vereinfacht: ".derivative.ausgeben();
+    HTMLoutput += "Ableitung Vereinfacht: " + derivative.ausgeben();
 }

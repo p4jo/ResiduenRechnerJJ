@@ -63,10 +63,10 @@ var Parser = /** @class */ (function () {
                 //result += "Nach dem Token ".end(tokens).", vor das Zeichen chr setze ich ·<br>";
                 tokens.push("·");
             }
-            if (inObject(chr, Parser.specialChars)) { //All special characters are single tokens
+            if (Parser.specialChars.includes(chr)) { //All special characters are single tokens
                 tokens.push(chr);
             }
-            else if (inObject(chr, Parser.numChars)) {
+            else if (Parser.numChars.includes(chr)) {
                 // entire number as one token
                 var number = chr;
                 var isnumber = true;
@@ -92,7 +92,7 @@ var Parser = /** @class */ (function () {
                     tokens.push(text);
             }
             else {
-                HTMLoutput += "Achtung das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)";
+                HTMLoutput += "Achtung, das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)";
             }
         }
         return tokens;
@@ -116,8 +116,8 @@ var Parser = /** @class */ (function () {
             }
             else if (token in operations) { //OPERATOR / Funktion
                 //WENN das letzte Token kein Operand war (Eine Operation oder eine Klammer auf, oder einfach der Anfang)
-                //UND dieses Token eine (mindestens) binäre Operation
-                //UND das nächtste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
+                //UND dieses Token eine (mindestens) binäre Operation ist
+                //UND das nächste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
                 //DANN fügt er einen leeren Operanden ein, der für den entsprechenden Standardwert steht (z.b. neutrales Element).
                 //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) : 0-baum oder /z : 1/z
                 if (!wasOperand && operations[token]['arity'] >= 2 && !(j + 1 in tokens && inObject(tokens[j + 1], Parser.leftBraceChars))) {
@@ -129,7 +129,7 @@ var Parser = /** @class */ (function () {
                 //Operatoren, die schon auf dem Operatorstapel sind (weil sie links stehen) zuerst ausgeführt (auf die Queue gelegt)
                 var myOP = Parser.precedence(token);
                 while (true) {
-                    if (!operator_stack)
+                    if (operator_stack.length == 0)
                         break;
                     var earlierOP = Parser.precedence(operator_stack[operator_stack.length - 1]);
                     if (earlierOP > myOP ||
@@ -150,7 +150,7 @@ var Parser = /** @class */ (function () {
                 // Alles bis zur linken Klammer & die linke Klammer pop-,pushen
                 while (operator_stack[operator_stack.length - 1] !== '(') {
                     output_queue.push(operator_stack.pop());
-                    if (!operator_stack) {
+                    if (operator_stack.length == 0) {
                         HTMLoutput += "Zu wenige öffnende Klammern.<br>";
                         //array_pop unten wirft keinen Fehler :)
                         break;
@@ -166,7 +166,7 @@ var Parser = /** @class */ (function () {
                     output_queue.push('');
                 while (operator_stack[operator_stack.length - 1] !== '(') {
                     output_queue.push(operator_stack.pop());
-                    if (!operator_stack) {
+                    if (operator_stack.length == 0) {
                         HTMLoutput += "Zu wenige öffnende Klammern.<br>";
                         //array_pop unten wirft keinen Fehler :)
                         break;
@@ -180,7 +180,7 @@ var Parser = /** @class */ (function () {
             }
         }
         //Pop remaining operations / functions
-        while (operator_stack) {
+        while (operator_stack.length > 0) {
             var token = operator_stack.pop();
             /* if the operator token on the top of the stack is a bracket, then
            there are mismatched parentheses. */
@@ -193,10 +193,11 @@ var Parser = /** @class */ (function () {
         return output_queue;
     };
     Parser.parseRPNToFunktionElement = function (RPNQueue) {
-        if (!RPNQueue)
+        if (RPNQueue.length == 0)
             return Numeric.zero;
         Parser.stack = [];
-        for (var token in RPNQueue) {
+        for (var index in RPNQueue) {
+            var token = RPNQueue[index];
             //HTMLoutput += "Ich verarbeite " + token;
             var funkEl = token === '' ? null : Parser.parseRPNToFunctionElementnumberernal(token);
             Parser.stack.push(funkEl);
@@ -204,7 +205,7 @@ var Parser = /** @class */ (function () {
         }
         var result = Parser.stack.pop();
         //Fehlerbehandlung
-        if (Parser.stack)
+        if (Parser.stack.length > 0)
             HTMLoutput += "HÄ? {"
                 + Parser.stack.map(function (a) { return a.ausgeben(); }).join(', ')
                 + "} is the stack left after parsing RPNQueue: {"
@@ -215,20 +216,21 @@ var Parser = /** @class */ (function () {
     Parser.parseRPNToFunctionElementnumberernal = function (token) {
         if (typeof token == "number")
             return Numeric.ofF(token);
+        //alert("typeof " + token + "is not number");
         if (token in operations) {
             switch (operations[token]['arity']) {
                 case 1:
-                    return new operations[token]['name'](Parser.stack.pop());
+                    return window[operations[token]['name']](Parser.stack.pop());
                 case 2:
                     var o2 = Parser.stack.pop();
                     var o1 = Parser.stack.pop();
                     //result += " {Token ".token ." wird geparst mit <math> ".o1.ausgeben() ."</math> und <math>". o2.ausgeben()."</math>] ";
-                    return new operations[token]['name'](o1, o2);
+                    return window[operations[token]['name']](o1, o2);
                 default:
                     var args = [];
                     for (var i = 0; i < operations[token]['arity']; i++)
                         args.push(Parser.stack.pop());
-                    return new operations[token]['name'](args.reverse);
+                    return window[operations[token]['name']](args.reverse);
             }
         }
         else

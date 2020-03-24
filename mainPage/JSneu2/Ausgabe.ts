@@ -30,8 +30,8 @@ function Ausgabe() {
     else { //Funktion neu parsen und keine Variablen einsetzen (außer i)
         HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
         Variable.noNumerics = true;
-        let root = Parser.parseStringToFunktionElement(formData["formel"]);
-        funktion = new EntireFunktion(root, "f");
+        let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
+        funktion = new EntireFunktion(theFunktion, "f");
     }
 
 

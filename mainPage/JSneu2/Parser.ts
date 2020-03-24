@@ -102,10 +102,10 @@ class Parser
             }
 
 
-            if (inObject(chr, Parser.specialChars)) { //All special characters are single tokens
+            if (Parser.specialChars.includes(chr)) { //All special characters are single tokens
                 tokens.push(chr);
             }
-            else if (inObject(chr, Parser.numChars)) {
+            else if (Parser.numChars.includes(chr)) {
                 // entire number as one token
                 let number : string = chr;
                 let isnumber = true;
@@ -133,7 +133,7 @@ class Parser
                     tokens.push(text);
             }
             else {
-                HTMLoutput += "Achtung das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)";
+                HTMLoutput += "Achtung, das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)";
             }
         }
         return tokens;
@@ -164,8 +164,8 @@ class Parser
             else if (token in operations) { //OPERATOR / Funktion
 
                 //WENN das letzte Token kein Operand war (Eine Operation oder eine Klammer auf, oder einfach der Anfang)
-                //UND dieses Token eine (mindestens) binäre Operation
-                //UND das nächtste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
+                //UND dieses Token eine (mindestens) binäre Operation ist
+                //UND das nächste Token keine Klammer auf ist (für Präfixnotation der Operation im Stil <operator>(op1;op2)) ;
                 //DANN fügt er einen leeren Operanden ein, der für den entsprechenden Standardwert steht (z.b. neutrales Element).
                 //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) : 0-baum oder /z : 1/z
                 if(!wasOperand && operations[token]['arity'] >= 2 && !(j+1 in tokens && inObject(tokens[j+1], Parser.leftBraceChars))) {
@@ -180,7 +180,7 @@ class Parser
                 let myOP = Parser.precedence(token);
                 while (true)
                 {
-                    if (!operator_stack)
+                    if (operator_stack.length == 0)
                         break;
 
                     let earlierOP = Parser.precedence(operator_stack[operator_stack.length-1]);
@@ -201,7 +201,7 @@ class Parser
                 // Alles bis zur linken Klammer & die linke Klammer pop-,pushen
                 while (operator_stack[operator_stack.length-1] !== '(') {
                     output_queue.push(operator_stack.pop());
-                    if (!operator_stack) {
+                    if (operator_stack.length == 0) {
                         HTMLoutput += "Zu wenige öffnende Klammern.<br>";
                         //array_pop unten wirft keinen Fehler :)
                         break;
@@ -217,7 +217,7 @@ class Parser
                     output_queue.push('');
                 while (operator_stack[operator_stack.length-1] !== '(') {
                     output_queue.push(operator_stack.pop());
-                    if (!operator_stack) {
+                    if (operator_stack.length == 0) {
                         HTMLoutput += "Zu wenige öffnende Klammern.<br>";
                         //array_pop unten wirft keinen Fehler :)
                         break;
@@ -232,7 +232,7 @@ class Parser
         }
 
         //Pop remaining operations / functions
-        while (operator_stack) {
+        while (operator_stack.length > 0) {
             let token = operator_stack.pop();
              /* if the operator token on the top of the stack is a bracket, then
             there are mismatched parentheses. */
@@ -249,10 +249,11 @@ class Parser
     private static stack : FunktionElement[];
     private static parseRPNToFunktionElement(RPNQueue : any[]) : FunktionElement
     {
-        if (!RPNQueue)
+        if (RPNQueue.length == 0)
             return Numeric.zero;
         Parser.stack = [];
-        for (var token in RPNQueue) {
+        for (var index in RPNQueue) {
+            let token = RPNQueue[index];
             //HTMLoutput += "Ich verarbeite " + token;
             let funkEl = token === '' ? null : Parser.parseRPNToFunctionElementnumberernal(token);
             Parser.stack.push(funkEl);
@@ -261,7 +262,7 @@ class Parser
 
         let result = Parser.stack.pop();
  //Fehlerbehandlung
-        if (Parser.stack)
+        if (Parser.stack.length > 0)
             HTMLoutput += "HÄ? {"
                 + Parser.stack.map(a =>  a.ausgeben()).join(', ')                
                 + "} is the stack left after parsing RPNQueue: {"
@@ -274,23 +275,24 @@ class Parser
 
     private static parseRPNToFunctionElementnumberernal(token)
     {
+
         if (typeof token == "number")
             return Numeric.ofF(token);
-
+        //alert("typeof " + token + "is not number");
         if (token in operations){
             switch (operations[token]['arity']) {
                 case 1:
-                    return new operations[token]['name'](Parser.stack.pop());
+                    return window[operations[token]['name']](Parser.stack.pop());
                 case 2:
                     let o2 = Parser.stack.pop();
                     let o1 = Parser.stack.pop();
                     //result += " {Token ".token ." wird geparst mit <math> ".o1.ausgeben() ."</math> und <math>". o2.ausgeben()."</math>] ";
-                    return new operations[token]['name'](o1, o2);
+                    return window[operations[token]['name']](o1, o2);
                 default:
                     let args = [];
                     for (let i = 0; i < operations[token]['arity']; i++)
                         args.push(Parser.stack.pop());
-                    return new operations[token]['name'](args.reverse);
+                    return window[ operations[token]['name'] ](args.reverse);
             }
         }
         else

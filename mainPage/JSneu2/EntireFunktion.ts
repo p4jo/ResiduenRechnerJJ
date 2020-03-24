@@ -1,13 +1,12 @@
 
 class EntireFunktion
 {
-    //Hier ist das Wurzelelement gemeint, nicht die mathematische Wurzel
-    private root : FunktionElement;
+    readonly inner : FunktionElement;
     name: string;
 
-    constructor(root : FunktionElement, name : string = 'f')
+    constructor(inner : FunktionElement, name : string = 'f')
     {
-        this.root = root;
+        this.inner = inner;
         this.name = name;
     }
 
@@ -15,18 +14,19 @@ class EntireFunktion
     ausgeben()
     {
         /*mathvariant=\"bold\"*/
+        dump (this);
         return "\\( " +
-            this.name + "\\left(\\mathit{" + Variable.workVariable + "}\\right) =  " + this.root.ausgeben() + "\\)<br>";
+            this.name + "\\left(\\mathit{" + Variable.workVariable + "}\\right) =  " + this.inner.ausgeben() + "\\)<br>";
     }
 
     simplified()
     {
         //muss vielleicht so oft wiederholt werden, bis sich nichts mehr ändert
-        return new EntireFunktion(this.root.simplified(), this.name);
+        return new EntireFunktion(this.inner.simplified(), this.name);
     }
 
     derivative()
     {
-        return new EntireFunktion(this.root.derivative(), this.name + "'");
+        return new EntireFunktion(this.inner.derivative(), this.name + "'");
     }
 }

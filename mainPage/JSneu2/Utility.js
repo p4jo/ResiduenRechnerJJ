@@ -21,3 +21,10 @@ function inObject(needle, haystack, argStrict) {
     }
     return false;
 }
+function dump(obj) {
+    var out = '';
+    for (var i in obj) {
+        out += i + ": " + obj[i] + "\n";
+    }
+    alert(out);
+}

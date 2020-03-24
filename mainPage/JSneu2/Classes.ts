@@ -241,7 +241,7 @@ class Variable extends FunktionElement
     {
         if (Variable.workVariable == this.name)
             return Numeric.one;
-        else if (this.useInner)
+        else if (this.useInner())
             return this.inner.derivative();
         return Numeric.zero;
     }
@@ -942,6 +942,4 @@ class RationalReal extends Real
     }
 }
 
-
 Numeric.init();
-Variable.init();

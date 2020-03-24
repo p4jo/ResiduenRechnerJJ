@@ -25,14 +25,15 @@ function sendInputTroughFunctionIntoDiv(outputFunction : Function, outputDiv, lo
 
 	formData = {"loadData": loadData};
 	const interestingInputs = document.getElementsByClassName("II");
-	alert (Object.keys(interestingInputs));
+	//alert (Object.keys(interestingInputs));
 	for (var index in interestingInputs)
-		formData[interestingInputs[index].id] = relevantData(index); //Hinzufügen
+		formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
 	
 	//PHP-Style: HTMLoutput entspricht dem einer PHP file.
 
 	HTMLoutput = '';
-	outputFunction()
+	outputFunction();
+	//alert(HTMLoutput);
 	sendHTMLIntoDiv(HTMLoutput, outputDiv);
 }
 
@@ -55,13 +56,4 @@ function reloadSecondArea() {
 
 function mathReload() {
 	MathJax.typesetPromise();
-}
-
-function dump(obj) {
-	var out = '';
-	for (var i in obj) {
-		out += i + ": " + obj[i] + "\n";
-	}
-
-	alert(out);
 }
