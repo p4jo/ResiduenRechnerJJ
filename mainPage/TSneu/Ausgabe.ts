@@ -4,21 +4,6 @@ function parseFunktion() {
     funktion = new EntireFunktion(theFunktion, "f");
 }
 
-function updateVariables() {
-    for (var key in registeredVariables) {
-        let variable: Variable = registeredVariables[key];
-        //Aktualisieren, wenn geändert
-        if (formData["input_" + variable.name] != null &&
-            formData["input_" + variable.name] != ((variable.inner != null) ? variable.inner.displayInline() : '')) {
-            variable.inner = Parser.parseStringToFunktionElement(formData["input_" + variable.name]);
-        }
-        variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
-        // alert(`${variable.name} : useinner: ${variable.useinner}, useInner(): ${variable.useInner()}`);
-        if (variable.useInner())
-            //Debug
-            HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
-    }
-}
 
 /** Funktion neu parsen und keine Variablen einsetzen (außer i)
  * */

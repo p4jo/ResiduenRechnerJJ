@@ -21,7 +21,7 @@ function loadData() {
 		formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
 }
 
-function updateData() {
+function updateInputData() {
 	loadData();
 
     Variable.workVariable = formData["workVariable"];
@@ -55,20 +55,21 @@ function mathReload() {
 //BUTTON-EVENTS
 
 function funktionSubmit() {
-	updateData(); 
+	updateInputData(); 
 	
 	sendOutputIntoDiv(Ausgabe1, 1);
-	showVariables();
+	showVariableList();
 	sendHTMLIntoDiv('', 3);
 }
 
-function showVariables() {
-	sendOutputIntoDiv(VariableList, 2);
-}
-
+// gets called from VariableList
 function reloadSecondArea() {
-	updateData(); 
+	updateInputData(); 
 
 	sendOutputIntoDiv(Ausgabe2, 1);
-	showVariables();
+	showVariableList();
+}
+
+function showVariableList() {
+	sendOutputIntoDiv(VariableListHTM, 2);
 }
