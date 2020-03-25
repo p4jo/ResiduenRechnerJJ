@@ -1,9 +1,11 @@
+// DATEN
 var formData;
 var HTMLoutput;
+var registeredVariables;
+var funktion;
 function relevantData(element) {
     if (element.type === "text")
-        //vielleicht reicht = value
-        return element.value !== "" ? element.value : null;
+        return element.value;
     if (element.type === "checkbox")
         return element.checked;
     return "nul";
@@ -15,10 +17,11 @@ function loadData() {
     for (var index in interestingInputs)
         formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
 }
-function prepare() {
+function updateData() {
     loadData();
     Variable.workVariable = formData["workVariable"];
     commaIsDecimalPoint = formData["cIDP"];
+    Parser.init();
 }
 //JAVASCRIPT FUNKTIONALITÄT
 function sendHTMLIntoDiv(htmlCode, outputDiv) {
@@ -38,7 +41,7 @@ function mathReload() {
 }
 //BUTTON-EVENTS
 function funktionSubmit() {
-    prepare();
+    updateData();
     sendOutputIntoDiv(Ausgabe1, 1);
     showVariables();
     sendHTMLIntoDiv('', 3);
@@ -47,7 +50,7 @@ function showVariables() {
     sendOutputIntoDiv(VariableList, 2);
 }
 function reloadSecondArea() {
-    prepare();
+    updateData();
     sendOutputIntoDiv(Ausgabe2, 1);
     showVariables();
 }

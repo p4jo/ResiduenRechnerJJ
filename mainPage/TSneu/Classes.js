@@ -42,6 +42,7 @@ class FunktionElement {
             return false;
         if (this.isNumeric() && other.isNumeric())
             return other.getValue().equalsN(this.getValue());
+        //TODO
         return null;
     }
     //ENDE ABSTRAKTE FUNKTIONEN
@@ -159,6 +160,11 @@ let Variable = /** @class */ (() => {
             return Numeric.zero;
         }
         display(outerPrecendence = 0) {
+            if (!this.isConstant())
+                return "\\mathit{" + this.name + "}";
+            if (this.useInner())
+                return "\\mathbf{" + this.name + '}';
+            return "\\mathrm{" + this.name + '}';
             return this.isConstant()
                 ? (this.isNumeric()
                     ? this.inner.getValue().display()
@@ -172,8 +178,7 @@ let Variable = /** @class */ (() => {
         }
         simplified() {
             if (this.useInner())
-                //ist schon simplified
-                return this.inner; //.simplified();
+                return this.inner.simplified();
             else
                 return this;
         }
@@ -447,7 +452,7 @@ class FloatReal extends Real {
             let dec_point = commaIsDecimalPoint ? ',' : '.';
             return number_format( this.value, displayDigits, dec_point, thousands_sep);
             */
-            return this.value.toLocaleString(commaIsDecimalPoint ? 'en-us' : 'de-de', { minimumFractionDigits: 0, maximumFractionDigits: displayDigits });
+            return this.value.toLocaleString(commaIsDecimalPoint ? 'de-de' : 'en-us', { minimumFractionDigits: 0, maximumFractionDigits: displayDigits });
         }
         return this.value.toString();
     }

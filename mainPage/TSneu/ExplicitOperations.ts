@@ -269,6 +269,11 @@ class Potenz extends BinaryOperation {
     { return 4; }
 
 
+    constructor(op1 : FunktionElement, op2 : FunktionElement)
+    {
+        super(op1 ?? registeredVariables['e'], op2 ?? Numeric.one);
+    }
+
     //Nur wegen Ausnahme bei Hochstellung + Keine Klammer
     display(outerPrecedence : number = 0) : string    {
         let innerPrec = this.precedence();

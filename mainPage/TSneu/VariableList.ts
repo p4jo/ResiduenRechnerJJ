@@ -1,6 +1,6 @@
 function VariableList () {
 
-    HTMLoutput += "<form><fieldset>";
+    HTMLoutput += "<form onsubmit='{event.preventDefault(); reloadSecondArea();}'><fieldset>";
 
     for (let index in registeredVariables) {
         let variable = registeredVariables[index];
@@ -19,15 +19,14 @@ function VariableList () {
 </label> 
 <label>Direkt einsetzen:  
     <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
-</label>
-    <br>`;
+</label><br>
+    `;
 
 
     }
 
 
     HTMLoutput +=
-`</fieldset></form>
-    <Button onclick=\"reloadSecondArea()\"> Aktualisieren </Button>
+`</fieldset> <br> <Button type = 'submit'> Aktualisieren </Button> </form>
 `;
 }

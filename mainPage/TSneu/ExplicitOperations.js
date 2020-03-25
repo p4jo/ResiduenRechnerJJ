@@ -199,6 +199,9 @@ class Division extends MultiplicationType {
 }
 class Potenz extends BinaryOperation {
     precedence() { return 4; }
+    constructor(op1, op2) {
+        super(op1 ?? registeredVariables['e'], op2 ?? Numeric.one);
+    }
     //Nur wegen Ausnahme bei Hochstellung + Keine Klammer
     display(outerPrecedence = 0) {
         let innerPrec = this.precedence();

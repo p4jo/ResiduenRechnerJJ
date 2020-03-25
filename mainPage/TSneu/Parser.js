@@ -1,14 +1,15 @@
-var commaIsDecimalPoint = true;
+var commaIsDecimalPoint = false;
 let Parser = /** @class */ (() => {
     class Parser {
         static init() {
+            Parser.numChars = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '\''];
+            Parser.separatorChars = [';'];
             if (commaIsDecimalPoint)
                 Parser.numChars.push(',');
             else {
                 Parser.separatorChars.push(',');
             }
-            Parser.braceChars = Parser.leftBraceChars.concat(Parser.rightBraceChars);
-            let temp = [
+            let specialChars = [
                 "#",
                 "%",
                 "&",
@@ -34,12 +35,13 @@ let Parser = /** @class */ (() => {
                 "‼",
                 "⌂"
             ].concat(Parser.separatorChars);
-            Parser.forbiddenToMultiplyWithMeChars = temp.concat(Parser.rightBraceChars);
-            Parser.forbiddenToMultiplyMeTokens = temp.concat(Parser.leftBraceChars, Object.keys(operations));
-            Parser.specialChars = temp.concat(Parser.braceChars);
+            Parser.singleCharacterTokens = specialChars.concat(Parser.leftBraceChars, Parser.rightBraceChars);
+            Parser.forbiddenToMultiplyWithMeChars = specialChars.concat(Parser.rightBraceChars);
+            Parser.forbiddenToMultiplyMeTokens = specialChars.concat(Parser.leftBraceChars, Object.keys(operations));
         }
         static parseStringToFunktionElement(inputStr) {
-            inputStr = inputStr ?? (inputStr != '' ? inputStr : '0');
+            if (inputStr == null || inputStr == '')
+                return Numeric.zero;
             let tokens = Parser.tokenize(inputStr);
             HTMLoutput += "Tokens: " + tokens.join(' ') + "<br>";
             let RPN = Parser.parseTokensToRPN(tokens);
@@ -63,7 +65,7 @@ let Parser = /** @class */ (() => {
                     //result += "Nach dem Token ".end(tokens).", vor das Zeichen chr setze ich ·<br>";
                     tokens.push("·");
                 }
-                if (Parser.specialChars.includes(chr)) { //All special characters are single tokens
+                if (Parser.singleCharacterTokens.includes(chr)) {
                     tokens.push(chr);
                 }
                 else if (Parser.numChars.includes(chr)) {
@@ -121,7 +123,7 @@ let Parser = /** @class */ (() => {
                     //DANN fügt er einen leeren Operanden ein, der für den entsprechenden Standardwert steht (z.b. neutrales Element).
                     //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) : 0-baum oder /z : 1/z
                     if (!wasOperand && operations[token]['arity'] >= 2 && !(j + 1 in tokens && Parser.leftBraceChars.includes(tokens[j + 1]))) {
-                        output_queue.push('');
+                        output_queue.push(null);
                         HTMLoutput += "leerer Operand wurde eingefügt für token <br>";
                     }
                     //Operatoren mit engerer Bindung (größerer Präzedenz) werden zuerst ausgeführt, d.h. zuerst auf
@@ -199,7 +201,7 @@ let Parser = /** @class */ (() => {
             for (var index in RPNQueue) {
                 let token = RPNQueue[index];
                 //HTMLoutput += "Ich verarbeite " + token;
-                let funkEl = token === '' ? null : Parser.parseRPNToFunctionElementInternal(token);
+                let funkEl = Parser.parseRPNToFunctionElementInternal(token);
                 Parser.stack.push(funkEl);
                 //HTMLoutput += " zu ".get_class(funkEl)."-Element: <math displaystyle='true'>" + funkEl.ausgeben() + "</math><br>";
             }
@@ -214,6 +216,8 @@ let Parser = /** @class */ (() => {
             return result;
         }
         static parseRPNToFunctionElementInternal(token) {
+            if (token === null)
+                return null;
             if (typeof token == "number")
                 return Numeric.ofF(token);
             //alert("typeof " + token + "is not number");
@@ -240,7 +244,6 @@ let Parser = /** @class */ (() => {
         }
     }
     // REGEXes
-    Parser.numChars = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '\''];
     //TODO: Vervollständigen der zulässigen Buchstaben (mit Schriftart abgleichen)
     Parser.letterChar = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
         'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -260,7 +263,6 @@ let Parser = /** @class */ (() => {
     Parser.namedChars = { 'alpha': 'α', 'beta': 'β', 'pi': 'π', 'tri': 'ш' };
     Parser.leftBraceChars = ['(', '[', '{', '<', '«'];
     Parser.rightBraceChars = [')', ']', '}', '>', '»'];
-    Parser.separatorChars = [';'];
     return Parser;
 })();
 Parser.init();

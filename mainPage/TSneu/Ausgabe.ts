@@ -1,8 +1,4 @@
 
-var commaIsDecimalPoint = true;
-var registeredVariables : Object;
-var funktion : EntireFunktion;
-
 function parseFunktion() {
     let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
     funktion = new EntireFunktion(theFunktion, "f");

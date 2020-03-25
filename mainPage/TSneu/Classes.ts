@@ -245,6 +245,11 @@ class Variable extends FunktionElement
     }
 
     display(outerPrecendence : number = 0) : string    {
+        if (!this.isConstant())
+            return "\\mathit{" + this.name + "}";
+        if (this.useInner())
+            return "\\mathbf{" + this.name + '}'
+        return "\\mathrm{" + this.name + '}';
         return this.isConstant()
                 ?(this.isNumeric()
                     ? this.inner.getValue().display()
@@ -261,8 +266,7 @@ class Variable extends FunktionElement
     simplified() : FunktionElement
     {
         if (this.useInner())
-            //ist schon simplified
-            return this.inner;//.simplified();
+            return this.inner.simplified();
         else
             return this;
     } 
@@ -323,7 +327,7 @@ class Variable extends FunktionElement
         registeredVariables['ш'] = new Variable('ш', registeredVariables['τ'] .divideBy(new Numeric(new RationalReal(4), Real.zero)), true);
     }
 
-    static ofName(name) : FunktionElement
+    static ofName(name) : Variable
     {
         if (name in registeredVariables)
             return registeredVariables[name];
@@ -683,7 +687,7 @@ class FloatReal extends Real{
             let dec_point = commaIsDecimalPoint ? ',' : '.';
             return number_format( this.value, displayDigits, dec_point, thousands_sep);
             */
-            return this.value.toLocaleString(commaIsDecimalPoint ? 'en-us' : 'de-de', {minimumFractionDigits: 0, maximumFractionDigits: displayDigits});
+            return this.value.toLocaleString(commaIsDecimalPoint ?  'de-de' : 'en-us', {minimumFractionDigits: 0, maximumFractionDigits: displayDigits});
         }
         return this.value.toString();
     }

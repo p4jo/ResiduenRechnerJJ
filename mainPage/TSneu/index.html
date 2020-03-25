@@ -25,21 +25,23 @@
     <body>
         <h1> Residuenrechner </h1>
         <div id = constDiv>
-            <form>
+        <form onsubmit="{event.preventDefault(); funktionSubmit();}">
                 <label> f(
                 <input class="II" type="text" id="workVariable" size="3">
                 ) = <br></label>
-                <input class="II" type="text" id="formel" size="80" onsubmit="funktionSubmit()">
+                <input class="II" type="text" id="formel" size="80">
                 <br>
                 <label>
-                <input type="checkbox" checked="checked" class="II" id="cIDP"> , als Dezimaltrenner</label>
+                <input type="checkbox" class="II" id="cIDP"> , als Dezimaltrenner</label>
+                <br>
+                <button id="submitButton" type="submit"> Funktion parsen </button>
             </form>
-            <br>
-            <button onclick = "funktionSubmit()"> Funktion parsen </button>
-      <!--      <button onclick = "showVariables()"> Variablenliste aktualisieren </button>
+            <!--      <button onclick = "showVariables()"> Variablenliste aktualisieren </button>
             <button onclick = "mathReload()"> Mathe-Formeln aktualisieren </button>
 -->
         </div>
+
+
 
         <div id = ausgabe1></div>
         <div id = ausgabe2></div>

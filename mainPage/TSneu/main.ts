@@ -1,12 +1,13 @@
-// DATEN
 declare const MathJax;
+// DATEN
 var formData : Object;
 var HTMLoutput : string;
+var registeredVariables : Object;
+var funktion : EntireFunktion;
 
 function relevantData(element) : string | boolean {
 	if (element.type === "text")
-	//vielleicht reicht = value
-		return element.value !== "" ? element.value : null;
+		return element.value;
 	if (element.type === "checkbox")
 		return element.checked;
 	return "nul";
@@ -20,11 +21,12 @@ function loadData() {
 		formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
 }
 
-function prepare() {
+function updateData() {
 	loadData();
 
     Variable.workVariable = formData["workVariable"];
-    commaIsDecimalPoint = formData["cIDP"];
+	commaIsDecimalPoint = formData["cIDP"];
+	Parser.init();
 }
 
 //JAVASCRIPT FUNKTIONALITÄT
@@ -53,7 +55,7 @@ function mathReload() {
 //BUTTON-EVENTS
 
 function funktionSubmit() {
-	prepare(); 
+	updateData(); 
 	
 	sendOutputIntoDiv(Ausgabe1, 1);
 	showVariables();
@@ -65,7 +67,7 @@ function showVariables() {
 }
 
 function reloadSecondArea() {
-	prepare(); 
+	updateData(); 
 
 	sendOutputIntoDiv(Ausgabe2, 1);
 	showVariables();
