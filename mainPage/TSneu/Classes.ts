@@ -71,6 +71,7 @@ abstract class FunktionElement {
             return false;
         if (this.isNumeric() && other.isNumeric())
             return other.getValue().equalsN(this.getValue());
+            //TODO
         return null;
     }
 
