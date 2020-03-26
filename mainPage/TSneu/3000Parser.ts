@@ -1,6 +1,4 @@
 
-var commaIsDecimalPoint = false;
-
 
 class Parser
 {

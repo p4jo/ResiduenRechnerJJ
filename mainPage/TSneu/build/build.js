@@ -1,3 +1,105 @@
+function inObject(needle, haystack, argStrict = true) {
+    var key = '';
+    var strict = !!argStrict;
+    if (strict) {
+        for (key in haystack) {
+            if (haystack[key] === needle) {
+                return true;
+            }
+        }
+    }
+    else {
+        for (key in haystack) {
+            if (haystack[key] == needle) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+function dump(obj) {
+    var out = '';
+    for (var i in obj) {
+        out += i + ": " + obj[i] + "\n";
+    }
+    alert(out);
+}
+function number_format(n = 0, decimals = 0, decPoint = '.', thousandsSep = '') {
+    decimals = Math.round(Math.abs(decimals));
+    var toFixedFix = function (n, prec) {
+        if (n.toString().indexOf('e') === -1) {
+            return +(Math.round(+(n + 'e+' + prec)) + 'e-' + prec);
+        }
+        else {
+            var arr = ('' + n).split('e');
+            var sig = '';
+            if (+arr[1] + prec > 0) {
+                sig = '+';
+            }
+            return (+(Math.round(+(+arr[0] + 'e' + sig + (+arr[1] + prec))) + 'e-' + prec)).toFixed(prec);
+        }
+    };
+    let s = (decimals > 0 ? toFixedFix(n, decimals) : Math.round(n)).toString().split('.');
+    if (s[0].length > 3) {
+        s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, thousandsSep);
+    }
+    if ((s[1] || '').length < decimals) {
+        s[1] = s[1] || '';
+        s[1] += new Array(decimals - s[1].length + 1).join('0');
+    }
+    return s.join(decPoint);
+}
+var formData;
+var HTMLoutput;
+var registeredVariables;
+var funktion;
+var commaIsDecimalPoint = false;
+function relevantData(element) {
+    if (element.type === "text")
+        return element.value;
+    if (element.type === "checkbox")
+        return element.checked;
+    return "nul";
+}
+function loadData() {
+    formData = {};
+    let interestingInputs = document.getElementsByClassName("II");
+    for (var index in interestingInputs)
+        formData[interestingInputs[index].id] = relevantData(interestingInputs[index]);
+}
+function updateInputData() {
+    loadData();
+    Variable.workVariable = formData["workVariable"];
+    commaIsDecimalPoint = formData["cIDP"];
+    Parser.init();
+}
+function sendHTMLIntoDiv(htmlCode, outputDiv) {
+    var div = document.getElementById("ausgabe" + outputDiv);
+    div.innerHTML = htmlCode;
+    mathReload();
+}
+function sendOutputIntoDiv(outputFunction, outputDiv) {
+    HTMLoutput = '';
+    outputFunction();
+    sendHTMLIntoDiv(HTMLoutput, outputDiv);
+}
+function mathReload() {
+    MathJax.typesetPromise();
+}
+function funktionSubmit() {
+    updateInputData();
+    sendOutputIntoDiv(Ausgabe1, 1);
+    showVariableList();
+    sendHTMLIntoDiv('', 3);
+}
+function reloadSecondArea() {
+    updateInputData();
+    sendOutputIntoDiv(Ausgabe2, 1);
+    showVariableList();
+}
+function showVariableList() {
+    sendOutputIntoDiv(VariableListHTM, 2);
+}
 function parseFunktion() {
     let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
     funktion = new EntireFunktion(theFunktion, "f");
@@ -21,6 +123,44 @@ function Ausgabe() {
     HTMLoutput += "Abgeleitet: " + derivative.display();
     derivative = derivative.simplified();
     HTMLoutput += "Ableitung Vereinfacht: " + derivative.display();
+}
+function VariableListHTM() {
+    HTMLoutput += "<form onsubmit='{event.preventDefault(); reloadSecondArea();}'><fieldset>";
+    for (let index in registeredVariables) {
+        let variable = registeredVariables[index];
+        let valN = variable.inner;
+        let mathOutput = '\\textrm{(nicht gesetzt)}';
+        let output = '';
+        if (valN != null) {
+            mathOutput = valN.display();
+            output = valN.displayInline();
+        }
+        let temp = variable.useinner ? "checked='checked'" : '';
+        HTMLoutput +=
+            `\\( ${variable.name} = ${mathOutput} \\).  
+<label> Setze eigenen Wert: 
+    <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
+</label> 
+<label>Direkt einsetzen:  
+    <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
+</label><br>
+    `;
+    }
+    HTMLoutput +=
+        `</fieldset> <br> <Button type = 'submit'> Aktualisieren </Button> </form>
+`;
+}
+function updateVariables() {
+    for (var key in registeredVariables) {
+        let variable = registeredVariables[key];
+        if (formData["input_" + variable.name] != null &&
+            formData["input_" + variable.name] != ((variable.inner != null) ? variable.inner.displayInline() : '')) {
+            variable.inner = Parser.parseStringToFunktionElement(formData["input_" + variable.name]);
+        }
+        variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
+        if (variable.useInner())
+            HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
+    }
 }
 const floatToRationalTolerance = Number.EPSILON;
 const floatToRationalMaxDen = 100000;
@@ -590,104 +730,6 @@ class RationalReal extends Real {
     }
 }
 Numeric.init();
-class EntireFunktion {
-    constructor(inner, name = 'f') {
-        this.inner = inner;
-        this.name = name;
-    }
-    display() {
-        let wV = Variable.ofName(Variable.workVariable);
-        return "\\( " +
-            this.name + "\\left(" + wV.display() + "\\right) =  " + this.inner.display() + "\\)<br>";
-    }
-    simplified() {
-        return new EntireFunktion(this.inner.simplified(), this.name);
-    }
-    derivative() {
-        return new EntireFunktion(this.inner.derivative(), this.name + "'");
-    }
-    valueAt(x) {
-        let wVName = Variable.workVariable;
-        Variable.workVariable = '';
-        let wV = Variable.ofName(wVName);
-        wV.useinner = true;
-        wV.inner = x;
-        let result = new EntireFunktion(this.inner.simplified(), this.name);
-        return result;
-    }
-}
-class sqrt extends UnaryOperation {
-    getValue() {
-        return this.op.getValue().sqrtN();
-    }
-    display(outerPrecendence = 0) {
-        return "\\sqrt{" + this.op.display() + "}";
-    }
-    derivative() {
-        return this.isConstant() ? Numeric.zero : this.op.derivative().divideBy(Numeric.two.multiply(this));
-    }
-    simplified() {
-        if (this.isNumeric())
-            return this.getValue();
-        let simplerop = this.op.simplified();
-        if (simplerop instanceof Potenz) {
-            simplerop.op2 = simplerop.op2.divideBy(Numeric.two);
-            return simplerop;
-        }
-        return new sqrt(simplerop);
-    }
-    isNumeric() {
-        if (!this.op.isNumeric())
-            return false;
-        if (this.getValue().isRational() || !this.op.getValue().isRational())
-            return true;
-        return false;
-    }
-}
-class cos extends UnaryOperation {
-    derivative() {
-        return this.isConstant() ? Numeric.zero : (Numeric.ofF(-1)).multiply(new sin(this.op)).multiply(this.op.derivative());
-    }
-    getValue() {
-        let v = this.op.getValue();
-        return Numeric.ofF(Math.cos(v.reF()) * Math.cosh(v.imF()), -Math.sin(v.reF()) * Math.sinh(v.imF()));
-    }
-    simplified() {
-        let simpler = new cos(this.op.simplified());
-        if (simpler.isNumeric())
-            return simpler.getValue();
-        return simpler;
-    }
-}
-class sin extends UnaryOperation {
-    derivative() {
-        return this.isConstant() ? Numeric.zero : (new cos(this.op)).multiply(this.op.derivative());
-    }
-    getValue() {
-        let v = this.op.getValue();
-        return Numeric.ofF(Math.sin(v.reF()) * Math.cosh(v.imF()), Math.cos(v.reF()) * Math.sinh(v.imF()));
-    }
-    simplified() {
-        let simpler = new sin(this.op.simplified());
-        if (simpler.isNumeric())
-            return simpler.getValue();
-        return simpler;
-    }
-}
-class ln extends UnaryOperation {
-    derivative() {
-        return this.isConstant() ? Numeric.zero : this.op.derivative().divideBy(this.op);
-    }
-    getValue() {
-        return Numeric.ofF(Math.log(this.op.getValue().absSquaredF()) / 2, this.op.getValue().argF());
-    }
-    simplified() {
-        let simpler = new ln(this.op.simplified());
-        if (simpler.isNumeric())
-            return simpler.getValue();
-        return simpler;
-    }
-}
 class AdditionType extends BinaryOperation {
     precedence() {
         return 2;
@@ -907,7 +949,104 @@ class Potenz extends BinaryOperation {
         return this.op1.getValue().toPowerN(this.op2.getValue());
     }
 }
-var commaIsDecimalPoint = false;
+class sqrt extends UnaryOperation {
+    getValue() {
+        return this.op.getValue().sqrtN();
+    }
+    display(outerPrecendence = 0) {
+        return "\\sqrt{" + this.op.display() + "}";
+    }
+    derivative() {
+        return this.isConstant() ? Numeric.zero : this.op.derivative().divideBy(Numeric.two.multiply(this));
+    }
+    simplified() {
+        if (this.isNumeric())
+            return this.getValue();
+        let simplerop = this.op.simplified();
+        if (simplerop instanceof Potenz) {
+            simplerop.op2 = simplerop.op2.divideBy(Numeric.two);
+            return simplerop;
+        }
+        return new sqrt(simplerop);
+    }
+    isNumeric() {
+        if (!this.op.isNumeric())
+            return false;
+        if (this.getValue().isRational() || !this.op.getValue().isRational())
+            return true;
+        return false;
+    }
+}
+class cos extends UnaryOperation {
+    derivative() {
+        return this.isConstant() ? Numeric.zero : (Numeric.ofF(-1)).multiply(new sin(this.op)).multiply(this.op.derivative());
+    }
+    getValue() {
+        let v = this.op.getValue();
+        return Numeric.ofF(Math.cos(v.reF()) * Math.cosh(v.imF()), -Math.sin(v.reF()) * Math.sinh(v.imF()));
+    }
+    simplified() {
+        let simpler = new cos(this.op.simplified());
+        if (simpler.isNumeric())
+            return simpler.getValue();
+        return simpler;
+    }
+}
+class sin extends UnaryOperation {
+    derivative() {
+        return this.isConstant() ? Numeric.zero : (new cos(this.op)).multiply(this.op.derivative());
+    }
+    getValue() {
+        let v = this.op.getValue();
+        return Numeric.ofF(Math.sin(v.reF()) * Math.cosh(v.imF()), Math.cos(v.reF()) * Math.sinh(v.imF()));
+    }
+    simplified() {
+        let simpler = new sin(this.op.simplified());
+        if (simpler.isNumeric())
+            return simpler.getValue();
+        return simpler;
+    }
+}
+class ln extends UnaryOperation {
+    derivative() {
+        return this.isConstant() ? Numeric.zero : this.op.derivative().divideBy(this.op);
+    }
+    getValue() {
+        return Numeric.ofF(Math.log(this.op.getValue().absSquaredF()) / 2, this.op.getValue().argF());
+    }
+    simplified() {
+        let simpler = new ln(this.op.simplified());
+        if (simpler.isNumeric())
+            return simpler.getValue();
+        return simpler;
+    }
+}
+class EntireFunktion {
+    constructor(inner, name = 'f') {
+        this.inner = inner;
+        this.name = name;
+    }
+    display() {
+        let wV = Variable.ofName(Variable.workVariable);
+        return "\\( " +
+            this.name + "\\left(" + wV.display() + "\\right) =  " + this.inner.display() + "\\)<br>";
+    }
+    simplified() {
+        return new EntireFunktion(this.inner.simplified(), this.name);
+    }
+    derivative() {
+        return new EntireFunktion(this.inner.derivative(), this.name + "'");
+    }
+    valueAt(x) {
+        let wVName = Variable.workVariable;
+        Variable.workVariable = '';
+        let wV = Variable.ofName(wVName);
+        wV.useinner = true;
+        wV.inner = x;
+        let result = new EntireFunktion(this.inner.simplified(), this.name);
+        return result;
+    }
+}
 let Parser = (() => {
     class Parser {
         static init() {
@@ -1140,142 +1279,4 @@ let Parser = (() => {
     return Parser;
 })();
 Parser.init();
-function inObject(needle, haystack, argStrict = true) {
-    var key = '';
-    var strict = !!argStrict;
-    if (strict) {
-        for (key in haystack) {
-            if (haystack[key] === needle) {
-                return true;
-            }
-        }
-    }
-    else {
-        for (key in haystack) {
-            if (haystack[key] == needle) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-function dump(obj) {
-    var out = '';
-    for (var i in obj) {
-        out += i + ": " + obj[i] + "\n";
-    }
-    alert(out);
-}
-function number_format(n = 0, decimals = 0, decPoint = '.', thousandsSep = '') {
-    decimals = Math.round(Math.abs(decimals));
-    var toFixedFix = function (n, prec) {
-        if (n.toString().indexOf('e') === -1) {
-            return +(Math.round(+(n + 'e+' + prec)) + 'e-' + prec);
-        }
-        else {
-            var arr = ('' + n).split('e');
-            var sig = '';
-            if (+arr[1] + prec > 0) {
-                sig = '+';
-            }
-            return (+(Math.round(+(+arr[0] + 'e' + sig + (+arr[1] + prec))) + 'e-' + prec)).toFixed(prec);
-        }
-    };
-    let s = (decimals > 0 ? toFixedFix(n, decimals) : Math.round(n)).toString().split('.');
-    if (s[0].length > 3) {
-        s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, thousandsSep);
-    }
-    if ((s[1] || '').length < decimals) {
-        s[1] = s[1] || '';
-        s[1] += new Array(decimals - s[1].length + 1).join('0');
-    }
-    return s.join(decPoint);
-}
-function VariableListHTM() {
-    HTMLoutput += "<form onsubmit='{event.preventDefault(); reloadSecondArea();}'><fieldset>";
-    for (let index in registeredVariables) {
-        let variable = registeredVariables[index];
-        let valN = variable.inner;
-        let mathOutput = '\\textrm{(nicht gesetzt)}';
-        let output = '';
-        if (valN != null) {
-            mathOutput = valN.display();
-            output = valN.displayInline();
-        }
-        let temp = variable.useinner ? "checked='checked'" : '';
-        HTMLoutput +=
-            `\\( ${variable.name} = ${mathOutput} \\).  
-<label> Setze eigenen Wert: 
-    <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
-</label> 
-<label>Direkt einsetzen:  
-    <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
-</label><br>
-    `;
-    }
-    HTMLoutput +=
-        `</fieldset> <br> <Button type = 'submit'> Aktualisieren </Button> </form>
-`;
-}
-function updateVariables() {
-    for (var key in registeredVariables) {
-        let variable = registeredVariables[key];
-        if (formData["input_" + variable.name] != null &&
-            formData["input_" + variable.name] != ((variable.inner != null) ? variable.inner.displayInline() : '')) {
-            variable.inner = Parser.parseStringToFunktionElement(formData["input_" + variable.name]);
-        }
-        variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
-        if (variable.useInner())
-            HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
-    }
-}
-var formData;
-var HTMLoutput;
-var registeredVariables;
-var funktion;
-function relevantData(element) {
-    if (element.type === "text")
-        return element.value;
-    if (element.type === "checkbox")
-        return element.checked;
-    return "nul";
-}
-function loadData() {
-    formData = {};
-    let interestingInputs = document.getElementsByClassName("II");
-    for (var index in interestingInputs)
-        formData[interestingInputs[index].id] = relevantData(interestingInputs[index]);
-}
-function updateInputData() {
-    loadData();
-    Variable.workVariable = formData["workVariable"];
-    commaIsDecimalPoint = formData["cIDP"];
-    Parser.init();
-}
-function sendHTMLIntoDiv(htmlCode, outputDiv) {
-    var div = document.getElementById("ausgabe" + outputDiv);
-    div.innerHTML = htmlCode;
-    mathReload();
-}
-function sendOutputIntoDiv(outputFunction, outputDiv) {
-    HTMLoutput = '';
-    outputFunction();
-    sendHTMLIntoDiv(HTMLoutput, outputDiv);
-}
-function mathReload() {
-    MathJax.typesetPromise();
-}
-function funktionSubmit() {
-    updateInputData();
-    sendOutputIntoDiv(Ausgabe1, 1);
-    showVariableList();
-    sendHTMLIntoDiv('', 3);
-}
-function reloadSecondArea() {
-    updateInputData();
-    sendOutputIntoDiv(Ausgabe2, 1);
-    showVariableList();
-}
-function showVariableList() {
-    sendOutputIntoDiv(VariableListHTM, 2);
-}
+Variable.init();

@@ -3,6 +3,8 @@
 	"compilerOptions": {
 		"target": "ES2020",
 		"removeComments": true,
-		"outFile": "build.js"
+		"outDir": "./build",
+		"outFile": "./build/build.js",
+		"allowJs": true
 	}
 }

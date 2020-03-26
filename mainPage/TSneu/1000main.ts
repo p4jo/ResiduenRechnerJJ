@@ -4,6 +4,8 @@ var formData : Object;
 var HTMLoutput : string;
 var registeredVariables : Object;
 var funktion : EntireFunktion;
+var commaIsDecimalPoint = false;
+
 
 function relevantData(element) : string | boolean {
 	if (element.type === "text")
