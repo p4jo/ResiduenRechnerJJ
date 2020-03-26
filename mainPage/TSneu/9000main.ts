@@ -1,34 +1,23 @@
-declare var MathJax;
-MathJax = {
-	options: {
-	  menuOptions: {
-		settings: {
-		  renderer: 'SVG',     // or 'CHTML'
-		  inTabOrder: false,      // true if tabbing includes math
-		},
-	  }
-	},
-	svg : {
-		mathmlSpacing : true
-	}
-  };
 
 // DATEN
 
-function relevantData(element) : string | boolean {
-	if (element.type === "text")
-		return element.value;
-	if (element.type === "checkbox")
-		return element.checked;
-	return "nul";
+function relevantData(element: Element) : string | boolean {
+	if (element instanceof HTMLFormElement) {
+		if (element.type === "text")
+			return element.value;
+		if (element.type === "checkbox")
+			return element.checked;
+	}
+	alert("relevantData cannot be read from element " + dump(element));
+	return null;
 }
 
 function loadData() {
 	formData = {};
 	let interestingInputs = document.getElementsByClassName("II");
 	//alert (Object.keys(interestingInputs));
-	for (var index in interestingInputs){
-		let element = interestingInputs[index];
+	for (let index in interestingInputs){
+		let element : Element = interestingInputs[index];
 		formData[element.id] = relevantData(element); //Hinzufügen
 	}
 }

@@ -76,129 +76,6 @@ const operations = {
     'ζ': { 'name': 'RiemannZeta', 'arity': 1, 'precedence': 5 },
     '!': { 'name': 'Factorial', 'arity': 1, 'precedence': 5 },
 };
-MathJax = {
-    options: {
-        menuOptions: {
-            settings: {
-                renderer: 'SVG',
-                inTabOrder: false,
-            },
-        }
-    },
-    svg: {
-        mathmlSpacing: true
-    }
-};
-function relevantData(element) {
-    if (element.type === "text")
-        return element.value;
-    if (element.type === "checkbox")
-        return element.checked;
-    return "nul";
-}
-function loadData() {
-    formData = {};
-    let interestingInputs = document.getElementsByClassName("II");
-    for (var index in interestingInputs) {
-        let element = interestingInputs[index];
-        formData[element.id] = relevantData(element);
-    }
-}
-function updateInputData() {
-    loadData();
-    Variable.workVariable = formData["workVariable"];
-    commaIsDecimalPoint = formData["cIDP"];
-    Parser.init();
-}
-function sendHTMLIntoDiv(htmlCode, outputDiv) {
-    var div = document.getElementById("ausgabe" + outputDiv);
-    div.innerHTML = htmlCode;
-    mathReload();
-}
-function sendOutputIntoDiv(outputFunction, outputDiv) {
-    HTMLoutput = '';
-    outputFunction();
-    sendHTMLIntoDiv(HTMLoutput, outputDiv);
-}
-function mathReload() {
-    MathJax.typesetPromise();
-}
-function funktionSubmit() {
-    updateInputData();
-    sendOutputIntoDiv(Ausgabe1, 1);
-    showVariableList();
-    sendHTMLIntoDiv('', 3);
-}
-function reloadSecondArea() {
-    updateInputData();
-    sendOutputIntoDiv(Ausgabe2, 1);
-    showVariableList();
-}
-function showVariableList() {
-    sendOutputIntoDiv(VariableListHTM, 2);
-}
-function parseFunktion() {
-    let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
-    funktion = new EntireFunktion(theFunktion, "f");
-}
-function Ausgabe1() {
-    Variable.activateInner = false;
-    HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
-    parseFunktion();
-    Ausgabe();
-}
-function Ausgabe2() {
-    Variable.activateInner = true;
-    updateVariables();
-    Ausgabe();
-}
-function Ausgabe() {
-    HTMLoutput += "Eingabe: " + funktion.display();
-    funktion = funktion.simplified();
-    HTMLoutput += "Vereinfacht: " + funktion.display();
-    var derivative = funktion.derivative();
-    HTMLoutput += "Abgeleitet: " + derivative.display();
-    derivative = derivative.simplified();
-    HTMLoutput += "Ableitung Vereinfacht: " + derivative.display();
-}
-function VariableListHTM() {
-    HTMLoutput += "<form onsubmit='{event.preventDefault(); reloadSecondArea();}'><fieldset>";
-    for (let index in registeredVariables) {
-        let variable = registeredVariables[index];
-        let valN = variable.inner;
-        let mathOutput = '\\textrm{(nicht gesetzt)}';
-        let output = '';
-        if (valN != null) {
-            mathOutput = valN.display();
-            output = valN.displayInline();
-        }
-        let temp = variable.useinner ? "checked='checked'" : '';
-        HTMLoutput +=
-            `\\( ${variable.name} = ${mathOutput} \\).  
-<label> Setze eigenen Wert: 
-    <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
-</label> 
-<label>Direkt einsetzen:  
-    <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
-</label><br>
-    `;
-    }
-    HTMLoutput +=
-        `</fieldset> <br> <Button type = 'submit'> Aktualisieren </Button> </form>
-`;
-}
-function updateVariables() {
-    for (var key in registeredVariables) {
-        let variable = registeredVariables[key];
-        if (formData["input_" + variable.name] != null &&
-            formData["input_" + variable.name] != ((variable.inner != null) ? variable.inner.displayInline() : '')) {
-            variable.inner = Parser.parseStringToFunktionElement(formData["input_" + variable.name]);
-        }
-        variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
-        if (variable.useInner())
-            HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
-    }
-}
 class FunktionElement {
     isOne() {
         return false;
@@ -1294,3 +1171,129 @@ let Parser = (() => {
 })();
 Parser.init();
 Variable.init();
+MathJax = {
+    options: {
+        menuOptions: {
+            settings: {
+                renderer: 'SVG',
+                inTabOrder: false,
+            },
+        }
+    },
+    svg: {
+        mathmlSpacing: true
+    }
+};
+function relevantData(element) {
+    if (element instanceof HTMLFormElement) {
+        if (element.type === "text")
+            return element.value;
+        if (element.type === "checkbox")
+            return element.checked;
+    }
+    alert("relevantData cannot be read from element " + dump(element));
+    return null;
+}
+function loadData() {
+    formData = {};
+    let interestingInputs = document.getElementsByClassName("II");
+    for (let index in interestingInputs) {
+        let element = interestingInputs[index];
+        formData[element.id] = relevantData(element);
+    }
+}
+function updateInputData() {
+    loadData();
+    Variable.workVariable = formData["workVariable"];
+    commaIsDecimalPoint = formData["cIDP"];
+    Parser.init();
+}
+function sendHTMLIntoDiv(htmlCode, outputDiv) {
+    var div = document.getElementById("ausgabe" + outputDiv);
+    div.innerHTML = htmlCode;
+    mathReload();
+}
+function sendOutputIntoDiv(outputFunction, outputDiv) {
+    HTMLoutput = '';
+    outputFunction();
+    sendHTMLIntoDiv(HTMLoutput, outputDiv);
+}
+function mathReload() {
+    MathJax.typesetPromise();
+}
+function funktionSubmit() {
+    updateInputData();
+    sendOutputIntoDiv(Ausgabe1, 1);
+    showVariableList();
+    sendHTMLIntoDiv('', 3);
+}
+function reloadSecondArea() {
+    updateInputData();
+    sendOutputIntoDiv(Ausgabe2, 1);
+    showVariableList();
+}
+function showVariableList() {
+    sendOutputIntoDiv(VariableListHTM, 2);
+}
+function parseFunktion() {
+    let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
+    funktion = new EntireFunktion(theFunktion, "f");
+}
+function Ausgabe1() {
+    Variable.activateInner = false;
+    HTMLoutput += "Keine Variablen außer i werden eingesetzt.<br>";
+    parseFunktion();
+    Ausgabe();
+}
+function Ausgabe2() {
+    Variable.activateInner = true;
+    updateVariables();
+    Ausgabe();
+}
+function Ausgabe() {
+    HTMLoutput += "Eingabe: " + funktion.display();
+    funktion = funktion.simplified();
+    HTMLoutput += "Vereinfacht: " + funktion.display();
+    var derivative = funktion.derivative();
+    HTMLoutput += "Abgeleitet: " + derivative.display();
+    derivative = derivative.simplified();
+    HTMLoutput += "Ableitung Vereinfacht: " + derivative.display();
+}
+function VariableListHTM() {
+    HTMLoutput += "<form onsubmit='{event.preventDefault(); reloadSecondArea();}'><fieldset>";
+    for (let index in registeredVariables) {
+        let variable = registeredVariables[index];
+        let valN = variable.inner;
+        let mathOutput = '\\textrm{(nicht gesetzt)}';
+        let output = '';
+        if (valN != null) {
+            mathOutput = valN.display();
+            output = valN.displayInline();
+        }
+        let temp = variable.useinner ? "checked='checked'" : '';
+        HTMLoutput +=
+            `\\( ${variable.name} = ${mathOutput} \\).  
+<label> Setze eigenen Wert: 
+    <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
+</label> 
+<label>Direkt einsetzen:  
+    <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
+</label><br>
+    `;
+    }
+    HTMLoutput +=
+        `</fieldset> <br> <Button type = 'submit'> Aktualisieren </Button> </form>
+`;
+}
+function updateVariables() {
+    for (var key in registeredVariables) {
+        let variable = registeredVariables[key];
+        if (formData["input_" + variable.name] != null &&
+            formData["input_" + variable.name] != ((variable.inner != null) ? variable.inner.displayInline() : '')) {
+            variable.inner = Parser.parseStringToFunktionElement(formData["input_" + variable.name]);
+        }
+        variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
+        if (variable.useInner())
+            HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
+    }
+}

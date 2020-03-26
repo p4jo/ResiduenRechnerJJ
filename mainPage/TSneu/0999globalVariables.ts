@@ -1,3 +1,4 @@
+declare var MathJax;
 
 var formData : Object;
 var HTMLoutput : string;

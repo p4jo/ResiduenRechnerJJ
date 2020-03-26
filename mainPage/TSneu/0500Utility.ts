@@ -33,7 +33,7 @@ function dump(obj) {
 }
 
 //var global = Function('return this;')() || eval('this');
-
+//funktioniert nicht
 function number_format (n : number = 0, decimals : number = 0, decPoint : string = '.', thousandsSep : string = '') { 
 	//n = +(n.toString().replace(/[^0-9+\-Ee.]/g, ''));
 	decimals = Math.round(Math.abs(decimals));
