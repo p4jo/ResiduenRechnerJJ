@@ -32,36 +32,22 @@ function dump(obj) {
 	alert(out);
 }
 
-//var global = Function('return this;')() || eval('this');
-//funktioniert nicht
-function number_format (n : number = 0, decimals : number = 0, decPoint : string = '.', thousandsSep : string = '') { 
-	//n = +(n.toString().replace(/[^0-9+\-Ee.]/g, ''));
-	decimals = Math.round(Math.abs(decimals));
+function number_format (n : number, decimals : number|null = null, decPoint : string = '.', thousandsSep : string = '') { 
 
-  
-	var toFixedFix = 
-	function (n, prec) {
-		if (n.toString().indexOf('e') === -1) {
-			return +(Math.round(+(n + 'e+' + prec)) + 'e-' + prec)
-		} else {
-			var arr = ('' + n).split('e')
-			var sig = ''
-			if (+arr[1] + prec > 0) {
-				sig = '+'
-			}
-		return (+(Math.round(+(+arr[0] + 'e' + sig + (+arr[1] + prec))) + 'e-' + prec)).toFixed(prec)
-		}
-	};
-  
-	// @todo: for IE parseFloat(0.55).toFixed(0) = 0;
-	let s = (decimals > 0 ? toFixedFix(n, decimals) : Math.round(n))	.toString().split('.')
-	if (s[0].length > 3) {
-	  s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, thousandsSep)
-	}
-	if ((s[1] || '').length < decimals) {
-	  s[1] = s[1] || ''
-	  s[1] += new Array(decimals - s[1].length + 1).join('0')
-	}
-  
-	return s.join(decPoint)
-  }
+	if (!decPoint)  decPoint = '.'; 
+	if (!thousandsSep) thousandsSep = '';
+ 
+    if (n == null || !isFinite(n)) {
+        throw new TypeError("n is not valid");
+    }
+
+	//Höchstens so viele Nachkommastellen verwenden, wie in toString ausgegeben werden (evtl. 0)
+	let maxDec = (n.toString()+'.').split('.')[1].length;
+	decimals = decimals == null ? maxDec : Math.min(decimals, maxDec);
+
+
+    var splitNum = n.toFixed(decimals).split('.');
+    splitNum[0] = splitNum[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSep);
+   	return splitNum.join(decPoint);
+
+}

@@ -215,18 +215,20 @@ class Variable extends FunktionElement
     }
 
     display(outerPrecendence : number = 0) : string    {
+        // \operatorname für mehrbuchstabige Bezeichner
+        //mathit Versionen der kyrillischen Buchstaben sind zu breit, mathbf passt. Bei griechischen Buchstaben sieht die (ohne)-Version ungut aus.
         if (!this.isConstant())
-            return "\\mathit{" + this.name + "}";
+            return "\\operatorname{\\mathit{" + this.name + "}}";
         if (this.useInner())
-            return "\\mathbf{" + this.name + '}'
-        return "\\mathrm{" + this.name + '}';
-        return this.isConstant()
+            return "\\operatorname{\\mathbf{" + this.name + '}}';
+        return "\\operatorname{\\mathit{" + this.name + '}}';
+        /* return this.isConstant()
                 ?(this.isNumeric()
                     ? this.inner.getValue().display()
                     : (this.useInner()
                         ? "\\mathbf{" + this.name + '}'
                         : this.name ))
-                :"\\mathit{" + this.name + "}" ;
+                :"\\mathit{" + this.name + "}" ; */
     }
 
     displayInline(outerPrecedence : number = 0) : string    {
@@ -297,14 +299,11 @@ class Variable extends FunktionElement
         registeredVariables['ш'] = new Variable('ш', registeredVariables['τ'] .divideBy(new Numeric(new RationalReal(4), Real.zero)), true);
     }
 
-    static ofName(name) : Variable
+    static ofName(name : string) : Variable
     {
-        if (name in registeredVariables)
-            return registeredVariables[name];
-
-        var co = new Variable(name);
-        registeredVariables[name] = co;
-        return co;
+        if (!(name in registeredVariables))
+            registeredVariables[name] = new Variable(name);
+        return registeredVariables[name];
     }
 
 }

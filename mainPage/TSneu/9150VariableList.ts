@@ -15,7 +15,7 @@ function VariableListHTM () {
 
         let temp = variable.useinner ? "checked='checked'" : '';
         HTMLoutput += 
-`\\( ${variable.name} = ${mathOutput} \\).  
+`\\( ${variable.display()} = ${mathOutput} \\).  
 <label> Setze eigenen Wert: 
     <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
 </label> 

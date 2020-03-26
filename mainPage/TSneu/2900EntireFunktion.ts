@@ -14,8 +14,8 @@ class EntireFunktion
     display() : string
     {
         let wV = Variable.ofName(Variable.workVariable);
-        return "\\( " +
-            this.name + "\\left(" + wV.display() + "\\right) =  " + this.inner.display() + "\\)<br>";
+        return "\\( \\operatorname{" +
+            this.name + "}\\left(" + wV.display() + "\\right) =  " + this.inner.display() + "\\)<br>";
     }
 
     simplified() : EntireFunktion
@@ -33,12 +33,20 @@ class EntireFunktion
     valueAt(x : FunktionElement) : EntireFunktion
     {
         let wVName = Variable.workVariable;
-        Variable.workVariable = '';
         let wV = Variable.ofName(wVName);
+        
+        let oldUseinner = wV.useinner;
+        let oldInner = wV.inner;
+        
+        Variable.workVariable = '';
         wV.useinner = true;
         wV.inner = x;
 
         let result = new EntireFunktion(this.inner.simplified(), this.name);
+
+        Variable.workVariable = wVName;
+        wV.useinner = oldUseinner;
+        wV.inner = oldInner;
 
         return result;
     }

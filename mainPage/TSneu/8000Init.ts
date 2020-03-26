@@ -1,6 +1,6 @@
 Variable.init();
 
-MathJax = {
+window.MathJax = {
 	options: {
 	  menuOptions: {
 		settings: {
@@ -10,6 +10,18 @@ MathJax = {
 	  }
 	},
 	svg : {
-		mathmlSpacing : true
+		mathmlSpacing : false
+	},
+	startup:{
+		output: 'svg'
+	},
+	loader: {
+		load: ['output/svg','[tex]/unicode']
+	},
+	tex:{
+		packages: {
+			'[+]': ['unicode']
+		},
+		digits: /^(?:[0-9]+(?:\{,\}[0-9]{3})*(?:\.[0-9]*)?|\.[0-9]+)/
 	}
   };

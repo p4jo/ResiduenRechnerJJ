@@ -2,13 +2,12 @@
 // DATEN
 
 function relevantData(element: Element) : string | boolean {
-	if (element instanceof HTMLFormElement) {
+	if(element instanceof HTMLInputElement){
 		if (element.type === "text")
 			return element.value;
 		if (element.type === "checkbox")
 			return element.checked;
 	}
-	alert("relevantData cannot be read from element " + dump(element));
 	return null;
 }
 
@@ -16,10 +15,13 @@ function loadData() {
 	formData = {};
 	let interestingInputs = document.getElementsByClassName("II");
 	//alert (Object.keys(interestingInputs));
-	for (let index in interestingInputs){
-		let element : Element = interestingInputs[index];
+	for (let index in interestingInputs) {
+		let element = interestingInputs[index];
+		if(!(element instanceof Element))
+			break;
 		formData[element.id] = relevantData(element); //Hinzufügen
 	}
+	dump(formData);
 }
 
 function updateInputData() {

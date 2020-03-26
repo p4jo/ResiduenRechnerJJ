@@ -24,30 +24,19 @@ function dump(obj) {
     }
     alert(out);
 }
-function number_format(n = 0, decimals = 0, decPoint = '.', thousandsSep = '') {
-    decimals = Math.round(Math.abs(decimals));
-    var toFixedFix = function (n, prec) {
-        if (n.toString().indexOf('e') === -1) {
-            return +(Math.round(+(n + 'e+' + prec)) + 'e-' + prec);
-        }
-        else {
-            var arr = ('' + n).split('e');
-            var sig = '';
-            if (+arr[1] + prec > 0) {
-                sig = '+';
-            }
-            return (+(Math.round(+(+arr[0] + 'e' + sig + (+arr[1] + prec))) + 'e-' + prec)).toFixed(prec);
-        }
-    };
-    let s = (decimals > 0 ? toFixedFix(n, decimals) : Math.round(n)).toString().split('.');
-    if (s[0].length > 3) {
-        s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, thousandsSep);
+function number_format(n, decimals = null, decPoint = '.', thousandsSep = '') {
+    if (!decPoint)
+        decPoint = '.';
+    if (!thousandsSep)
+        thousandsSep = '';
+    if (n == null || !isFinite(n)) {
+        throw new TypeError("n is not valid");
     }
-    if ((s[1] || '').length < decimals) {
-        s[1] = s[1] || '';
-        s[1] += new Array(decimals - s[1].length + 1).join('0');
-    }
-    return s.join(decPoint);
+    let maxDec = (n.toString() + '.').split('.')[1].length;
+    decimals = decimals == null ? maxDec : Math.min(decimals, maxDec);
+    var splitNum = n.toFixed(decimals).split('.');
+    splitNum[0] = splitNum[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSep);
+    return splitNum.join(decPoint);
 }
 var formData;
 var HTMLoutput;
@@ -197,17 +186,10 @@ let Variable = (() => {
         }
         display(outerPrecendence = 0) {
             if (!this.isConstant())
-                return "\\mathit{" + this.name + "}";
+                return "\\operatorname{\\mathit{" + this.name + "}}";
             if (this.useInner())
-                return "\\mathbf{" + this.name + '}';
-            return "\\mathrm{" + this.name + '}';
-            return this.isConstant()
-                ? (this.isNumeric()
-                    ? this.inner.getValue().display()
-                    : (this.useInner()
-                        ? "\\mathbf{" + this.name + '}'
-                        : this.name))
-                : "\\mathit{" + this.name + "}";
+                return "\\operatorname{\\mathbf{" + this.name + '}}';
+            return "\\operatorname{\\mathit{" + this.name + '}}';
         }
         displayInline(outerPrecedence = 0) {
             return this.name;
@@ -253,11 +235,9 @@ let Variable = (() => {
             registeredVariables['ш'] = new Variable('ш', registeredVariables['τ'].divideBy(new Numeric(new RationalReal(4), Real.zero)), true);
         }
         static ofName(name) {
-            if (name in registeredVariables)
-                return registeredVariables[name];
-            var co = new Variable(name);
-            registeredVariables[name] = co;
-            return co;
+            if (!(name in registeredVariables))
+                registeredVariables[name] = new Variable(name);
+            return registeredVariables[name];
         }
     }
     Variable.activateInner = true;
@@ -919,8 +899,8 @@ class EntireFunktion {
     }
     display() {
         let wV = Variable.ofName(Variable.workVariable);
-        return "\\( " +
-            this.name + "\\left(" + wV.display() + "\\right) =  " + this.inner.display() + "\\)<br>";
+        return "\\( \\operatorname{" +
+            this.name + "}\\left(" + wV.display() + "\\right) =  " + this.inner.display() + "\\)<br>";
     }
     simplified() {
         return new EntireFunktion(this.inner.simplified(), this.name);
@@ -930,11 +910,16 @@ class EntireFunktion {
     }
     valueAt(x) {
         let wVName = Variable.workVariable;
-        Variable.workVariable = '';
         let wV = Variable.ofName(wVName);
+        let oldUseinner = wV.useinner;
+        let oldInner = wV.inner;
+        Variable.workVariable = '';
         wV.useinner = true;
         wV.inner = x;
         let result = new EntireFunktion(this.inner.simplified(), this.name);
+        Variable.workVariable = wVName;
+        wV.useinner = oldUseinner;
+        wV.inner = oldInner;
         return result;
     }
 }
@@ -1171,7 +1156,7 @@ let Parser = (() => {
 })();
 Parser.init();
 Variable.init();
-MathJax = {
+window.MathJax = {
     options: {
         menuOptions: {
             settings: {
@@ -1181,17 +1166,28 @@ MathJax = {
         }
     },
     svg: {
-        mathmlSpacing: true
+        mathmlSpacing: false
+    },
+    startup: {
+        output: 'svg'
+    },
+    loader: {
+        load: ['output/svg', '[tex]/unicode']
+    },
+    tex: {
+        packages: {
+            '[+]': ['unicode']
+        },
+        digits: /^(?:[0-9]+(?:\{,\}[0-9]{3})*(?:\.[0-9]*)?|\.[0-9]+)/
     }
 };
 function relevantData(element) {
-    if (element instanceof HTMLFormElement) {
+    if (element instanceof HTMLInputElement) {
         if (element.type === "text")
             return element.value;
         if (element.type === "checkbox")
             return element.checked;
     }
-    alert("relevantData cannot be read from element " + dump(element));
     return null;
 }
 function loadData() {
@@ -1199,8 +1195,11 @@ function loadData() {
     let interestingInputs = document.getElementsByClassName("II");
     for (let index in interestingInputs) {
         let element = interestingInputs[index];
+        if (!(element instanceof Element))
+            break;
         formData[element.id] = relevantData(element);
     }
+    dump(formData);
 }
 function updateInputData() {
     loadData();
@@ -1272,7 +1271,7 @@ function VariableListHTM() {
         }
         let temp = variable.useinner ? "checked='checked'" : '';
         HTMLoutput +=
-            `\\( ${variable.name} = ${mathOutput} \\).  
+            `\\( ${variable.display()} = ${mathOutput} \\).  
 <label> Setze eigenen Wert: 
     <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
 </label> 
