@@ -58,6 +58,37 @@ const floatToRationalTolerance = Number.EPSILON;
 const floatToRationalMaxDen = 100000;
 const displayDigits = 8;
 var registeredVariables;
+const operations = {
+    '+': { 'name': 'Addition', 'arity': 2, 'precedence': 2 },
+    '-': { 'name': 'Subtraktion', 'arity': 2, 'precedence': 2 },
+    '/': { 'name': 'Division', 'arity': 2, 'precedence': 4 },
+    '÷': { 'name': 'Division', 'arity': 2, 'precedence': 3 },
+    ':': { 'name': 'Division', 'arity': 2, 'precedence': 3 },
+    '*': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
+    '×': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
+    '·': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
+    '^': { 'name': 'Potenz', 'arity': 2, 'precedence': 4, 'rightAssociative': 1 },
+    'sin': { 'name': 'sin', 'arity': 1, 'precedence': 5 },
+    'cos': { 'name': 'cos', 'arity': 1, 'precedence': 5 },
+    'ln': { 'name': 'ln', 'arity': 1, 'precedence': 5 },
+    'sqrt': { 'name': 'sqrt', 'arity': 1, 'precedence': 5 },
+    'Wurzel': { 'name': 'sqrt', 'arity': 1, 'precedence': 5 },
+    'ζ': { 'name': 'RiemannZeta', 'arity': 1, 'precedence': 5 },
+    '!': { 'name': 'Factorial', 'arity': 1, 'precedence': 5 },
+};
+MathJax = {
+    options: {
+        menuOptions: {
+            settings: {
+                renderer: 'SVG',
+                inTabOrder: false,
+            },
+        }
+    },
+    svg: {
+        mathmlSpacing: true
+    }
+};
 function relevantData(element) {
     if (element.type === "text")
         return element.value;
@@ -68,8 +99,10 @@ function relevantData(element) {
 function loadData() {
     formData = {};
     let interestingInputs = document.getElementsByClassName("II");
-    for (var index in interestingInputs)
-        formData[interestingInputs[index].id] = relevantData(interestingInputs[index]);
+    for (var index in interestingInputs) {
+        let element = interestingInputs[index];
+        formData[element.id] = relevantData(element);
+    }
 }
 function updateInputData() {
     loadData();
@@ -166,24 +199,6 @@ function updateVariables() {
             HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
     }
 }
-const operations = {
-    '+': { 'name': 'Addition', 'arity': 2, 'precedence': 2 },
-    '-': { 'name': 'Subtraktion', 'arity': 2, 'precedence': 2 },
-    '/': { 'name': 'Division', 'arity': 2, 'precedence': 4 },
-    '÷': { 'name': 'Division', 'arity': 2, 'precedence': 3 },
-    ':': { 'name': 'Division', 'arity': 2, 'precedence': 3 },
-    '*': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
-    '×': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
-    '·': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
-    '^': { 'name': 'Potenz', 'arity': 2, 'precedence': 4, 'rightAssociative': 1 },
-    'sin': { 'name': 'sin', 'arity': 1, 'precedence': 5 },
-    'cos': { 'name': 'cos', 'arity': 1, 'precedence': 5 },
-    'ln': { 'name': 'ln', 'arity': 1, 'precedence': 5 },
-    'sqrt': { 'name': 'sqrt', 'arity': 1, 'precedence': 5 },
-    'Wurzel': { 'name': 'sqrt', 'arity': 1, 'precedence': 5 },
-    'ζ': { 'name': 'RiemannZeta', 'arity': 1, 'precedence': 5 },
-    '!': { 'name': 'Factorial', 'arity': 1, 'precedence': 5 },
-};
 class FunktionElement {
     isOne() {
         return false;
@@ -286,7 +301,6 @@ class BinaryOperation extends FunktionElement {
             return "(" + this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec)) + ")";
         return this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec));
     }
-    precedence() { return 3; }
 }
 let Variable = (() => {
     class Variable extends FunktionElement {
@@ -731,9 +745,7 @@ class RationalReal extends Real {
 }
 Numeric.init();
 class AdditionType extends BinaryOperation {
-    precedence() {
-        return 2;
-    }
+    precedence() { return 2; }
     constructor(op1, op2) {
         super(op1 ?? Numeric.zero, op2 ?? Numeric.zero);
     }
@@ -755,11 +767,12 @@ class AdditionType extends BinaryOperation {
                 numeric = numeric.subtractN(this.op2.getValue());
         }
         else if (this.op2 instanceof AdditionType) {
+            const summ = this.op2.allSummands();
             if (this instanceof Addition)
-                numeric = numeric.addN(this.op2.getValue());
+                numeric = numeric.addN(summ[0]);
             else
-                numeric = numeric.subtractN(this.op2.getValue());
-            list = list.concat(this.op2.allSummands()[1]);
+                numeric = numeric.subtractN(summ[0]);
+            list = list.concat(summ[1]);
         }
         else
             list.push(this.op2);
@@ -816,6 +829,7 @@ class Subtraction extends AdditionType {
     }
 }
 class MultiplicationType extends BinaryOperation {
+    precedence() { return 3; }
     constructor(op1, op2) {
         super(op1 ?? Numeric.one, op2 ?? Numeric.one);
     }

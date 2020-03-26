@@ -1,6 +1,19 @@
-declare const MathJax;
-// DATEN
+declare var MathJax;
+MathJax = {
+	options: {
+	  menuOptions: {
+		settings: {
+		  renderer: 'SVG',     // or 'CHTML'
+		  inTabOrder: false,      // true if tabbing includes math
+		},
+	  }
+	},
+	svg : {
+		mathmlSpacing : true
+	}
+  };
 
+// DATEN
 
 function relevantData(element) : string | boolean {
 	if (element.type === "text")
@@ -14,8 +27,10 @@ function loadData() {
 	formData = {};
 	let interestingInputs = document.getElementsByClassName("II");
 	//alert (Object.keys(interestingInputs));
-	for (var index in interestingInputs)
-		formData[interestingInputs[index].id] = relevantData(interestingInputs[index]); //Hinzufügen
+	for (var index in interestingInputs){
+		let element = interestingInputs[index];
+		formData[element.id] = relevantData(element); //Hinzufügen
+	}
 }
 
 function updateInputData() {
