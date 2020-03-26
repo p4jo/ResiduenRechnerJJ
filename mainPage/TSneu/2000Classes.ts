@@ -1,11 +1,4 @@
-//GLOBAL CONSTANTS
 
-const floatToRationalTolerance: number = Number.EPSILON;
-const floatToRationalMaxDen: number = 100000;    
-const displayDigits : number = 8;
-
-
-var registeredVariables: Object;
 // TODO: Auch Operationen müssen, wie Variablen, nur zu Numerics vereinfacht werden dürfen, wenn das gewünscht ist
 // (z.B. Additionen immer erlaubt (oder bei rational plus number nicht), aber Wurzel und ln nicht erlaubt, weil das in Zahlen in mathematischer Notation auch stehen bleibt
 

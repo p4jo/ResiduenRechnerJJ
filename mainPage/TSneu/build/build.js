@@ -54,6 +54,10 @@ var HTMLoutput;
 var registeredVariables;
 var funktion;
 var commaIsDecimalPoint = false;
+const floatToRationalTolerance = Number.EPSILON;
+const floatToRationalMaxDen = 100000;
+const displayDigits = 8;
+var registeredVariables;
 function relevantData(element) {
     if (element.type === "text")
         return element.value;
@@ -162,10 +166,6 @@ function updateVariables() {
             HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
     }
 }
-const floatToRationalTolerance = Number.EPSILON;
-const floatToRationalMaxDen = 100000;
-const displayDigits = 8;
-var registeredVariables;
 const operations = {
     '+': { 'name': 'Addition', 'arity': 2, 'precedence': 2 },
     '-': { 'name': 'Subtraktion', 'arity': 2, 'precedence': 2 },
