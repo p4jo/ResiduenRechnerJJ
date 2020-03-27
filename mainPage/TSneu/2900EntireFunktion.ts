@@ -41,7 +41,7 @@ class EntireFunktion
         wV.useinner = true;
         wV.inner = x;
 
-        let result = new EntireFunktion(this.inner.simp lified(), this.name);
+        let result = new EntireFunktion(this.inner.simplified(), this.name);
 
         Variable.workVariable = wVName;
         wV.useinner = useinner;
