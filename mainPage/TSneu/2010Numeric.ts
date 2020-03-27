@@ -341,12 +341,12 @@ class FloatReal extends Real{
     displayInline(): string
     {
         if (displayDigits > 0) {
-            /*
-            let thousands_sep = '\'';
+            
+            let thousands_sep = commaIsDecimalPoint ? '\'' : ',';
             let dec_point = commaIsDecimalPoint ? ',' : '.';
             return number_format( this.value, displayDigits, dec_point, thousands_sep);
-            */
-            return this.value.toLocaleString(commaIsDecimalPoint ?  'de-de' : 'en-us', {minimumFractionDigits: 0, maximumFractionDigits: displayDigits});
+            
+            //return this.value.toLocaleString(commaIsDecimalPoint ?  'de-de' : 'en-us', {minimumFractionDigits: 0, maximumFractionDigits: displayDigits});
         }
         return this.value.toString();
     }

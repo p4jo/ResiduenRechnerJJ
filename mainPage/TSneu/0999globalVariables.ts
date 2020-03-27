@@ -18,13 +18,13 @@ var registeredVariables: Object;
 // 'rightAssociative' if meant otherwise
 const operations = {
     '+': { 'name': 'Addition', 'arity': 2, 'precedence': 2 },
-    '-': { 'name': 'Subtraktion', 'arity': 2, 'precedence': 2 },
+    '-': { 'name': 'Subtraction', 'arity': 2, 'precedence': 2 },
     '/': { 'name': 'Division', 'arity': 2, 'precedence': 4 },
     '÷': { 'name': 'Division', 'arity': 2, 'precedence': 3 },
     ':': { 'name': 'Division', 'arity': 2, 'precedence': 3 },
-    '*': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
-    '×': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
-    '·': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
+    '*': { 'name': 'Multiplication', 'arity': 2, 'precedence': 3 },
+    '×': { 'name': 'Multiplication', 'arity': 2, 'precedence': 3 },
+    '·': { 'name': 'Multiplication', 'arity': 2, 'precedence': 3 },
     //    '%' : {'name' : 'RestMod', 'arity' : 2, 'precedence' : 3},
     '^': { 'name': 'Potenz', 'arity': 2, 'precedence': 4, 'rightAssociative': 1 },
 

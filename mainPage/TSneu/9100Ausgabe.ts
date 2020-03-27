@@ -35,13 +35,17 @@ function Ausgabe2() {
 //Evtl. HTML-Bereiche verwenden und mit CSS farbig / mit Rand etc. machen
 function Ausgabe() {
     HTMLoutput += "Eingabe: " + funktion.display();
+    let residuePoint = Parser.parseStringToFunktionElement(formData["residuePoint"]);
+    let Df : EntireFunktion[] = new Array(10);
+    Df[0] = funktion.simplified();
+    HTMLoutput += "Vereinfacht: " + Df[0].display();
 
-    funktion = funktion.simplified();
-    HTMLoutput += "Vereinfacht: " + funktion.display();
+    for (let i : number = 1; i < 10; i++) {
+        Df[i] = Df[i-1].derivative().simplified();
+    }
+    for (let i : number = 0; i < 10; i++) {
+        HTMLoutput += i+"-te Ableitung: " + Df[i].display() + " mit Wert " + Df[i].valueAt(residuePoint).display();
+    }
 
-    var derivative: EntireFunktion = funktion.derivative();
-    HTMLoutput += "Abgeleitet: " + derivative.display();
 
-    derivative = derivative.simplified();
-    HTMLoutput += "Ableitung Vereinfacht: " + derivative.display();
 }

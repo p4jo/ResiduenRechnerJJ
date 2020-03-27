@@ -78,9 +78,9 @@ class Parser
             return Numeric.zero;
         
         let tokens = Parser.tokenize(inputStr);
-        HTMLoutput += "Tokens: " + tokens.join(' ') + "<br>";
+        //HTMLoutput += "Tokens: " + tokens.join(' ') + "<br>";
         let RPN = Parser.parseTokensToRPN(tokens);
-        HTMLoutput += "RPN: " + RPN.join(' ') + "<br>";
+        //HTMLoutput += "RPN: " + RPN.join(' ') + "<br>";
         return Parser.parseRPNToFunktionElement(RPN);
     }
 
@@ -174,7 +174,7 @@ class Parser
                 //Damit kann mann binäre Operationen unär verwenden, z.B. (-baum) : 0-baum oder /z : 1/z
                 if(!wasOperand && operations[token]['arity'] >= 2 && !(j+1 in tokens && Parser.leftBraceChars.includes(tokens[j+1]))) {
                     output_queue.push(null);
-                    HTMLoutput += "leerer Operand wurde eingefügt für token <br>";
+                    //HTMLoutput += "leerer Operand wurde eingefügt für token <br>";
                 }
 
 

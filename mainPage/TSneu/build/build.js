@@ -49,13 +49,13 @@ const displayDigits = 8;
 var registeredVariables;
 const operations = {
     '+': { 'name': 'Addition', 'arity': 2, 'precedence': 2 },
-    '-': { 'name': 'Subtraktion', 'arity': 2, 'precedence': 2 },
+    '-': { 'name': 'Subtraction', 'arity': 2, 'precedence': 2 },
     '/': { 'name': 'Division', 'arity': 2, 'precedence': 4 },
     '÷': { 'name': 'Division', 'arity': 2, 'precedence': 3 },
     ':': { 'name': 'Division', 'arity': 2, 'precedence': 3 },
-    '*': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
-    '×': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
-    '·': { 'name': 'Multiplikation', 'arity': 2, 'precedence': 3 },
+    '*': { 'name': 'Multiplication', 'arity': 2, 'precedence': 3 },
+    '×': { 'name': 'Multiplication', 'arity': 2, 'precedence': 3 },
+    '·': { 'name': 'Multiplication', 'arity': 2, 'precedence': 3 },
     '^': { 'name': 'Potenz', 'arity': 2, 'precedence': 4, 'rightAssociative': 1 },
     'sin': { 'name': 'sin', 'arity': 1, 'precedence': 5 },
     'cos': { 'name': 'cos', 'arity': 1, 'precedence': 5 },
@@ -86,7 +86,7 @@ class FunktionElement {
         return new Subtraction(this, other);
     }
     multiply(other) {
-        return new Multiplikation(this, other);
+        return new Multiplication(this, other);
     }
     divideBy(other) {
         return new Division(this, other);
@@ -186,7 +186,7 @@ let Variable = (() => {
         }
         display(outerPrecendence = 0) {
             if (!this.isConstant())
-                return "\\operatorname{\\mathit{" + this.name + "}}";
+                return "\\operatorname{\\mathtt{" + this.name + "}}";
             if (this.useInner())
                 return "\\operatorname{\\mathbf{" + this.name + '}}';
             return "\\operatorname{\\mathit{" + this.name + '}}';
@@ -440,7 +440,9 @@ class FloatReal extends Real {
     }
     displayInline() {
         if (displayDigits > 0) {
-            return this.value.toLocaleString(commaIsDecimalPoint ? 'de-de' : 'en-us', { minimumFractionDigits: 0, maximumFractionDigits: displayDigits });
+            let thousands_sep = commaIsDecimalPoint ? '\'' : ',';
+            let dec_point = commaIsDecimalPoint ? ',' : '.';
+            return number_format(this.value, displayDigits, dec_point, thousands_sep);
         }
         return this.value.toString();
     }
@@ -694,7 +696,7 @@ class MultiplicationType extends BinaryOperation {
         return null;
     }
 }
-class Multiplikation extends MultiplicationType {
+class Multiplication extends MultiplicationType {
     displayNormally(left, right) {
         return left + '\\cdot ' + right;
     }
@@ -706,7 +708,7 @@ class Multiplikation extends MultiplicationType {
             this.op1.derivative().multiply(this.op2).add(this.op1.multiply(this.op2.derivative()));
     }
     simplified() {
-        let simpler = new Multiplikation(this.op1.simplified(), this.op2.simplified());
+        let simpler = new Multiplication(this.op1.simplified(), this.op2.simplified());
         if (simpler.isNumeric())
             return simpler.getValue();
         if (simpler.op1.isNumeric() && simpler.op1.isZero()) {
@@ -748,7 +750,7 @@ class Division extends MultiplicationType {
         return left + " ÷ " + right;
     }
     derivative() {
-        return this.isConstant() ? Numeric.zero : new Division(new Subtraction(new Multiplikation(this.op1.derivative(), this.op2), new Multiplikation(this.op1, this.op2.derivative())), new Potenz(this.op2, Numeric.ofF(2)));
+        return this.isConstant() ? Numeric.zero : new Division(new Subtraction(new Multiplication(this.op1.derivative(), this.op2), new Multiplication(this.op1, this.op2.derivative())), new Potenz(this.op2, Numeric.ofF(2)));
     }
     simplified() {
         let simpler = new Division(this.op1.simplified(), this.op2.simplified());
@@ -898,9 +900,8 @@ class EntireFunktion {
         this.name = name;
     }
     display() {
-        let wV = Variable.ofName(Variable.workVariable);
         return "\\( \\operatorname{" +
-            this.name + "}\\left(" + wV.display() + "\\right) =  " + this.inner.display() + "\\)<br>";
+            this.name + "}\\left(\\operatorname{\\mathit{" + Variable.workVariable + "}}\\right) =  " + this.inner.display() + "\\)<br>";
     }
     simplified() {
         return new EntireFunktion(this.inner.simplified(), this.name);
@@ -911,15 +912,15 @@ class EntireFunktion {
     valueAt(x) {
         let wVName = Variable.workVariable;
         let wV = Variable.ofName(wVName);
-        let oldUseinner = wV.useinner;
-        let oldInner = wV.inner;
+        let useinner = wV.useinner;
+        let inner = wV.inner;
         Variable.workVariable = '';
         wV.useinner = true;
         wV.inner = x;
-        let result = new EntireFunktion(this.inner.simplified(), this.name);
+        let result = new EntireFunktion(this.inner.simp, lified(), this.name);
         Variable.workVariable = wVName;
-        wV.useinner = oldUseinner;
-        wV.inner = oldInner;
+        wV.useinner = useinner;
+        wV.inner = inner;
         return result;
     }
 }
@@ -967,9 +968,7 @@ let Parser = (() => {
             if (inputStr == null || inputStr == '')
                 return Numeric.zero;
             let tokens = Parser.tokenize(inputStr);
-            HTMLoutput += "Tokens: " + tokens.join(' ') + "<br>";
             let RPN = Parser.parseTokensToRPN(tokens);
-            HTMLoutput += "RPN: " + RPN.join(' ') + "<br>";
             return Parser.parseRPNToFunktionElement(RPN);
         }
         static tokenize(input) {
@@ -1034,7 +1033,6 @@ let Parser = (() => {
                 else if (token in operations) {
                     if (!wasOperand && operations[token]['arity'] >= 2 && !(j + 1 in tokens && Parser.leftBraceChars.includes(tokens[j + 1]))) {
                         output_queue.push(null);
-                        HTMLoutput += "leerer Operand wurde eingefügt für token <br>";
                     }
                     let myOP = Parser.precedence(token);
                     while (true) {
@@ -1157,30 +1155,39 @@ let Parser = (() => {
 Parser.init();
 Variable.init();
 window.MathJax = {
-    options: {
-        menuOptions: {
-            settings: {
-                renderer: 'SVG',
-                inTabOrder: false,
-            },
-        }
-    },
-    svg: {
-        mathmlSpacing: false
-    },
-    startup: {
-        output: 'svg'
-    },
-    loader: {
-        load: ['output/svg', '[tex]/unicode']
-    },
-    tex: {
-        packages: {
-            '[+]': ['unicode']
+    config: {
+        options: {
+            menuOptions: {
+                settings: {
+                    renderer: 'SVG',
+                    inTabOrder: false,
+                },
+            }
         },
-        digits: /^(?:[0-9]+(?:\{,\}[0-9]{3})*(?:\.[0-9]*)?|\.[0-9]+)/
+        svg: {
+            mathmlSpacing: false
+        },
+        startup: {
+            output: 'svg'
+        },
+        loader: {
+            load: ['output/svg', '[tex]/unicode']
+        },
+        tex: {
+            packages: {
+                '[+]': ['unicode']
+            },
+            digits: /^(?:[0-9]+(?:\{,\}[0-9]{3})*(?:\.[0-9]*)?|\.[0-9]+)/
+        }
     }
 };
+function updateLocale() {
+    Parser.init();
+    window.MathJax.config.tex.digits = commaIsDecimalPoint ?
+        /^(?:[0-9]+(?:\{'\}[0-9]{3})*(?:\,[0-9]*)?|\,[0-9]+)/ :
+        /^(?:[0-9]+(?:\{,\}[0-9]{3})*(?:\.[0-9]*)?|\.[0-9]+)/;
+    MathJax.startup.getComponents();
+}
 function relevantData(element) {
     if (element instanceof HTMLInputElement) {
         if (element.type === "text")
@@ -1199,13 +1206,12 @@ function loadData() {
             break;
         formData[element.id] = relevantData(element);
     }
-    dump(formData);
 }
 function updateInputData() {
     loadData();
     Variable.workVariable = formData["workVariable"];
     commaIsDecimalPoint = formData["cIDP"];
-    Parser.init();
+    updateLocale();
 }
 function sendHTMLIntoDiv(htmlCode, outputDiv) {
     var div = document.getElementById("ausgabe" + outputDiv);
@@ -1251,12 +1257,16 @@ function Ausgabe2() {
 }
 function Ausgabe() {
     HTMLoutput += "Eingabe: " + funktion.display();
-    funktion = funktion.simplified();
-    HTMLoutput += "Vereinfacht: " + funktion.display();
-    var derivative = funktion.derivative();
-    HTMLoutput += "Abgeleitet: " + derivative.display();
-    derivative = derivative.simplified();
-    HTMLoutput += "Ableitung Vereinfacht: " + derivative.display();
+    let residuePoint = Parser.parseStringToFunktionElement(formData["residuePoint"]);
+    let Df = new Array(10);
+    Df[0] = funktion.simplified();
+    HTMLoutput += "Vereinfacht: " + Df[0].display();
+    for (let i = 1; i < 10; i++) {
+        Df[i] = Df[i - 1].derivative().simplified();
+    }
+    for (let i = 0; i < 10; i++) {
+        HTMLoutput += i + "-te Ableitung: " + Df[i].display() + " mit Wert " + Df[i].valueAt(residuePoint).display();
+    }
 }
 function VariableListHTM() {
     HTMLoutput += "<form onsubmit='{event.preventDefault(); reloadSecondArea();}'><fieldset>";
@@ -1292,7 +1302,5 @@ function updateVariables() {
             variable.inner = Parser.parseStringToFunktionElement(formData["input_" + variable.name]);
         }
         variable.useinner = ("check_" + variable.name in formData) && formData["check_" + variable.name];
-        if (variable.useInner())
-            HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
     }
 }

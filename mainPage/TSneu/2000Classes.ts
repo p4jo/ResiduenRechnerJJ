@@ -53,8 +53,8 @@ abstract class FunktionElement {
     subtract (other: FunktionElement) : Subtraction {
         return new Subtraction(this,other);
     }
-    multiply (other: FunktionElement) : Multiplikation {
-        return new Multiplikation(this,other);
+    multiply (other: FunktionElement) : Multiplication {
+        return new Multiplication(this,other);
     }
     divideBy (other: FunktionElement) : Division {
         return new Division(this,other);
@@ -215,10 +215,11 @@ class Variable extends FunktionElement
     }
 
     display(outerPrecendence : number = 0) : string    {
-        // \operatorname für mehrbuchstabige Bezeichner
-        //mathit Versionen der kyrillischen Buchstaben sind zu breit, mathbf passt. Bei griechischen Buchstaben sieht die (ohne)-Version ungut aus.
+        // \operatorname für mehrbuchstabige Bezeichner (schadet nicht)
+        //mathit Versionen der kyrillischen Buchstaben sind zu breit. Bei griechischen Buchstaben sieht die (ohne)-Version ungut aus.
+        //mathtt und mathbf sind gut
         if (!this.isConstant())
-            return "\\operatorname{\\mathit{" + this.name + "}}";
+            return "\\operatorname{\\mathtt{" + this.name + "}}";
         if (this.useInner())
             return "\\operatorname{\\mathbf{" + this.name + '}}';
         return "\\operatorname{\\mathit{" + this.name + '}}';

@@ -19,7 +19,7 @@ abstract class MultiplicationType extends BinaryOperation {
 }
 
 
-class Multiplikation extends MultiplicationType {
+class Multiplication extends MultiplicationType {
     displayNormally(left, right)
     {
         return left + '\\cdot ' + right;
@@ -37,7 +37,7 @@ class Multiplikation extends MultiplicationType {
     }
 
     simplified() : FunktionElement {
-        let simpler = new Multiplikation(this.op1.simplified(), this.op2.simplified());
+        let simpler = new Multiplication(this.op1.simplified(), this.op2.simplified());
 
         if (simpler.isNumeric())
             return simpler.getValue();
@@ -95,7 +95,7 @@ class Division extends MultiplicationType {
     }
 
     derivative() : FunktionElement {
-        return this.isConstant() ? Numeric.zero : new Division(new Subtraction(new Multiplikation(this.op1.derivative(), this.op2), new Multiplikation(this.op1, this.op2.derivative())), new Potenz(this.op2, Numeric.ofF(2)));
+        return this.isConstant() ? Numeric.zero : new Division(new Subtraction(new Multiplication(this.op1.derivative(), this.op2), new Multiplication(this.op1, this.op2.derivative())), new Potenz(this.op2, Numeric.ofF(2)));
     }
 
     simplified() : FunktionElement {

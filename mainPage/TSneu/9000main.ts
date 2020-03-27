@@ -21,7 +21,7 @@ function loadData() {
 			break;
 		formData[element.id] = relevantData(element); //Hinzufügen
 	}
-	dump(formData);
+	//dump(formData);
 }
 
 function updateInputData() {
@@ -29,7 +29,8 @@ function updateInputData() {
 
     Variable.workVariable = formData["workVariable"];
 	commaIsDecimalPoint = formData["cIDP"];
-	Parser.init();
+	updateLocale();
+
 }
 
 //JAVASCRIPT FUNKTIONALITÄT
