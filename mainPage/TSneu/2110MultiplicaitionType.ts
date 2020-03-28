@@ -48,11 +48,12 @@ class Multiplication extends MultiplicationType {
             
         //How do I get variables?
         for (let index in registeredVariables) {
+            let currentVariable = registeredVariables[index];
             if((this.op1 instanceof Potenz || this.op1 instanceof MultiplicationType) && (this.op2 instanceof Potenz || this.op2 instanceof MultiplicationType)) {
-                let mul1 = this.op1.isMultipleOf(index);
-                let mul2 = this.op1.isMultipleOf(index);
+                let mul1 = this.op1.isMultipleOf(currentVariable);
+                let mul2 = this.op1.isMultipleOf(currentVariable);
                 if(!mul1.isZero() && !mul2.isZero()) {
-                    return new Multiplication(new Potenz(index, new Addition(mul1, mul2).simplified()), new Multiplication(this.op1.removeVariable(index), this.op2.removeVariable(index).simplified()));
+                    return new Multiplication(new Potenz(currentVariable, new Addition(mul1, mul2).simplified()), new Multiplication(this.op1.removeVariable(currentVariable), this.op2.removeVariable(currentVariable).simplified()));
                 }
             }
         }

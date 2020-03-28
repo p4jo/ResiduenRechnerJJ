@@ -83,6 +83,13 @@ abstract class AdditionType extends BinaryOperation {
 */
         return this;
     }
+
+
+
+    //TODO
+    isMultipleOf(variable : Variable) : FunktionElement {
+        return Numeric.zero;
+    }
 }
 
 class Addition extends AdditionType {
