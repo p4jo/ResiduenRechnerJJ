@@ -15,7 +15,7 @@ class sqrt extends UnaryOperation {
     }
 
     simplified() : FunktionElement {
-
+        //Wollen wir wirklich sqrt(30) als rational ausgeben?
         if (this.isNumeric())
             return this.getValue();
 
@@ -34,7 +34,7 @@ class sqrt extends UnaryOperation {
     {
         if (! this.op.isNumeric())
             return false;
-        //TODO: wann nicht vereinfachen für Mathematische Exaktheit
+        //TODO: wenn nicht vereinfachen für Mathematische Exaktheit
 
         //result += this.inlineAusgeben() + "=".this.getValue().inlineAusgeben();
         if (this.getValue().isRational() || ! this.op.getValue().isRational())
