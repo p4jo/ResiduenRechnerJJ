@@ -3,6 +3,7 @@ declare var MathJax;
 var formData : Object;
 var HTMLoutput : string;
 var registeredVariables : Object;
+var workVariable :  string;
 var funktion : EntireFunktion;
 var commaIsDecimalPoint = false;
 

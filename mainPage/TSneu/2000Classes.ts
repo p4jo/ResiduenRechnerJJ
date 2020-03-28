@@ -188,10 +188,13 @@ abstract class BinaryOperation extends FunktionElement  {
 
 }
 
+
+
+
+
 class Variable extends FunktionElement
 {
     static activateInner : boolean = true;
-    static workVariable : string = '';
 
     name : string;
     inner : FunktionElement;
@@ -207,7 +210,7 @@ class Variable extends FunktionElement
 
     derivative() : FunktionElement
     {
-        if (Variable.workVariable == this.name)
+        if (workVariable == this.name)
             return Numeric.one;
         else if (this.useInner())
             return this.inner.derivative();
@@ -218,10 +221,10 @@ class Variable extends FunktionElement
         // \operatorname für mehrbuchstabige Bezeichner (schadet nicht)
         //mathit Versionen der kyrillischen Buchstaben sind zu breit. Bei griechischen Buchstaben sieht die (ohne)-Version ungut aus.
         //mathtt und mathbf sind gut
-        if (!this.isConstant())
-            return "\\operatorname{\\mathtt{" + this.name + "}}";
         if (this.useInner())
             return "\\operatorname{\\mathbf{" + this.name + '}}';
+        if (!this.isConstant())
+            return "\\operatorname{\\mathtt{" + this.name + "}}";
         return "\\operatorname{\\mathit{" + this.name + '}}';
         /* return this.isConstant()
                 ?(this.isNumeric()
@@ -253,16 +256,16 @@ class Variable extends FunktionElement
     {
         if (this.inner === null)
             return false;
-        //alert("inner is not null on " + this.name);
-        if (!Variable.activateInner)
-            return this.name == 'i';
-        //alert("nonumerics is false")
-        return this.useinner;
+
+        if (Variable.activateInner || this.name == workVariable)
+            return this.useinner;
+            
+        return this.name == 'i';
     }
 
     isConstant(): boolean
     {
-        return this.name != Variable.workVariable && (!this.useInner() || this.inner.isConstant());
+        return this.name != workVariable && (!this.useInner() || this.inner.isConstant());
     }
 
     // wirft entweder Fehler, oder rechnet mit nichtssagenden, konstanten Werten, wenn
@@ -270,7 +273,7 @@ class Variable extends FunktionElement
     getValue() : Numeric
     {
         if (!this.isNumeric())
-            HTMLoutput += "Programmierfehler : getValue on nonnumeric";
+            HTMLoutput += "Programmierfehler : getValue on nonnumeric Variable <br>";
         return this.inner.getValue();
     }
 
@@ -298,6 +301,7 @@ class Variable extends FunktionElement
         registeredVariables['π'] = new Variable('π', registeredVariables['τ'].divideBy(Numeric.two), true);
         //TODO tri-Symbol zu Schrift hinzufügen
         registeredVariables['ш'] = new Variable('ш', registeredVariables['τ'] .divideBy(new Numeric(new RationalReal(4), Real.zero)), true);
+        registeredVariables['°'] = new Variable('°', registeredVariables['τ'] .divideBy(new Numeric(new RationalReal(360), Real.zero)), true);
     }
 
     static ofName(name : string) : Variable

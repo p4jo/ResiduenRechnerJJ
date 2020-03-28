@@ -41,6 +41,7 @@ function number_format(n, decimals = null, decPoint = '.', thousandsSep = '') {
 var formData;
 var HTMLoutput;
 var registeredVariables;
+var workVariable;
 var funktion;
 var commaIsDecimalPoint = false;
 const floatToRationalTolerance = Number.EPSILON;
@@ -178,17 +179,17 @@ let Variable = (() => {
             this.useinner = useInner;
         }
         derivative() {
-            if (Variable.workVariable == this.name)
+            if (workVariable == this.name)
                 return Numeric.one;
             else if (this.useInner())
                 return this.inner.derivative();
             return Numeric.zero;
         }
         display(outerPrecendence = 0) {
-            if (!this.isConstant())
-                return "\\operatorname{\\mathtt{" + this.name + "}}";
             if (this.useInner())
                 return "\\operatorname{\\mathbf{" + this.name + '}}';
+            if (!this.isConstant())
+                return "\\operatorname{\\mathtt{" + this.name + "}}";
             return "\\operatorname{\\mathit{" + this.name + '}}';
         }
         displayInline(outerPrecedence = 0) {
@@ -206,16 +207,16 @@ let Variable = (() => {
         useInner() {
             if (this.inner === null)
                 return false;
-            if (!Variable.activateInner)
-                return this.name == 'i';
-            return this.useinner;
+            if (Variable.activateInner || this.name == workVariable)
+                return this.useinner;
+            return this.name == 'i';
         }
         isConstant() {
-            return this.name != Variable.workVariable && (!this.useInner() || this.inner.isConstant());
+            return this.name != workVariable && (!this.useInner() || this.inner.isConstant());
         }
         getValue() {
             if (!this.isNumeric())
-                HTMLoutput += "Programmierfehler : getValue on nonnumeric";
+                HTMLoutput += "Programmierfehler : getValue on nonnumeric Variable <br>";
             return this.inner.getValue();
         }
         isOne() {
@@ -233,6 +234,7 @@ let Variable = (() => {
             };
             registeredVariables['π'] = new Variable('π', registeredVariables['τ'].divideBy(Numeric.two), true);
             registeredVariables['ш'] = new Variable('ш', registeredVariables['τ'].divideBy(new Numeric(new RationalReal(4), Real.zero)), true);
+            registeredVariables['°'] = new Variable('°', registeredVariables['τ'].divideBy(new Numeric(new RationalReal(360), Real.zero)), true);
         }
         static ofName(name) {
             if (!(name in registeredVariables))
@@ -241,7 +243,6 @@ let Variable = (() => {
         }
     }
     Variable.activateInner = true;
-    Variable.workVariable = '';
     return Variable;
 })();
 class Numeric extends FunktionElement {
@@ -771,13 +772,13 @@ class Potenz extends BinaryOperation {
     }
     display(outerPrecedence = 0) {
         let innerPrec = this.precedence();
-        if (outerPrecedence > innerPrec)
+        if (outerPrecedence >= innerPrec)
             return "\\left(" + this.displayNormally(this.op1.display(innerPrec), this.op2.display()) + "\\right)";
         return this.displayNormally(this.op1.display(innerPrec), this.op2.display());
     }
     displayInline(outerPrecedence = 0) {
         let innerPrec = this.precedence();
-        if (outerPrecedence > innerPrec)
+        if (outerPrecedence >= innerPrec)
             return "(" + this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline()) + ")";
         return this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline());
     }
@@ -895,30 +896,27 @@ class ln extends UnaryOperation {
     }
 }
 class EntireFunktion {
-    constructor(inner, name = 'f') {
+    constructor(inner, name = 'f', input = null) {
         this.inner = inner;
         this.name = name;
+        this.input = input ?? Variable.ofName(workVariable);
     }
     display() {
-        return "\\( \\operatorname{" +
-            this.name + "}\\left(\\operatorname{\\mathit{" + Variable.workVariable + "}}\\right) =  " + this.inner.display() + "\\)<br>";
+        return "\\( \\operatorname{" + this.name + "}\\left(" + this.input.display() + "\\right) =  " + this.inner.display() + "\\)";
     }
     simplified() {
-        return new EntireFunktion(this.inner.simplified(), this.name);
+        return new EntireFunktion(this.inner.simplified(), this.name, this.input.simplified());
     }
     derivative() {
-        return new EntireFunktion(this.inner.derivative(), this.name + "'");
+        return new EntireFunktion(this.inner.derivative(), this.name + "'", this.input);
     }
     valueAt(x) {
-        let wVName = Variable.workVariable;
-        let wV = Variable.ofName(wVName);
+        let wV = Variable.ofName(workVariable);
         let useinner = wV.useinner;
         let inner = wV.inner;
-        Variable.workVariable = '';
         wV.useinner = true;
         wV.inner = x;
-        let result = new EntireFunktion(this.inner.simplified(), this.name);
-        Variable.workVariable = wVName;
+        let result = new EntireFunktion(this.inner.simplified(), this.name, x);
         wV.useinner = useinner;
         wV.inner = inner;
         return result;
@@ -1146,7 +1144,7 @@ let Parser = (() => {
         'ы', 'ф', 'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', 'Й',
         'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З', 'Х', 'Э', 'Ж',
         'Д', 'Л', 'О', 'Р', 'П', 'А', 'В', 'Ы', 'Ф', 'Я', 'Ч', 'С',
-        'М', 'И', 'Т', 'Ь', 'Б', 'Ю', '\''];
+        'М', 'И', 'Т', 'Ь', 'Б', 'Ю', '\'', '°'];
     Parser.namedChars = { 'alpha': 'α', 'beta': 'β', 'pi': 'π', 'tri': 'ш' };
     Parser.leftBraceChars = ['(', '[', '{', '<', '«'];
     Parser.rightBraceChars = [')', ']', '}', '>', '»'];
@@ -1165,7 +1163,8 @@ window.MathJax = {
             }
         },
         svg: {
-            mathmlSpacing: false
+            mathmlSpacing: false,
+            linebreaks: true
         },
         startup: {
             output: 'svg'
@@ -1174,6 +1173,7 @@ window.MathJax = {
             load: ['output/svg', '[tex]/unicode']
         },
         tex: {
+            maxBuffer: 10240,
             packages: {
                 '[+]': ['unicode']
             },
@@ -1209,7 +1209,7 @@ function loadData() {
 }
 function updateInputData() {
     loadData();
-    Variable.workVariable = formData["workVariable"];
+    workVariable = formData["workVariable"];
     commaIsDecimalPoint = formData["cIDP"];
     updateLocale();
 }
@@ -1241,8 +1241,7 @@ function showVariableList() {
     sendOutputIntoDiv(VariableListHTM, 2);
 }
 function parseFunktion() {
-    let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
-    funktion = new EntireFunktion(theFunktion, "f");
+    funktion = new EntireFunktion(Parser.parseStringToFunktionElement(formData["formel"]), "f");
 }
 function Ausgabe1() {
     Variable.activateInner = false;
@@ -1256,16 +1255,15 @@ function Ausgabe2() {
     Ausgabe();
 }
 function Ausgabe() {
-    HTMLoutput += "Eingabe: " + funktion.display();
+    HTMLoutput += "Eingabe: " + funktion.display() + "<br>";
     let residuePoint = Parser.parseStringToFunktionElement(formData["residuePoint"]);
-    let Df = new Array(10);
+    let Df = new Array(4);
     Df[0] = funktion.simplified();
-    HTMLoutput += "Vereinfacht: " + Df[0].display();
-    for (let i = 1; i < 10; i++) {
+    for (let i = 1; i < 4; i++) {
         Df[i] = Df[i - 1].derivative().simplified();
     }
-    for (let i = 0; i < 10; i++) {
-        HTMLoutput += i + "-te Ableitung: " + Df[i].display() + " mit Wert " + Df[i].valueAt(residuePoint).display();
+    for (let i = 0; i < 4; i++) {
+        HTMLoutput += i + "-te Ableitung: " + Df[i].display() + " mit Wert " + Df[i].valueAt(residuePoint).display() + "<br>";
     }
 }
 function VariableListHTM() {

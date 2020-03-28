@@ -27,7 +27,7 @@ function loadData() {
 function updateInputData() {
 	loadData();
 
-    Variable.workVariable = formData["workVariable"];
+    workVariable = formData["workVariable"];
 	commaIsDecimalPoint = formData["cIDP"];
 	updateLocale();
 

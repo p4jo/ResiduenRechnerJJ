@@ -11,7 +11,8 @@ window.MathJax = {
 		}
 		},
 		svg : {
-			mathmlSpacing : false
+			mathmlSpacing : false,
+			linebreaks: true
 		},
 		startup:{
 			output: 'svg'
@@ -19,7 +20,8 @@ window.MathJax = {
 		loader: {
 			load: ['output/svg','[tex]/unicode']
 		},
-		tex:{
+		tex: {
+			maxBuffer: 10240, //doppelt so viel wie normal (in byte)
 			packages: {
 				'[+]': ['unicode']
 			},

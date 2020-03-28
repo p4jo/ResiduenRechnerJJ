@@ -2,48 +2,46 @@
 class EntireFunktion
 {
     readonly inner : FunktionElement;
+    input : FunktionElement;
     name: string;
 
-    constructor(inner : FunktionElement, name : string = 'f')
+    constructor(inner : FunktionElement, name : string = 'f', input : FunktionElement = null)
     {
         this.inner = inner;
         this.name = name;
+        this.input = input ?? Variable.ofName(workVariable);
     }
 
 
     display() : string
     {
-        return "\\( \\operatorname{" +
-            this.name + "}\\left(\\operatorname{\\mathit{" + Variable.workVariable + "}}\\right) =  " + this.inner.display() + "\\)<br>";
+        return "\\( \\operatorname{" + this.name + "}\\left(" + this.input.display() + "\\right) =  " + this.inner.display() + "\\)";
     }
 
     simplified() : EntireFunktion
     {
         //muss vielleicht so oft wiederholt werden, bis sich nichts mehr ändert
-        return new EntireFunktion(this.inner.simplified(), this.name);
+        return new EntireFunktion(this.inner.simplified(), this.name, this.input.simplified());
     }
 
     derivative() : EntireFunktion
     {
-        return new EntireFunktion(this.inner.derivative(), this.name + "'");
+        return new EntireFunktion(this.inner.derivative(), this.name + "'", this.input);
     }
 
 
     valueAt(x : FunktionElement) : EntireFunktion
     {
-        let wVName = Variable.workVariable;
-        let wV = Variable.ofName(wVName);
+        let wV = Variable.ofName(workVariable);
         
         let useinner = wV.useinner;
         let inner = wV.inner;
         
-        Variable.workVariable = '';
         wV.useinner = true;
         wV.inner = x;
 
-        let result = new EntireFunktion(this.inner.simplified(), this.name);
+        let result = new EntireFunktion(this.inner.simplified(), this.name, x);
 
-        Variable.workVariable = wVName;
         wV.useinner = useinner;
         wV.inner = inner;
 

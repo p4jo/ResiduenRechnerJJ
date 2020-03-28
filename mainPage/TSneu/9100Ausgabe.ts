@@ -1,7 +1,6 @@
 
 function parseFunktion() {
-    let theFunktion = Parser.parseStringToFunktionElement(formData["formel"]);
-    funktion = new EntireFunktion(theFunktion, "f");
+    funktion = new EntireFunktion(Parser.parseStringToFunktionElement(formData["formel"]), "f");
 }
 
 
@@ -34,17 +33,16 @@ function Ausgabe2() {
 //TODO: Noch zum Residuen berechnen umschreiben. Zwischenschritte angeben (wie Integralrechner). 
 //Evtl. HTML-Bereiche verwenden und mit CSS farbig / mit Rand etc. machen
 function Ausgabe() {
-    HTMLoutput += "Eingabe: " + funktion.display();
+    HTMLoutput += "Eingabe: " + funktion.display() + "<br>";
     let residuePoint = Parser.parseStringToFunktionElement(formData["residuePoint"]);
-    let Df : EntireFunktion[] = new Array(10);
+    
+    let Df : EntireFunktion[] = new Array(4);
     Df[0] = funktion.simplified();
-    HTMLoutput += "Vereinfacht: " + Df[0].display();
-
-    for (let i : number = 1; i < 10; i++) {
+    for (let i : number = 1; i < 4; i++) {
         Df[i] = Df[i-1].derivative().simplified();
     }
-    for (let i : number = 0; i < 10; i++) {
-        HTMLoutput += i+"-te Ableitung: " + Df[i].display() + " mit Wert " + Df[i].valueAt(residuePoint).display();
+    for (let i : number = 0; i < 4; i++) {
+        HTMLoutput += i+"-te Ableitung: " + Df[i].display() + " mit Wert " + Df[i].valueAt(residuePoint).display() + "<br>";
     }
 
 

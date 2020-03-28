@@ -129,14 +129,14 @@ class Potenz extends BinaryOperation {
     //Nur wegen Ausnahme bei Hochstellung + Keine Klammer
     display(outerPrecedence : number = 0) : string    {
         let innerPrec = this.precedence();
-        if (outerPrecedence > innerPrec)
+        if (outerPrecedence >= innerPrec) //Innerhalb dieser Präzedenzklasse muss man klammern
             return "\\left(" + this.displayNormally(this.op1.display(innerPrec), this.op2.display()) + "\\right)";
         return this.displayNormally(this.op1.display(innerPrec), this.op2.display());
     }
 
     displayInline(outerPrecedence : number = 0) : string    {
         let innerPrec = this.precedence();
-        if (outerPrecedence > innerPrec)
+        if (outerPrecedence >= innerPrec)
             return "(" + this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline()) + ")";
         return this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline());
     }
