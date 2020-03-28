@@ -15,6 +15,9 @@ abstract class MultiplicationType extends BinaryOperation {
         return null;
     }
 
+
+    abstract removeVariable(variable : Variable) : FunktionElement;
+    
     //TODO: WIE BEI ADDITION
 }
 
@@ -39,30 +42,52 @@ class Multiplication extends MultiplicationType {
     simplified() : FunktionElement {
         let simpler = new Multiplication(this.op1.simplified(), this.op2.simplified());
 
-        if (simpler.isNumeric())
+        if (simpler.isNumeric()) {
             return simpler.getValue();
+        }
+            
+        //How do I get variables?
+        for (let index in registeredVariables) {
+            if((this.op1 instanceof Potenz || this.op1 instanceof MultiplicationType) && (this.op2 instanceof Potenz || this.op2 instanceof MultiplicationType)) {
+                let mul1 = this.op1.isMultipleOf(index);
+                let mul2 = this.op1.isMultipleOf(index);
+                if(!mul1.isZero() && !mul2.isZero()) {
+                    return new Multiplication(new Potenz(index, new Addition(mul1, mul2).simplified()), new Multiplication(this.op1.removeVariable(index), this.op2.removeVariable(index).simplified()));
+                }
+            }
+        }
 
-        if(simpler.op1 . isNumeric() && simpler.op1.isZero()) {
-            return Numeric.zero;
-        }
-        if(simpler.op1 . isNumeric() && simpler.op1.isOne()) {
-            return simpler.op2;
-        }
-
-        if(simpler.op2 . isNumeric() && simpler.op2.isZero()) {
-            return Numeric.zero;
-        }
-        if(simpler.op2 . isNumeric() && simpler.op2.isOne()) {
-            return simpler.op1;
-        }
-        //result += "Nichts vereinfacht (multiplikation) <math>" . simpler.ausgeben() . "</math><br>";
         //TODO
+
         return simpler;
     }
 
-    getValue() : Numeric
-    {
+    getValue() : Numeric {
         return this.op1.getValue().multiplyN(this.op2.getValue());
+    }
+
+    //Stuff to simplify
+    isMultipleOf(variable : Variable) : FunktionElement {
+        if(this.op1 == variable || this.op2 == variable) {
+            return Numeric.one;
+        }
+        return Numeric.zero;
+    }
+
+    removeVariable(variable : Variable) : FunktionElement {
+        if(this.op1 == variable) {
+            return this.op2;
+        } else if(this.op2 == variable) {
+            return this.op1;
+        } else {
+            if(this.op1 instanceof Potenz || this.op1 instanceof Multiplication || this.op1 instanceof Division){
+                this.op1 = this.op1.removeVariable(variable);
+            }
+            if(this.op2 instanceof Potenz || this.op2 instanceof Multiplication || this.op2 instanceof Division){
+                this.op2 = this.op2.removeVariable(variable);
+            }
+        }
+        return this;
     }
 }
 
@@ -111,9 +136,32 @@ class Division extends MultiplicationType {
         return simpler;
     }
 
-    getValue() : Numeric
-    {
+    getValue() : Numeric {
         return this.op1.getValue().divideByN(this.op2.getValue());
+    }
+
+    //Stuff to simplify
+    isMultipleOf(variable : Variable) : FunktionElement {
+        if(this.op1 == variable || this.op2 == variable) {
+            return Numeric.one;
+        }
+        return Numeric.zero;
+    }
+
+    removeVariable(variable : Variable) : FunktionElement {
+        if(this.op1 == variable) {
+            return this.op2;
+        } else if(this.op2 == variable) {
+            return this.op1;
+        } else {
+            if(this.op1 instanceof Potenz || this.op1 instanceof Multiplication || this.op1 instanceof Division){
+                this.op1 = this.op1.removeVariable(variable);
+            }
+            if(this.op2 instanceof Potenz || this.op2 instanceof Multiplication || this.op2 instanceof Division){
+                this.op2 = this.op2.removeVariable(variable);
+            }
+        }
+        return this;
     }
 }
 
@@ -187,8 +235,34 @@ class Potenz extends BinaryOperation {
         return simpler;
     }
 
-    getValue() : Numeric
-    {
+    getValue() : Numeric {
         return this.op1.getValue() . toPowerN( this.op2.getValue());
+    }
+
+
+    //Stuff to simplify
+    isMultipleOf(variable : Variable) : FunktionElement {
+        if(this.op1 == variable) {
+            if(this.op2.isNumeric) {
+                return this.op2.getValue();
+            }
+        }
+        return Numeric.zero;
+    }
+
+    removeVariable(variable : Variable) : FunktionElement {
+        if(this.op1 == variable) {
+            return this.op2;
+        } else if(this.op2 == variable) {
+            return this.op1;
+        } else {
+            if(this.op1 instanceof Potenz || this.op1 instanceof Multiplication || this.op1 instanceof Division){
+                this.op1 = this.op1.removeVariable(variable);
+            }
+            if(this.op2 instanceof Potenz || this.op2 instanceof Multiplication || this.op2 instanceof Division){
+                this.op2 = this.op2.removeVariable(variable);
+            }
+        }
+        return this;
     }
 }

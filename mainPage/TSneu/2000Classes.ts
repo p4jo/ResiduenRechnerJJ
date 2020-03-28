@@ -184,8 +184,9 @@ abstract class BinaryOperation extends FunktionElement  {
 
     abstract displayInlineNormally(left, right);
 
-    abstract precedence() : number
-
+    abstract precedence() : number;
+    
+    abstract isMultipleOf(variable : Variable) : FunktionElement;
 }
 
 

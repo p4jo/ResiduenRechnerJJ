@@ -15,22 +15,19 @@ function VariableListHTM () {
 
         let temp = variable.useinner ? "checked='checked'" : '';
         HTMLoutput += 
-`\\( ${variable.display()} = ${mathOutput} \\).  
-<label> Setze eigenen Wert: 
-    <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
-</label> 
-<label>Direkt einsetzen:  
-    <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
-</label><br>
-    `;
+        `\\( ${variable.display()} = ${mathOutput} \\).  
+        <label> Setze eigenen Wert: 
+            <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
+        </label> 
+        <label>Direkt einsetzen:  
+            <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
+        </label><br>`;
 
 
     }
 
 
-    HTMLoutput +=
-`</fieldset> <br> <Button type = 'submit'> Aktualisieren </Button> </form>
-`;
+    HTMLoutput +=  `</fieldset> <br> <Button type = 'submit'> Aktualisieren </Button> </form>`;
 }
 
 
