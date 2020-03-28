@@ -649,6 +649,9 @@ class AdditionType extends BinaryOperation {
         }
         return this;
     }
+    isMultipleOf(variable) {
+        return Numeric.zero;
+    }
 }
 class Addition extends AdditionType {
     displayInlineNormally(left, right) {
@@ -710,24 +713,46 @@ class Multiplication extends MultiplicationType {
     }
     simplified() {
         let simpler = new Multiplication(this.op1.simplified(), this.op2.simplified());
-        if (simpler.isNumeric())
+        if (simpler.isNumeric()) {
             return simpler.getValue();
-        if (simpler.op1.isNumeric() && simpler.op1.isZero()) {
-            return Numeric.zero;
         }
-        if (simpler.op1.isNumeric() && simpler.op1.isOne()) {
-            return simpler.op2;
-        }
-        if (simpler.op2.isNumeric() && simpler.op2.isZero()) {
-            return Numeric.zero;
-        }
-        if (simpler.op2.isNumeric() && simpler.op2.isOne()) {
-            return simpler.op1;
+        for (let index in registeredVariables) {
+            let currentVariable = registeredVariables[index];
+            if ((this.op1 instanceof Potenz || this.op1 instanceof MultiplicationType) && (this.op2 instanceof Potenz || this.op2 instanceof MultiplicationType)) {
+                let mul1 = this.op1.isMultipleOf(currentVariable);
+                let mul2 = this.op1.isMultipleOf(currentVariable);
+                if (!mul1.isZero() && !mul2.isZero()) {
+                    return new Multiplication(new Potenz(currentVariable, new Addition(mul1, mul2).simplified()), new Multiplication(this.op1.removeVariable(currentVariable), this.op2.removeVariable(currentVariable).simplified()));
+                }
+            }
         }
         return simpler;
     }
     getValue() {
         return this.op1.getValue().multiplyN(this.op2.getValue());
+    }
+    isMultipleOf(variable) {
+        if (this.op1 == variable || this.op2 == variable) {
+            return Numeric.one;
+        }
+        return Numeric.zero;
+    }
+    removeVariable(variable) {
+        if (this.op1 == variable) {
+            return this.op2;
+        }
+        else if (this.op2 == variable) {
+            return this.op1;
+        }
+        else {
+            if (this.op1 instanceof Potenz || this.op1 instanceof Multiplication || this.op1 instanceof Division) {
+                this.op1 = this.op1.removeVariable(variable);
+            }
+            if (this.op2 instanceof Potenz || this.op2 instanceof Multiplication || this.op2 instanceof Division) {
+                this.op2 = this.op2.removeVariable(variable);
+            }
+        }
+        return this;
     }
 }
 class Division extends MultiplicationType {
@@ -763,6 +788,29 @@ class Division extends MultiplicationType {
     }
     getValue() {
         return this.op1.getValue().divideByN(this.op2.getValue());
+    }
+    isMultipleOf(variable) {
+        if (this.op1 == variable || this.op2 == variable) {
+            return Numeric.one;
+        }
+        return Numeric.zero;
+    }
+    removeVariable(variable) {
+        if (this.op1 == variable) {
+            return this.op2;
+        }
+        else if (this.op2 == variable) {
+            return this.op1;
+        }
+        else {
+            if (this.op1 instanceof Potenz || this.op1 instanceof Multiplication || this.op1 instanceof Division) {
+                this.op1 = this.op1.removeVariable(variable);
+            }
+            if (this.op2 instanceof Potenz || this.op2 instanceof Multiplication || this.op2 instanceof Division) {
+                this.op2 = this.op2.removeVariable(variable);
+            }
+        }
+        return this;
     }
 }
 class Potenz extends BinaryOperation {
@@ -821,6 +869,31 @@ class Potenz extends BinaryOperation {
     }
     getValue() {
         return this.op1.getValue().toPowerN(this.op2.getValue());
+    }
+    isMultipleOf(variable) {
+        if (this.op1 == variable) {
+            if (this.op2.isNumeric) {
+                return this.op2.getValue();
+            }
+        }
+        return Numeric.zero;
+    }
+    removeVariable(variable) {
+        if (this.op1 == variable) {
+            return this.op2;
+        }
+        else if (this.op2 == variable) {
+            return this.op1;
+        }
+        else {
+            if (this.op1 instanceof Potenz || this.op1 instanceof Multiplication || this.op1 instanceof Division) {
+                this.op1 = this.op1.removeVariable(variable);
+            }
+            if (this.op2 instanceof Potenz || this.op2 instanceof Multiplication || this.op2 instanceof Division) {
+                this.op2 = this.op2.removeVariable(variable);
+            }
+        }
+        return this;
     }
 }
 class sqrt extends UnaryOperation {
@@ -1280,17 +1353,14 @@ function VariableListHTM() {
         let temp = variable.useinner ? "checked='checked'" : '';
         HTMLoutput +=
             `\\( ${variable.display()} = ${mathOutput} \\).  
-<label> Setze eigenen Wert: 
-    <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
-</label> 
-<label>Direkt einsetzen:  
-    <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
-</label><br>
-    `;
+        <label> Setze eigenen Wert: 
+            <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
+        </label> 
+        <label>Direkt einsetzen:  
+            <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
+        </label><br>`;
     }
-    HTMLoutput +=
-        `</fieldset> <br> <Button type = 'submit'> Aktualisieren </Button> </form>
-`;
+    HTMLoutput += `</fieldset> <br> <Button type = 'submit'> Aktualisieren </Button> </form>`;
 }
 function updateVariables() {
     for (var key in registeredVariables) {
