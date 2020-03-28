@@ -113,4 +113,10 @@ class ln extends UnaryOperation {
         // TODO: Implement simplify() method.
         return simpler;
     }
+
+    //For simplification
+    getOp(): FunktionElement
+    {
+        return this.op;
+    }
 }
