@@ -13,7 +13,6 @@ const floatToRationalMaxDen: number = 100000;
 const displayDigits : number = 8;
 
 
-var registeredVariables: Object;
 
 // Enter any new Operator here. By default Operators are left-grouping within their precedence class, add key
 // 'rightAssociative' if meant otherwise
