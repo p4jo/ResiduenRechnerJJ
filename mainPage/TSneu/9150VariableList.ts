@@ -14,14 +14,21 @@ function VariableListHTM() {
         }
 
         let temp = variable.useinner ? "checked='checked'" : '';
-        HTMLoutput +=
-            `\\( ${variable.display()} = ${mathOutput} \\).  
-        <label> Setze eigenen Wert: 
-            <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
-        </label> 
-        <label>Direkt einsetzen:  
-            <input class='II' type='checkbox' id='check_${variable.name}' ${temp} ">
-        </label><br>`;
+        HTMLoutput += 
+`\\( ${variable.display()} = ${mathOutput} \\).  
+<label> Setze eigenen Wert: 
+    <input class='II' type='text' id='input_${variable.name}' value='${output}' size='20'>. 
+</label> 
+<label>Direkt einsetzen:  
+    <input class='II' type='checkbox' id='check_${variable.name}' ${temp} >
+</label>
+
+<button onclick="deleteVariable('${variable.name}')">
+    <!-- <img src="icons/delete.svg"/>   -->
+    <i class="fa fa-eye-slash"></i>
+</button>
+
+<br>`;
 
 
     }
@@ -45,4 +52,11 @@ function updateVariables() {
         //Debug
         // HTMLoutput += "Eingesetzter Wert \\(" + variable.inner.display() + "\\) für Variable " + variable.name + "<br>";
     }
+}
+
+function deleteVariable(variable : string) {
+    //auf Standard zurücksetzen, weil die Referenz noch in alten Funktionelement-Ausdrücken vorkommen kann
+    registeredVariables[variable].inner = null;
+    registeredVariables[variable].useinner = false;
+    delete registeredVariables[variable];
 }
