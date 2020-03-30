@@ -12,7 +12,12 @@ abstract class MultiplicationType extends BinaryOperation {
         return null;
     }
 
-
+    /**
+     * Geht alle Variablen aus der Vairablen-Liste durch und testet auf vielfache Vorkommen (auch in tiefer ligenden Multiplikationen, sowie Potenzen)
+     * 
+     * 
+     * @returns FunktionElement, that is simplified
+     */
     multiplicationSimplify(): FunktionElement {
         for (let index in registeredVariables) {
             let currentVariable = registeredVariables[index];

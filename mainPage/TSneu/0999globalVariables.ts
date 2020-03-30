@@ -1,19 +1,17 @@
 declare var MathJax;
 
-var formData : Object;
-var HTMLoutput : string;
-var registeredVariables : Object;
-var workVariable :  string;
-var funktion : EntireFunktion;
+var formData: Object;
+var HTMLoutput: string;
+var registeredVariables: Object;
+var workVariable: string;
+var funktion: EntireFunktion;
 var commaIsDecimalPoint = false;
 
 
 const floatToRationalTolerance: number = Number.EPSILON;
-const floatToRationalMaxDen: number = 100000;    
-const displayDigits : number = 8;
+const floatToRationalMaxDen: number = 100000;
+const displayDigits: number = 8;
 
-
-var registeredVariables: Object;
 
 // Enter any new Operator here. By default Operators are left-grouping within their precedence class, add key
 // 'rightAssociative' if meant otherwise
