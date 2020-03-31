@@ -40,6 +40,14 @@ class sqrt extends UnaryOperation {
         return false;
 
     }
+
+    /**
+     * A numeric can never be a multiple of a Variable.
+     * @param variable
+     */
+    isMultipleOf(variable: Variable): FunktionElement {
+        return new Multiplication(Numeric.ofF(0.5), this.op.isMultipleOf(variable)).simplified();
+    }
 }
 
 class cos extends UnaryOperation {
@@ -59,6 +67,15 @@ class cos extends UnaryOperation {
             return simpler.getValue();
         // TODO: Implement simplify() method.
         return simpler;
+    }
+
+    /**
+     * A cos is not to be expected to be a multiple of a varibale, eaven tough it could be possible (but pretty unlikely) (e.g. cos(arccos(x)))
+     * As this function is only expected to be used for simplification it will always return Numeric.zero
+     * @param variable
+     */
+    isMultipleOf(variable: Variable): FunktionElement {
+        return Numeric.zero;
     }
 }
 
@@ -80,6 +97,15 @@ class sin extends UnaryOperation {
         // TODO: Implement simplify() method.
 
         return simpler;
+    }
+
+    /**
+     * A sin is not to be expected to be a multiple of a varibale, eaven tough it could be possible (but pretty unlikely) (e.g. sin(arcsin(x)))
+     * As this function is only expected to be used for simplification it will always return Numeric.zero
+     * @param variable
+     */
+    isMultipleOf(variable: Variable): FunktionElement {
+        return Numeric.zero;
     }
 }
 
@@ -106,5 +132,14 @@ class ln extends UnaryOperation {
     //For simplification
     getOp(): FunktionElement {
         return this.op;
+    }
+
+     /**
+     * A sin is not to be expected to be a multiple of a varibale, eaven tough it could be possible (but pretty unlikely) (ln(exp(x)))
+     * As this function is only expected to be used for simplification it will always return Numeric.zero
+     * @param variable
+     */
+    isMultipleOf(variable: Variable): FunktionElement {
+        return Numeric.zero;
     }
 }

@@ -179,7 +179,13 @@ class Numeric extends FunktionElement
         return new Numeric(Real.ofF(reF), Real.ofF(imF));
     }
 
-
+    /**
+     * A numeric can never be a multiple of a Variable.
+     * @param variable
+     */
+    isMultipleOf(variable: Variable): FunktionElement {
+        return Numeric.zero;
+    }
 }
 
 class InfinityNumeric extends Numeric {

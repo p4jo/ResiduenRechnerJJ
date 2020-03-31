@@ -104,6 +104,16 @@ abstract class AdditionType extends BinaryOperation {
     isMultipleOf(variable: Variable): FunktionElement {
         return Numeric.zero;
     }
+
+
+    /**
+    * @see FunktionElement.removeVariable
+    */
+    removeVariable(variable: Variable): FunktionElement {
+        this.op1 = this.op1.removeVariable(variable);
+        this.op2 = this.op2.removeVariable(variable);
+        return this;
+    }
 }
 
 
@@ -152,27 +162,106 @@ class Addition extends AdditionType {
         let summands: [FunktionElement, boolean];
         this.getSummands(summands);
 
+        this.simplifiedHelperMethod(summands);
 
+
+
+        return simpler.simplify();
+    }
+
+    /**
+     * Vereinfacht das Summanden-Array.
+     * Ist eine extra-Methode, weil diese sich selbst so oft aufruft, bis keine Vereinfachung mehr möglich ist.
+     */
+    simplifiedHelperMethod(summands: [FunktionElement, boolean]) {
+        let restart: boolean = false;
         for (let index in summands) {
+            //possibly never called....
+            if (restart)
+                break;
             //1. überprüfe zwei exakt gleiche FunktionElemente
             //Speichere Element, um unnötig viele Zugriffe auf das Array zu verhindern
             let currentData = summands[index];
             let currentElement: FunktionElement = currentData[0];
             for (let index2 in summands) {
-                if (currentElement.equals(summands[index2][0])) {
+                let tempElement: FunktionElement = currentData[index2][0];
+                if (restart) {
+                    break;
+                } else if (currentElement.equals(summands[index2][0])) {
+                    //remove both elements from list
                     summands.filter(function (value, index3, arr) {
-                        let tempindex:Number = new Number(index);
-                        let tempindex2:Number = new Number(index);
+                        let tempindex: Number = new Number(index);
+                        let tempindex2: Number = new Number(index2);
                         return tempindex == index3 || tempindex2 == index3;
                     });
+                    //add new element
                     summands.push(new Multiplication(Numeric.ofF(2), currentElement));
+                    //must restart now
+                    restart = true;
+                } else {
+                    for (let regVarCount in registeredVariables) {
+                        if (restart)
+                            break;
+                        let regVariable = registeredVariables[regVarCount];
+                        let left: FunktionElement = currentElement.isMultipleOf(regVariable);
+                        let right: FunktionElement = tempElement.isMultipleOf(regVariable);
+                        if (left.isNumeric() && right.isNumeric()) {
+                            if (left.getValue().reF() == 0 && right.getValue().reF() == 0) {
+
+                            } else if (left.getValue().imF() == 0 && right.getValue().imF() == 0) {
+                                //Look up minimum of both sides
+                                let leftIsMin: boolean = true;
+                                let min: number = left.getValue().reF();
+                                let delta: number = right.getValue().reF() - min;
+                                if (right.getValue().reF() < min) {
+                                    leftIsMin = false;
+                                    min = right.getValue().reF();
+                                    delta = -delta;
+                                }
+
+                                //remove both elements from list
+                                summands.filter(function (value, index3, arr) {
+                                    let tempindex: Number = new Number(index);
+                                    let tempindex2: Number = new Number(index2);
+                                    return tempindex == index3 || tempindex2 == index3;
+                                });
+                                //add new element
+                                if (delta == 0) {
+                                    summands.push(new Multiplication(new Addition(currentElement.removeVariable(regVariable), tempElement.removeVariable(regVariable)).simplified(), new Potenz(regVariable, Numeric.ofF(min)).simplified()));
+                                } else if (leftIsMin) {
+                                    summands.push(new Multiplication(new Addition(currentElement.removeVariable(regVariable), new Multiplication(tempElement.removeVariable(regVariable), new Potenz(regVariable, Numeric.ofF(delta)))).simplified(), new Potenz(regVariable, Numeric.ofF(min)).simplified()));
+                                } else {
+                                    summands.push(new Multiplication(new Addition(new Multiplication(currentElement.removeVariable(regVariable), new Potenz(regVariable, Numeric.ofF(delta))), tempElement.removeVariable(regVariable)).simplified(), new Potenz(regVariable, Numeric.ofF(min)).simplified()));
+
+                                }
+                                summands.push(new Multiplication(Numeric.ofF(2), currentElement));
+                                //must restart now
+                                restart = true;
+                            }
+                        }
+                    }
                 }
             }
+            if (restart) {
+                this.simplifiedHelperMethod(summands);
+            }
         }
-
-
-        return simpler.simplify();
     }
+
+
+
+    /**
+     * @see FunktionElement.isMultipleOf
+     * @param variable
+     * @unused
+     * @broken
+     */
+    isMultipleOf(variable: Variable): FunktionElement {
+        return Numeric.zero;
+    }
+
+
+
 }
 
 

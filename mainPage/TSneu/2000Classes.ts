@@ -31,6 +31,19 @@ abstract class FunktionElement {
         return false;
     }
 
+    /**
+     * Gibt die erste vorkommende Potenz der übergebenen Variablen zurück
+     * @returns Exponent der Variablen
+     * @default default return value is Numeric.zero()
+     */
+    abstract isMultipleOf(variable: Variable): FunktionElement;
+
+    /**
+     * Entfernt das erste Corkommen der übergebenen Variablen
+     */
+    abstract removeVariable(variable: Variable): FunktionElement;
+
+
     // WARNING: ONLY CALL ON (RELATIVELY) NUMERIC OBJECTS
     abstract getValue(): Numeric;
 
@@ -64,9 +77,8 @@ abstract class FunktionElement {
     sqrt(): sqrt {
         return new sqrt(this);
     }
-
-
 }
+
 
 /**
  * Alle Funktionen sollten als Unterklassen von den Operation - Klassen definiert werden,
@@ -176,8 +188,6 @@ abstract class BinaryOperation extends FunktionElement {
     abstract displayInlineNormally(left, right);
 
     abstract precedence(): number;
-
-    abstract isMultipleOf(variable: Variable): FunktionElement;
 }
 
 
@@ -290,6 +300,15 @@ class Variable extends FunktionElement {
         if (!(name in registeredVariables))
             registeredVariables[name] = new Variable(name);
         return registeredVariables[name];
+    }
+
+
+    isMultipleOf(variable: Variable): FunktionElement {
+        return variable == this ? Numeric.one : Numeric.zero;
+    }
+
+    removeVariable(variable: Variable): FunktionElement {
+        return variable == this ? Numeric.zero : this;
     }
 
 }
