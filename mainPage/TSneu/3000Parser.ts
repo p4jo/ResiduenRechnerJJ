@@ -20,7 +20,23 @@ class Parser
     'Д', 'Л', 'О', 'Р', 'П', 'А', 'В', 'Ы', 'Ф', 'Я', 'Ч', 'С',
     'М', 'И', 'Т', 'Ь', 'Б', 'Ю', '\'', '°'];
     //TODO: Vervollständigen
-    private static namedChars = {'alpha' : 'α', 'beta' : 'β', 'pi' : 'π', 'tri' : 'ш'};
+    private static namedChars = {'alpha' : 'α', 'alfa' : 'α',
+    'beta' : 'β', 'vita' : 'β', 'gamma' : 'γ', 'delta' : 'δ', 'epsilon' : 'ε',
+    'zeta' : 'ζ', 'zita' : 'ζ', 'eta' : 'η', 'ita' : 'η', 'theta' : 'θ', 'thita' : 'θ',
+    'iota' : 'ι', 'kappa' : 'κ', 'lambda' : 'λ', 'lamda' : 'λ', 
+    'my' : 'μ', 'mi' : 'μ', 'ny' : 'ν', 'ni' : 'ν', 'xi' : 'ξ', 
+    'omikron' : 'ο', 'pi' : 'π', 'rho' : 'ρ', 'ro' : 'ρ', 'sigma' : 'σ', 
+    'tau' : 'τ', 'taf' : 'τ', 'ypsilon' : 'υ', 'phi' : 'φ', 'fi' : 'φ',
+    'chi' : 'χ', 'psi' : 'ψ', 'omega': 'ω',
+                                'Alpha' : 'Α', 'Alfa' : 'Α',
+    'Beta' : 'Β', 'Vita' : 'Β', 'Gamma' : 'Γ', 'Delta' : 'Δ', 'Epsilon' : 'Ε',
+    'Zeta' : 'Ζ', 'Zita' : 'Ζ', 'Eta' : 'Η', 'Ita' : 'Η', 'Theta' : 'Θ', 'Thita' : 'Θ',
+    'Iota' : 'Ι', 'Kappa' : 'Κ', 'Lambda' : 'Λ', 'Lamda' : 'Λ', 
+    'My' : 'Μ', 'Mi' : 'Μ', 'Ny' : 'Ν', 'Ni' : 'Ν', 'Xi' : 'Ξ', 
+    'Omikron' : 'Ο', 'Pi' : 'Π', 'Rho' : 'Ρ', 'Ro' : 'Ρ', 'Sigma' : 'Σ', 
+    'Tau' : 'Τ', 'Taf' : 'Τ', 'Ypsilon' : 'Υ', 'Phi' : 'Φ', 'Fi' : 'Φ',
+    'Chi' : 'Χ', 'Psi' : 'Ψ', 'Omega': 'Ω',
+    'tri' : 'ш'};
     private static leftBraceChars : string[] = ['(','[','{','<','«'];
     private static rightBraceChars : string[] = [')',']','}','>','»'];
     
@@ -128,16 +144,17 @@ class Parser
             }
             else if (Parser.letterChar.includes(chr)) {
                 let text = chr;
-                while (input.length > i + 1 && Parser.letterChar.includes(input[i + 1]))
-                    text += input[++i]; //erst hier erhöhen
+                if (text !== 'i') { //itau wird zu i*τ, aber nicht andersherum
+                    while (input.length > i + 1 && Parser.letterChar.includes(input[i + 1]))
+                        text += input[++i]; //erst hier erhöhen
+                }
                 if (text in Parser.namedChars)
                     tokens.push(Parser.namedChars[text]);
-                else
-                    //TODO: Hier noch in einzelne Faktoren splitten, falls mehrbuchstabige Variablen nicht erwünscht sind. Dann muss auf in Operations geprüft werden
+                else 
                     tokens.push(text);
             }
             else {
-                HTMLoutput += "Achtung, das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)";
+                HTMLoutput += `Achtung, das Zeichen ${input[i]} an Stelle ${i}: von "${input}" wurde übergangen (invalid) <br>`;
             }
         }
         return tokens;
@@ -230,6 +247,8 @@ class Parser
                 wasOperand = false;
             }
             else {                                          //VARIABLE / KONSTANTE
+                //TODO: Hier noch in einzelne Faktoren splitten, falls mehrbuchstabige Variablen nicht erwünscht sind. Dann muss auf in Operations geprüft werden
+
                 output_queue.push(token);
                 wasOperand = true;
             }
@@ -288,17 +307,17 @@ class Parser
                 case 1:
                     let op = Parser.stack.pop();
                     //instantiates new Object of the type named = value of (operations[token]['name'])
-                    return new Function('a', "return new " + [operations[token]['name']] + "(a);") (op);
+                    return new Function('a', `return new ${operations[token]['name']} (a);`) (op);
                 case 2:
                     let o2 = Parser.stack.pop();
                     let o1 = Parser.stack.pop();
-                    return new Function('a', 'b', "return new " + [operations[token]['name']] + "(a, b);") (o1, o2);
+                    return new Function('a', 'b', `return new ${operations[token]['name']} (a, b);`) (o1, o2);
                 //result += " {Token ".token ." wird geparst mit <math> ".o1.ausgeben() ."</math> und <math>". o2.ausgeben()."</math>] ";
                 default:
                     let args = [];
                     for (let i = 0; i < operations[token]['arity']; i++)
-                        args.push(Parser.stack.pop());
-                    return new Function('a', "return new " + [operations[token]['name']] + "(a);") (args.reverse());
+                        args.unshift(Parser.stack.pop());
+                    return new Function('a', `return new ${operations[token]['name']} (a);`) (args);
             }
         }
         else

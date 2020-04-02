@@ -39,7 +39,7 @@ abstract class FunktionElement {
     abstract isMultipleOf(variable: Variable): FunktionElement;
 
     /**
-     * Entfernt das erste Corkommen der übergebenen Variablen
+     * Entfernt das erste Vorkommen der übergebenen Variablen
      */
     abstract removeVariable(variable: Variable): FunktionElement;
 
@@ -112,7 +112,7 @@ abstract class Operation extends FunktionElement {
     }
 
     display(outerPrecendence: number = 0): string {
-        return "\\mathrm{" + this.constructor.name + "}\\left(" +
+        return "\\operatorname{" + this.constructor.name + "}\\left(" +
             this.op.map(a => a.display()).join(', ') + "\\right)";
     }
 
@@ -138,7 +138,7 @@ abstract class UnaryOperation extends FunktionElement {
     display(outerPrecedence: number = 0): string //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
     {
         //ausgeben gibt mit Klammern aus
-        return "\\mathrm{" + this.constructor.name + "}\\left(" + this.op.display() + '\\right)';
+        return "\\operatorname{" + this.constructor.name + "}\\left(" + this.op.display() + '\\right)';
     }
 
     displayInline(outerPrecedence: number = 0): string //Ausgabe standardmäßig in Präfixnotation (Funktionsschreibweise)
@@ -185,7 +185,7 @@ abstract class BinaryOperation extends FunktionElement {
         return this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec));
     }
 
-    abstract displayInlineNormally(left, right);
+    abstract displayInlineNormally(left, right): string;
 
     abstract precedence(): number;
 }
@@ -218,8 +218,8 @@ class Variable extends FunktionElement {
 
     display(outerPrecendence: number = 0): string {
         // \operatorname für mehrbuchstabige Bezeichner (schadet nicht)
-        //mathit Versionen der kyrillischen Buchstaben sind zu breit. Bei griechischen Buchstaben sieht die (ohne)-Version ungut aus.
-        //mathtt und mathbf sind gut
+        //mathit Versionen der kyrillischen Buchstaben sind zu breit gespaced. Bei griechischen Buchstaben sieht die (ohne)-Version ungut aus.
+        //mathtt und mathbf sind gut, mathtt sieht allerdings fehl am Platz aus
         if (this.useInner())
             return "\\operatorname{\\mathbf{" + this.name + '}}';
         if (!this.isConstant())
