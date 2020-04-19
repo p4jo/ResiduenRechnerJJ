@@ -41,7 +41,8 @@ abstract class FunktionElement {
     /**
      * Entfernt das erste Vorkommen der übergebenen Variablen
      */
-    abstract removeVariable(variable: Variable): FunktionElement;
+    //abstract removeVariable(variable: Variable): FunktionElement;
+    removeVariable(variable: Variable): FunktionElement {return this;}
 
 
     // WARNING: ONLY CALL ON (RELATIVELY) NUMERIC OBJECTS

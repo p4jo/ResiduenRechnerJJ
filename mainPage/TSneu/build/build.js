@@ -72,6 +72,7 @@ class FunktionElement {
     isZero() {
         return false;
     }
+    removeVariable(variable) { return this; }
     equals(other) {
         if (this.isNumeric() != other.isNumeric() || this.isConstant() != other.isConstant())
             return false;
@@ -118,7 +119,7 @@ class Operation extends FunktionElement {
         return result;
     }
     display(outerPrecendence = 0) {
-        return "\\mathrm{" + this.constructor.name + "}\\left(" +
+        return "\\operatorname{" + this.constructor.name + "}\\left(" +
             this.op.map(a => a.display()).join(', ') + "\\right)";
     }
 }
@@ -134,7 +135,7 @@ class UnaryOperation extends FunktionElement {
         return this.op.isConstant();
     }
     display(outerPrecedence = 0) {
-        return "\\mathrm{" + this.constructor.name + "}\\left(" + this.op.display() + '\\right)';
+        return "\\operatorname{" + this.constructor.name + "}\\left(" + this.op.display() + '\\right)';
     }
     displayInline(outerPrecedence = 0) {
         return this.constructor.name + '(' + this.op.displayInline() + ")";
@@ -168,82 +169,85 @@ class BinaryOperation extends FunktionElement {
         return this.displayInlineNormally(this.op1.displayInline(innerPrec), this.op2.displayInline(innerPrec));
     }
 }
-let Variable = (() => {
-    class Variable extends FunktionElement {
-        constructor(name, inner = null, useInner = false) {
-            super();
-            this.useinner = false;
-            this.name = name;
-            this.inner = inner != null ? inner.simplified() : null;
-            this.useinner = useInner;
-        }
-        derivative() {
-            if (workVariable == this.name)
-                return Numeric.one;
-            else if (this.useInner())
-                return this.inner.derivative();
-            return Numeric.zero;
-        }
-        display(outerPrecendence = 0) {
-            if (this.useInner())
-                return "\\operatorname{\\mathbf{" + this.name + '}}';
-            if (!this.isConstant())
-                return "\\operatorname{\\mathtt{" + this.name + "}}";
-            return "\\operatorname{\\mathit{" + this.name + '}}';
-        }
-        displayInline(outerPrecedence = 0) {
-            return this.name;
-        }
-        simplified() {
-            if (this.useInner())
-                return this.inner.simplified();
-            else
-                return this;
-        }
-        isNumeric() {
-            return this.useInner() && this.isConstant() && this.inner.isNumeric();
-        }
-        useInner() {
-            if (this.inner === null)
-                return false;
-            if (Variable.activateInner || this.name == workVariable)
-                return this.useinner;
-            return this.name == 'i';
-        }
-        isConstant() {
-            return this.name != workVariable && (!this.useInner() || this.inner.isConstant());
-        }
-        getValue() {
-            if (!this.isNumeric())
-                HTMLoutput += "Programmierfehler : getValue on nonnumeric Variable <br>";
-            return this.inner.getValue();
-        }
-        isOne() {
-            return this.isNumeric() && this.getValue().isOne();
-        }
-        isZero() {
-            return this.isNumeric() && this.getValue().isZero();
-        }
-        static init() {
-            registeredVariables = {
-                'τ': new Variable('τ', new Numeric(new FloatReal(2 * Math.PI))),
-                'e': new Variable('e', new Numeric(new FloatReal(Math.E))),
-                'i': new Variable('i', new Numeric(Real.zero, Real.one), true),
-                'φ': new Variable('φ', Numeric.one.add(new sqrt(new Numeric(new RationalReal(5)))).divideBy(Numeric.two))
-            };
-            registeredVariables['π'] = new Variable('π', registeredVariables['τ'].divideBy(Numeric.two), true);
-            registeredVariables['ш'] = new Variable('ш', registeredVariables['τ'].divideBy(new Numeric(new RationalReal(4), Real.zero)), true);
-            registeredVariables['°'] = new Variable('°', registeredVariables['τ'].divideBy(new Numeric(new RationalReal(360), Real.zero)), true);
-        }
-        static ofName(name) {
-            if (!(name in registeredVariables))
-                registeredVariables[name] = new Variable(name);
-            return registeredVariables[name];
-        }
+class Variable extends FunktionElement {
+    constructor(name, inner = null, useInner = false) {
+        super();
+        this.useinner = false;
+        this.name = name;
+        this.inner = inner != null ? inner.simplified() : null;
+        this.useinner = useInner;
     }
-    Variable.activateInner = true;
-    return Variable;
-})();
+    derivative() {
+        if (workVariable == this.name)
+            return Numeric.one;
+        else if (this.useInner())
+            return this.inner.derivative();
+        return Numeric.zero;
+    }
+    display(outerPrecendence = 0) {
+        if (this.useInner())
+            return "\\operatorname{\\mathbf{" + this.name + '}}';
+        if (!this.isConstant())
+            return "\\operatorname{\\mathtt{" + this.name + "}}";
+        return "\\operatorname{\\mathit{" + this.name + '}}';
+    }
+    displayInline(outerPrecedence = 0) {
+        return this.name;
+    }
+    simplified() {
+        if (this.useInner())
+            return this.inner.simplified();
+        else
+            return this;
+    }
+    isNumeric() {
+        return this.useInner() && this.isConstant() && this.inner.isNumeric();
+    }
+    useInner() {
+        if (this.inner === null)
+            return false;
+        if (Variable.activateInner || this.name == workVariable)
+            return this.useinner;
+        return this.name == 'i';
+    }
+    isConstant() {
+        return this.name != workVariable && (!this.useInner() || this.inner.isConstant());
+    }
+    getValue() {
+        if (!this.isNumeric())
+            HTMLoutput += "Programmierfehler : getValue on nonnumeric Variable <br>";
+        return this.inner.getValue();
+    }
+    isOne() {
+        return this.isNumeric() && this.getValue().isOne();
+    }
+    isZero() {
+        return this.isNumeric() && this.getValue().isZero();
+    }
+    static init() {
+        registeredVariables = {
+            'τ': new Variable('τ', new Numeric(new FloatReal(2 * Math.PI))),
+            'e': new Variable('e', new Numeric(new FloatReal(Math.E))),
+            'i': new Variable('i', new Numeric(Real.zero, Real.one), true),
+            'φ': new Variable('φ', Numeric.one.add(new sqrt(new Numeric(new RationalReal(5)))).divideBy(Numeric.two))
+        };
+        registeredVariables['π'] = new Variable('π', registeredVariables['τ'].divideBy(Numeric.two), true);
+        registeredVariables['ш'] = new Variable('ш', registeredVariables['τ'].divideBy(new Numeric(new RationalReal(4), Real.zero)), true);
+        registeredVariables['°'] = new Variable('°', registeredVariables['τ'].divideBy(new Numeric(new RationalReal(360), Real.zero)), true);
+    }
+    static ofName(name) {
+        if (!(name in registeredVariables))
+            registeredVariables[name] = new Variable(name);
+        return registeredVariables[name];
+    }
+    isMultipleOf(variable) {
+        return variable == this ? Numeric.one : Numeric.zero;
+    }
+    removeVariable(variable) {
+        return variable == this ? Numeric.zero : this;
+    }
+}
+Variable.activateInner = true;
 class Numeric extends FunktionElement {
     constructor(re, im = null) {
         super();
@@ -355,6 +359,9 @@ class Numeric extends FunktionElement {
     }
     static ofF(reF, imF = 0) {
         return new Numeric(Real.ofF(reF), Real.ofF(imF));
+    }
+    isMultipleOf(variable) {
+        return Numeric.zero;
     }
 }
 class InfinityNumeric extends Numeric {
@@ -608,6 +615,20 @@ class AdditionType extends BinaryOperation {
     constructor(op1, op2) {
         super(op1 ?? Numeric.zero, op2 ?? Numeric.zero);
     }
+    getSummands(list) {
+        if (this.op1 instanceof AdditionType) {
+            this.op1.getSummands(list);
+        }
+        else {
+            list.push(this.op1, true);
+        }
+        if (this.op2 instanceof AdditionType) {
+            this.op2.getSummands(list);
+        }
+        else {
+            list.push(this.op2, this instanceof Addition);
+        }
+    }
     allSummands() {
         let numeric = Numeric.zero;
         let list;
@@ -651,6 +672,11 @@ class AdditionType extends BinaryOperation {
     isMultipleOf(variable) {
         return Numeric.zero;
     }
+    removeVariable(variable) {
+        this.op1 = this.op1.removeVariable(variable);
+        this.op2 = this.op2.removeVariable(variable);
+        return this;
+    }
 }
 class Addition extends AdditionType {
     displayInlineNormally(left, right) {
@@ -667,7 +693,79 @@ class Addition extends AdditionType {
         if (simpler.isNumeric()) {
             return simpler.getValue();
         }
+        let summands;
+        this.getSummands(summands);
+        this.simplifiedHelperMethod(summands);
         return simpler.simplify();
+    }
+    simplifiedHelperMethod(summands) {
+        let restart = false;
+        for (let index in summands) {
+            if (restart)
+                break;
+            let currentData = summands[index];
+            let currentElement = currentData[0];
+            for (let index2 in summands) {
+                let tempElement = currentData[index2][0];
+                if (restart) {
+                    break;
+                }
+                else if (currentElement.equals(summands[index2][0])) {
+                    summands.filter(function (value, index3, arr) {
+                        let tempindex = new Number(index);
+                        let tempindex2 = new Number(index2);
+                        return tempindex == index3 || tempindex2 == index3;
+                    });
+                    summands.push(new Multiplication(Numeric.ofF(2), currentElement));
+                    restart = true;
+                }
+                else {
+                    for (let regVarCount in registeredVariables) {
+                        if (restart)
+                            break;
+                        let regVariable = registeredVariables[regVarCount];
+                        let left = currentElement.isMultipleOf(regVariable);
+                        let right = tempElement.isMultipleOf(regVariable);
+                        if (left.isNumeric() && right.isNumeric()) {
+                            if (left.getValue().reF() == 0 && right.getValue().reF() == 0) {
+                            }
+                            else if (left.getValue().imF() == 0 && right.getValue().imF() == 0) {
+                                let leftIsMin = true;
+                                let min = left.getValue().reF();
+                                let delta = right.getValue().reF() - min;
+                                if (right.getValue().reF() < min) {
+                                    leftIsMin = false;
+                                    min = right.getValue().reF();
+                                    delta = -delta;
+                                }
+                                summands.filter(function (value, index3, arr) {
+                                    let tempindex = new Number(index);
+                                    let tempindex2 = new Number(index2);
+                                    return tempindex == index3 || tempindex2 == index3;
+                                });
+                                if (delta == 0) {
+                                    summands.push(new Multiplication(new Addition(currentElement.removeVariable(regVariable), tempElement.removeVariable(regVariable)).simplified(), new Potenz(regVariable, Numeric.ofF(min)).simplified()));
+                                }
+                                else if (leftIsMin) {
+                                    summands.push(new Multiplication(new Addition(currentElement.removeVariable(regVariable), new Multiplication(tempElement.removeVariable(regVariable), new Potenz(regVariable, Numeric.ofF(delta)))).simplified(), new Potenz(regVariable, Numeric.ofF(min)).simplified()));
+                                }
+                                else {
+                                    summands.push(new Multiplication(new Addition(new Multiplication(currentElement.removeVariable(regVariable), new Potenz(regVariable, Numeric.ofF(delta))), tempElement.removeVariable(regVariable)).simplified(), new Potenz(regVariable, Numeric.ofF(min)).simplified()));
+                                }
+                                summands.push(new Multiplication(Numeric.ofF(2), currentElement));
+                                restart = true;
+                            }
+                        }
+                    }
+                }
+            }
+            if (restart) {
+                this.simplifiedHelperMethod(summands);
+            }
+        }
+    }
+    isMultipleOf(variable) {
+        return Numeric.zero;
     }
 }
 class Subtraction extends AdditionType {
@@ -965,6 +1063,9 @@ class sqrt extends UnaryOperation {
             return true;
         return false;
     }
+    isMultipleOf(variable) {
+        return new Multiplication(Numeric.ofF(0.5), this.op.isMultipleOf(variable)).simplified();
+    }
 }
 class cos extends UnaryOperation {
     derivative() {
@@ -980,6 +1081,9 @@ class cos extends UnaryOperation {
             return simpler.getValue();
         return simpler;
     }
+    isMultipleOf(variable) {
+        return Numeric.zero;
+    }
 }
 class sin extends UnaryOperation {
     derivative() {
@@ -994,6 +1098,9 @@ class sin extends UnaryOperation {
         if (simpler.isNumeric())
             return simpler.getValue();
         return simpler;
+    }
+    isMultipleOf(variable) {
+        return Numeric.zero;
     }
 }
 class ln extends UnaryOperation {
@@ -1011,6 +1118,9 @@ class ln extends UnaryOperation {
     }
     getOp() {
         return this.op;
+    }
+    isMultipleOf(variable) {
+        return Numeric.zero;
     }
 }
 class EntireFunktion {
@@ -1040,234 +1150,249 @@ class EntireFunktion {
         return result;
     }
 }
-let Parser = (() => {
-    class Parser {
-        static init() {
-            Parser.numChars = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '\''];
-            Parser.separatorChars = [';'];
-            if (commaIsDecimalPoint)
-                Parser.numChars.push(',');
-            else {
-                Parser.separatorChars.push(',');
+class Parser {
+    static init() {
+        Parser.numChars = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '\''];
+        Parser.separatorChars = [';'];
+        if (commaIsDecimalPoint)
+            Parser.numChars.push(',');
+        else {
+            Parser.separatorChars.push(',');
+        }
+        let specialChars = [
+            "#",
+            "%",
+            "&",
+            "*",
+            "+",
+            "-",
+            "/",
+            ":",
+            ";",
+            "?",
+            "@",
+            "^",
+            "_",
+            "|",
+            "~",
+            "‖",
+            "×",
+            "·",
+            "¶",
+            "±",
+            "¤",
+            "÷",
+            "‼",
+            "⌂"
+        ].concat(Parser.separatorChars);
+        Parser.singleCharacterTokens = specialChars.concat(Parser.leftBraceChars, Parser.rightBraceChars);
+        Parser.forbiddenToMultiplyWithMeChars = specialChars.concat(Parser.rightBraceChars);
+        Parser.forbiddenToMultiplyMeTokens = specialChars.concat(Parser.leftBraceChars, Object.keys(operations));
+    }
+    static parseStringToFunktionElement(inputStr) {
+        if (inputStr == null || inputStr == '')
+            return Numeric.zero;
+        let tokens = Parser.tokenize(inputStr);
+        let RPN = Parser.parseTokensToRPN(tokens);
+        return Parser.parseRPNToFunktionElement(RPN);
+    }
+    static tokenize(input) {
+        let tokens = [];
+        for (let i = 0; i < input.length; i++) {
+            let chr = input[i];
+            if (chr.trim() === '') {
+                continue;
             }
-            let specialChars = [
-                "#",
-                "%",
-                "&",
-                "*",
-                "+",
-                "-",
-                "/",
-                ":",
-                ";",
-                "?",
-                "@",
-                "^",
-                "_",
-                "|",
-                "~",
-                "‖",
-                "×",
-                "·",
-                "¶",
-                "±",
-                "¤",
-                "÷",
-                "‼",
-                "⌂"
-            ].concat(Parser.separatorChars);
-            Parser.singleCharacterTokens = specialChars.concat(Parser.leftBraceChars, Parser.rightBraceChars);
-            Parser.forbiddenToMultiplyWithMeChars = specialChars.concat(Parser.rightBraceChars);
-            Parser.forbiddenToMultiplyMeTokens = specialChars.concat(Parser.leftBraceChars, Object.keys(operations));
-        }
-        static parseStringToFunktionElement(inputStr) {
-            if (inputStr == null || inputStr == '')
-                return Numeric.zero;
-            let tokens = Parser.tokenize(inputStr);
-            let RPN = Parser.parseTokensToRPN(tokens);
-            return Parser.parseRPNToFunktionElement(RPN);
-        }
-        static tokenize(input) {
-            let tokens = [];
-            for (let i = 0; i < input.length; i++) {
-                let chr = input[i];
-                if (chr.trim() === '') {
-                    continue;
-                }
-                if (tokens.length > 0 &&
-                    !Parser.forbiddenToMultiplyMeTokens.includes(tokens[tokens.length - 1]) &&
-                    !Parser.forbiddenToMultiplyWithMeChars.includes(chr)) {
-                    tokens.push("·");
-                }
-                if (Parser.singleCharacterTokens.includes(chr)) {
-                    tokens.push(chr);
-                }
-                else if (Parser.numChars.includes(chr)) {
-                    let number = chr;
-                    let isInt = true;
-                    while (input.length > i + 1 && Parser.numChars.includes(input[i + 1])) {
-                        let digit = input[++i];
-                        if (digit == '.' || digit == ',') {
-                            digit = isInt ? '.' : '';
-                            isInt = false;
-                        }
-                        if (digit != '\'')
-                            number += digit;
+            if (tokens.length > 0 &&
+                !Parser.forbiddenToMultiplyMeTokens.includes(tokens[tokens.length - 1]) &&
+                !Parser.forbiddenToMultiplyWithMeChars.includes(chr)) {
+                tokens.push("·");
+            }
+            if (Parser.singleCharacterTokens.includes(chr)) {
+                tokens.push(chr);
+            }
+            else if (Parser.numChars.includes(chr)) {
+                let number = chr;
+                let isInt = true;
+                while (input.length > i + 1 && Parser.numChars.includes(input[i + 1])) {
+                    let digit = input[++i];
+                    if (digit == '.' || digit == ',') {
+                        digit = isInt ? '.' : '';
+                        isInt = false;
                     }
-                    tokens.push(parseFloat(number));
+                    if (digit != '\'')
+                        number += digit;
                 }
-                else if (Parser.letterChar.includes(chr)) {
-                    let text = chr;
+                tokens.push(parseFloat(number));
+            }
+            else if (Parser.letterChar.includes(chr)) {
+                let text = chr;
+                if (text !== 'i') {
                     while (input.length > i + 1 && Parser.letterChar.includes(input[i + 1]))
                         text += input[++i];
-                    if (text in Parser.namedChars)
-                        tokens.push(Parser.namedChars[text]);
-                    else
-                        tokens.push(text);
                 }
-                else {
-                    HTMLoutput += "Achtung, das Zeichen " + input[i] + " an Stelle i: von \"" + input + "\" wurde übergangen (invalid)";
-                }
-            }
-            return tokens;
-        }
-        static precedence(token) {
-            if (token in operations)
-                return operations[token]['precedence'];
-            return -1;
-        }
-        static parseTokensToRPN(tokens) {
-            let output_queue = [];
-            let operator_stack = [];
-            let wasOperand = false;
-            for (let j = 0; j in tokens; j++) {
-                let token = tokens[j];
-                if (typeof token == 'number') {
-                    output_queue.push(token);
-                    wasOperand = true;
-                }
-                else if (token in operations) {
-                    if (!wasOperand && operations[token]['arity'] >= 2 && !(j + 1 in tokens && Parser.leftBraceChars.includes(tokens[j + 1]))) {
-                        output_queue.push(null);
-                    }
-                    let myOP = Parser.precedence(token);
-                    while (true) {
-                        if (operator_stack.length == 0)
-                            break;
-                        let earlierOP = Parser.precedence(operator_stack[operator_stack.length - 1]);
-                        if (earlierOP > myOP ||
-                            (earlierOP == myOP && !('rightAssociative' in operations[operator_stack[operator_stack.length - 1]])))
-                            output_queue.push(operator_stack.pop());
-                        else
-                            break;
-                    }
-                    operator_stack.push(token);
-                    wasOperand = false;
-                }
-                else if (Parser.leftBraceChars.includes(token)) {
-                    operator_stack.push('(');
-                    wasOperand = false;
-                }
-                else if (Parser.rightBraceChars.includes(token)) {
-                    while (operator_stack[operator_stack.length - 1] !== '(') {
-                        output_queue.push(operator_stack.pop());
-                        if (operator_stack.length == 0) {
-                            HTMLoutput += "Zu wenige öffnende Klammern.<br>";
-                            break;
-                        }
-                    }
-                    operator_stack.pop();
-                    wasOperand = true;
-                }
-                else if (Parser.separatorChars.includes(token)) {
-                    if (operator_stack[operator_stack.length - 1] !== '(')
-                        output_queue.push('');
-                    while (operator_stack[operator_stack.length - 1] !== '(') {
-                        output_queue.push(operator_stack.pop());
-                        if (operator_stack.length == 0) {
-                            HTMLoutput += "Zu wenige öffnende Klammern.<br>";
-                            break;
-                        }
-                    }
-                    wasOperand = false;
-                }
-                else {
-                    output_queue.push(token);
-                    wasOperand = true;
-                }
-            }
-            while (operator_stack.length > 0) {
-                let token = operator_stack.pop();
-                if (token == '(') {
-                    HTMLoutput += "Zu viele öffnende Klammern!<br>";
-                }
+                if (text in Parser.namedChars)
+                    tokens.push(Parser.namedChars[text]);
                 else
-                    output_queue.push(token);
+                    tokens.push(text);
             }
-            return output_queue;
-        }
-        static parseRPNToFunktionElement(RPNQueue) {
-            if (RPNQueue.length == 0)
-                return Numeric.zero;
-            Parser.stack = [];
-            for (var index in RPNQueue) {
-                let token = RPNQueue[index];
-                let funkEl = Parser.parseRPNToFunctionElementInternal(token);
-                Parser.stack.push(funkEl);
+            else {
+                HTMLoutput += `Achtung, das Zeichen ${input[i]} an Stelle ${i}: von "${input}" wurde übergangen (invalid) <br>`;
             }
-            let result = Parser.stack.pop();
-            if (Parser.stack.length > 0)
-                HTMLoutput += "HÄ? {"
-                    + Parser.stack.map(a => a.display()).join(', ')
-                    + "} is the stack left after parsing RPNQueue: {"
-                    + RPNQueue.join(', ')
-                    + "}<br>";
-            return result;
         }
-        static parseRPNToFunctionElementInternal(token) {
-            if (token === null)
-                return null;
-            if (typeof token == "number")
-                return Numeric.ofF(token);
-            if (token in operations) {
-                switch (operations[token]['arity']) {
-                    case 1:
-                        let op = Parser.stack.pop();
-                        return new Function('a', "return new " + [operations[token]['name']] + "(a);")(op);
-                    case 2:
-                        let o2 = Parser.stack.pop();
-                        let o1 = Parser.stack.pop();
-                        return new Function('a', 'b', "return new " + [operations[token]['name']] + "(a, b);")(o1, o2);
-                    default:
-                        let args = [];
-                        for (let i = 0; i < operations[token]['arity']; i++)
-                            args.push(Parser.stack.pop());
-                        return new Function('a', "return new " + [operations[token]['name']] + "(a);")(args.reverse());
+        return tokens;
+    }
+    static precedence(token) {
+        if (token in operations)
+            return operations[token]['precedence'];
+        return -1;
+    }
+    static parseTokensToRPN(tokens) {
+        let output_queue = [];
+        let operator_stack = [];
+        let wasOperand = false;
+        for (let j = 0; j in tokens; j++) {
+            let token = tokens[j];
+            if (typeof token == 'number') {
+                output_queue.push(token);
+                wasOperand = true;
+            }
+            else if (token in operations) {
+                if (!wasOperand && operations[token]['arity'] >= 2 && !(j + 1 in tokens && Parser.leftBraceChars.includes(tokens[j + 1]))) {
+                    output_queue.push(null);
                 }
+                let myOP = Parser.precedence(token);
+                while (true) {
+                    if (operator_stack.length == 0)
+                        break;
+                    let earlierOP = Parser.precedence(operator_stack[operator_stack.length - 1]);
+                    if (earlierOP > myOP ||
+                        (earlierOP == myOP && !('rightAssociative' in operations[operator_stack[operator_stack.length - 1]])))
+                        output_queue.push(operator_stack.pop());
+                    else
+                        break;
+                }
+                operator_stack.push(token);
+                wasOperand = false;
+            }
+            else if (Parser.leftBraceChars.includes(token)) {
+                operator_stack.push('(');
+                wasOperand = false;
+            }
+            else if (Parser.rightBraceChars.includes(token)) {
+                while (operator_stack[operator_stack.length - 1] !== '(') {
+                    output_queue.push(operator_stack.pop());
+                    if (operator_stack.length == 0) {
+                        HTMLoutput += "Zu wenige öffnende Klammern.<br>";
+                        break;
+                    }
+                }
+                operator_stack.pop();
+                wasOperand = true;
+            }
+            else if (Parser.separatorChars.includes(token)) {
+                if (operator_stack[operator_stack.length - 1] !== '(')
+                    output_queue.push('');
+                while (operator_stack[operator_stack.length - 1] !== '(') {
+                    output_queue.push(operator_stack.pop());
+                    if (operator_stack.length == 0) {
+                        HTMLoutput += "Zu wenige öffnende Klammern.<br>";
+                        break;
+                    }
+                }
+                wasOperand = false;
+            }
+            else {
+                output_queue.push(token);
+                wasOperand = true;
+            }
+        }
+        while (operator_stack.length > 0) {
+            let token = operator_stack.pop();
+            if (token == '(') {
+                HTMLoutput += "Zu viele öffnende Klammern!<br>";
             }
             else
-                return Variable.ofName(token);
+                output_queue.push(token);
         }
+        return output_queue;
     }
-    Parser.letterChar = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-        'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-        'ä', 'ö', 'ü', 'ß', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-        'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
-        'W', 'X', 'Y', 'Z', 'Ä', 'Ö', 'Ü', 'ς', 'ε', 'ρ', 'τ', 'υ', 'θ',
-        'ι', 'ο', 'π', 'λ', 'κ', 'ξ', 'η', 'γ', 'φ', 'δ', 'σ', 'α', 'ζ',
-        'χ', 'ψ', 'ω', 'β', 'ν', 'μ', 'Ε', 'Ρ', 'Τ', 'Υ', 'Θ', 'Ι', 'Ο',
-        'Π', 'Λ', 'Κ', 'Ξ', 'Η', 'Γ', 'Φ', 'Δ', 'Σ', 'Α', 'Ζ', 'Χ', 'Ψ',
-        'Ω', 'Β', 'Ν', 'Μ', 'й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш',
-        'щ', 'з', 'х', 'э', 'ж', 'д', 'л', 'о', 'р', 'п', 'а', 'в',
-        'ы', 'ф', 'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', 'Й',
-        'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З', 'Х', 'Э', 'Ж',
-        'Д', 'Л', 'О', 'Р', 'П', 'А', 'В', 'Ы', 'Ф', 'Я', 'Ч', 'С',
-        'М', 'И', 'Т', 'Ь', 'Б', 'Ю', '\'', '°'];
-    Parser.namedChars = { 'alpha': 'α', 'beta': 'β', 'pi': 'π', 'tri': 'ш' };
-    Parser.leftBraceChars = ['(', '[', '{', '<', '«'];
-    Parser.rightBraceChars = [')', ']', '}', '>', '»'];
-    return Parser;
-})();
+    static parseRPNToFunktionElement(RPNQueue) {
+        if (RPNQueue.length == 0)
+            return Numeric.zero;
+        Parser.stack = [];
+        for (var index in RPNQueue) {
+            let token = RPNQueue[index];
+            let funkEl = Parser.parseRPNToFunctionElementInternal(token);
+            Parser.stack.push(funkEl);
+        }
+        let result = Parser.stack.pop();
+        if (Parser.stack.length > 0)
+            HTMLoutput += "HÄ? {"
+                + Parser.stack.map(a => a.display()).join(', ')
+                + "} is the stack left after parsing RPNQueue: {"
+                + RPNQueue.join(', ')
+                + "}<br>";
+        return result;
+    }
+    static parseRPNToFunctionElementInternal(token) {
+        if (token === null)
+            return null;
+        if (typeof token == "number")
+            return Numeric.ofF(token);
+        if (token in operations) {
+            switch (operations[token]['arity']) {
+                case 1:
+                    let op = Parser.stack.pop();
+                    return new Function('a', `return new ${operations[token]['name']} (a);`)(op);
+                case 2:
+                    let o2 = Parser.stack.pop();
+                    let o1 = Parser.stack.pop();
+                    return new Function('a', 'b', `return new ${operations[token]['name']} (a, b);`)(o1, o2);
+                default:
+                    let args = [];
+                    for (let i = 0; i < operations[token]['arity']; i++)
+                        args.unshift(Parser.stack.pop());
+                    return new Function('a', `return new ${operations[token]['name']} (a);`)(args);
+            }
+        }
+        else
+            return Variable.ofName(token);
+    }
+}
+Parser.letterChar = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    'ä', 'ö', 'ü', 'ß', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+    'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+    'W', 'X', 'Y', 'Z', 'Ä', 'Ö', 'Ü', 'ς', 'ε', 'ρ', 'τ', 'υ', 'θ',
+    'ι', 'ο', 'π', 'λ', 'κ', 'ξ', 'η', 'γ', 'φ', 'δ', 'σ', 'α', 'ζ',
+    'χ', 'ψ', 'ω', 'β', 'ν', 'μ', 'Ε', 'Ρ', 'Τ', 'Υ', 'Θ', 'Ι', 'Ο',
+    'Π', 'Λ', 'Κ', 'Ξ', 'Η', 'Γ', 'Φ', 'Δ', 'Σ', 'Α', 'Ζ', 'Χ', 'Ψ',
+    'Ω', 'Β', 'Ν', 'Μ', 'й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш',
+    'щ', 'з', 'х', 'э', 'ж', 'д', 'л', 'о', 'р', 'п', 'а', 'в',
+    'ы', 'ф', 'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', 'Й',
+    'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З', 'Х', 'Э', 'Ж',
+    'Д', 'Л', 'О', 'Р', 'П', 'А', 'В', 'Ы', 'Ф', 'Я', 'Ч', 'С',
+    'М', 'И', 'Т', 'Ь', 'Б', 'Ю', '\'', '°'];
+Parser.namedChars = { 'alpha': 'α', 'alfa': 'α',
+    'beta': 'β', 'vita': 'β', 'gamma': 'γ', 'delta': 'δ', 'epsilon': 'ε',
+    'zeta': 'ζ', 'zita': 'ζ', 'eta': 'η', 'ita': 'η', 'theta': 'θ', 'thita': 'θ',
+    'iota': 'ι', 'kappa': 'κ', 'lambda': 'λ', 'lamda': 'λ',
+    'my': 'μ', 'mi': 'μ', 'ny': 'ν', 'ni': 'ν', 'xi': 'ξ',
+    'omikron': 'ο', 'pi': 'π', 'rho': 'ρ', 'ro': 'ρ', 'sigma': 'σ',
+    'tau': 'τ', 'taf': 'τ', 'ypsilon': 'υ', 'phi': 'φ', 'fi': 'φ',
+    'chi': 'χ', 'psi': 'ψ', 'omega': 'ω',
+    'Alpha': 'Α', 'Alfa': 'Α',
+    'Beta': 'Β', 'Vita': 'Β', 'Gamma': 'Γ', 'Delta': 'Δ', 'Epsilon': 'Ε',
+    'Zeta': 'Ζ', 'Zita': 'Ζ', 'Eta': 'Η', 'Ita': 'Η', 'Theta': 'Θ', 'Thita': 'Θ',
+    'Iota': 'Ι', 'Kappa': 'Κ', 'Lambda': 'Λ', 'Lamda': 'Λ',
+    'My': 'Μ', 'Mi': 'Μ', 'Ny': 'Ν', 'Ni': 'Ν', 'Xi': 'Ξ',
+    'Omikron': 'Ο', 'Pi': 'Π', 'Rho': 'Ρ', 'Ro': 'Ρ', 'Sigma': 'Σ',
+    'Tau': 'Τ', 'Taf': 'Τ', 'Ypsilon': 'Υ', 'Phi': 'Φ', 'Fi': 'Φ',
+    'Chi': 'Χ', 'Psi': 'Ψ', 'Omega': 'Ω',
+    'tri': 'ш' };
+Parser.leftBraceChars = ['(', '[', '{', '<', '«'];
+Parser.rightBraceChars = [')', ']', '}', '>', '»'];
 Parser.init();
 Variable.init();
 window.MathJax = {
